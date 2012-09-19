@@ -6,4 +6,8 @@ insmod /system/lib/modules/hid-gaff.ko
 insmod /system/lib/modules/hid-pl.ko
 insmod /system/lib/modules/hid-sony.ko
 
+
+# UInput supplied by cherrytree
+insmod /system/lib/modules/uinput.ko
+
 echo "done Additional Modules Autoload"
