@@ -1,0 +1,163 @@
+Compilation Notes
+
+
+FAQs
+
+* HW accelerated playback of local contents is limited to few files format but there's a nice workaround: since network playback works flawlessly we'll install an UPNP server that will automatically open our files from the loopback network interface. In this case stagefright player will kick in and will play every file without any trouble.
+Install both MX Player and BubbleUPNP from Play store. Open BubbleUPNP and from "Library" section select the file to play. Choose MX Player as default player and enjoy the HW accelerated video playback
+
+Sources
+
+* Github repository
+
+repo init -u git://github.com/CyanogenMod/android.git -b jellybean
+
+paste these lines inside new file .repo/manifests/local_manifest.xml
+
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <!-- remote  name="github" fetch="git://github.com/" /-->
+  <!-- remove-project name="hardware/libhardware"/-->
+  <remove-project name="CyanogenMod/android_hardware_libhardware"/>
+  <remove-project name="CyanogenMod/android_frameworks_av"/>
+  <remove-project name="CyanogenMod/android_frameworks_native"/>
+  <remove-project name="CyanogenMod/android_frameworks_base"/>
+  <remove-project name="CyanogenMod/android_system_core"/>
+  <remove-project name="CyanogenMod/android_system_vold"/>
+  <remove-project name="CyanogenMod/android_system_bluetooth"/>
+  <project remote="github" revision="jellybean-cm" name="shaun2029/android_device_907" path="device/softwinner/907" />
+  <project remote="github" revision="jellybean-cm" name="shaun2029/android_hardware_realtek" path="hardware/realtek" />
+  <project remote="github" revision="jellybean-cm" name="shaun2029/android_hardware_libhardware" path="hardware/libhardware" />
+  <project remote="github" revision="jellybean-cm" name="shaun2029/android_frameworks_av" path="frameworks/av" />
+  <project remote="github" revision="jellybean-cm" name="shaun2029/android_frameworks_native" path="frameworks/native" />
+  <project remote="github" revision="jellybean-cm" name="shaun2029/android_frameworks_base" path="frameworks/base" />
+  <project remote="github" revision="jellybean-cm" name="shaun2029/android_system_core" path="system/core" />
+  <project remote="github" revision="jellybean-cm" name="shaun2029/android_system_vold" path="system/vold" />
+  <project remote="github" revision="jellybean-cm" name="shaun2029/android_system_bluetooth" path="system/bluetooth" />
+</manifest>
+
+now type this command
+
+repo sync -j8
+
+finally you're ready to build it
+
+source build/envsetup.sh
+lunch cm_907-userdebug && mka
+
+mka otapackage
+
+
+Prerequisites:
+
+1. Needs realtek:
+	git clone https://github.com/allwinner-dev-team/android_hardware_realtek.git
+	cd android_hardware_realtek
+	git checkout jellybean
+
+	a. Copy the folder wlan to 
+	hardware/realtek/
+	
+	b. Move the folder hardware/realtek/wlan/wpa_supplicant_8_lib to
+	media/Storage/git/jellybean/device/softwinner/907/libraries/wpa_supplicant_8_lib
+
+2. Prebuilts
+	cd into vendor/cm and do
+	./get-prebuilts
+
+	a. Extract UpdateMe.apk/assets/update_me.xml to
+	/media/Storage/git/jellybean/device/softwinner/907/prebuilt/
+
+	b. Extract proprietary/Term.apk/lib/armeabi/libjackpal-androidterm4.so into
+	vendor/cm/proprietary/lib/armeabi/
+
+	c. Copy UpdateMe.apk to
+	device/softwinner/907/prebuilt/app/UpdateMe.apk
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+It seems that the android_device_907 has incorrect info for wifi.
+Copy the following from Christian Troy android_device_907 / BoardConfig.mk  ICS branch 
+
+
+# Wifi stuff
+WPA_SUPPLICANT_VERSION := VER_0_8_X
+BOARD_WPA_SUPPLICANT_DRIVER := WEXT
+BOARD_WPA_SUPPLICANT_PRIVATE_LIB := lib_driver_cmd_rtl
+BOARD_HOSTAPD_DRIVER := WEXT
+BOARD_HOSTAPD_PRIVATE_LIB := lib_driver_cmd_rtl
+
+BOARD_WLAN_DEVICE := rtl8192cu
+
+WIFI_DRIVER_MODULE_NAME := 8192cu
+WIFI_DRIVER_MODULE_PATH := "/system/lib/modules/8192cu.ko"
+
+WIFI_DRIVER_MODULE_ARG := ""
+WIFI_FIRMWARE_LOADER := ""
+WIFI_DRIVER_FW_PATH_STA := ""
+WIFI_DRIVER_FW_PATH_AP := ""
+WIFI_DRIVER_FW_PATH_P2P := ""
+WIFI_DRIVER_FW_PATH_PARAM := ""
+
+TARGET_CUSTOM_WIFI := ../../hardware/realtek/wlan/wifi_realtek.c
+
+# Wifi stuff
+BOARD_WIFI_VENDOR := realtek
+ifeq ($(BOARD_WIFI_VENDOR), realtek)
+WPA_SUPPLICANT_VERSION := VER_0_8_X
+BOARD_WPA_SUPPLICANT_DRIVER := NL80211
+BOARD_WPA_SUPPLICANT_PRIVATE_LIB := lib_driver_cmd_rtl
+BOARD_HOSTAPD_DRIVER := NL80211
+BOARD_HOSTAPD_PRIVATE_LIB := lib_driver_cmd_rtl
+
+BOARD_WLAN_DEVICE := rtl8192cu
+
+WIFI_DRIVER_MODULE_NAME := 8192cu
+WIFI_DRIVER_MODULE_PATH := "/system/lib/modules/8192cu.ko"
+
+WIFI_DRIVER_MODULE_ARG := ""
+WIFI_FIRMWARE_LOADER := ""
+WIFI_DRIVER_FW_PATH_STA := ""
+WIFI_DRIVER_FW_PATH_AP := ""
+WIFI_DRIVER_FW_PATH_P2P := ""
+WIFI_DRIVER_FW_PATH_PARAM := ""
+
+TARGET_CUSTOM_WIFI := ../../hardware/realtek/wlan/libhardware_legacy/wifi/wifi_realtek.c
+endif
+
+
+
+
+
+
+
+
+
+
+make: *** No rule to make target `out/target/product/907/obj/STATIC_LIBRARIES/lib_driver_cmd_rtl_intermediates/export_includes', needed by `out/target/product/907/obj/EXECUTABLES/hostapd_intermediates/import_includes'. Stop.
+
+Delete the arrays.xml and config.xml files from device/allwinner/a10/overlay/frameworks/base/core/res/res/values 
+
+
+make: *** No rule to make target `out/target/product/a10/obj/STATIC_LIBRARIES/lib_driver_cmd_rtl_intermediates/export_includes', needed by `out/target/product/a10/obj/EXECUTABLES/hostapd_intermediates/import_includes'.  Stop.
+make: *** Waiting for unfinished jobs....
+
+Create the folder lib_driver_cmd_rtl_intermediates in out/target/product/a10/obj/STATIC_LIBRARIES and put an export_includes file in there. You can grab that file from other folders in that directory 
