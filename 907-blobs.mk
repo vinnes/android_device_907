@@ -52,7 +52,6 @@ PRODUCT_COPY_FILES += \
 # /system/lib
 PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/lib/egl/libEGL_mali.so:system/lib/egl/libEGL_mali.so \
-	device/softwinner/907/prebuilt/lib/egl/libGLES_android.so:system/lib/egl/libGLES_android.so \
 	device/softwinner/907/prebuilt/lib/egl/libGLESv1_CM_mali.so:system/lib/egl/libGLESv1_CM_mali.so \
 	device/softwinner/907/prebuilt/lib/egl/libGLESv2_mali.so:system/lib/egl/libGLESv2_mali.so \
 	device/softwinner/907/prebuilt/lib/liballwinner-ril.so:system/lib/liballwinner-ril.so \
