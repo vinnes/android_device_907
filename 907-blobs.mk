@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Update Me
-PRODUCT_COPY_FILES += \
-       device/softwinner/907/prebuilt/app/UpdateMe.apk:system/app/UpdateMe.apk \
-       device/softwinner/907/prebuilt/update_me.xml:system/update_me.xml
-
 # /system/bin
 PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/bin/fsck.exfat:system/bin/fsck.exfat \
@@ -75,9 +70,6 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/etc/wifi/wpa_supplicant.conf:system/etc/wifi/wpa_supplicant.conf
 
 # prebuilt kernel modules
-#PRODUCT_COPY_FILES += \
-#	$(call find-copy-subdir-files,*,device/softwinner/907/prebuilt/vendor/modules,system/vendor/modules)
-
 PRODUCT_COPY_FILES += \
 	$(call find-copy-subdir-files,*,device/softwinner/907/prebuilt/lib/modules,system/lib/modules)
 

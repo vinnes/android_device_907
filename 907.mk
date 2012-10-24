@@ -37,29 +37,31 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	persist.sys.strictmode.visual=0 \
 	persist.sys.strictmode.disable=1 \
 	persist.sys.usb.config=mass_storage,adb \
-	dalvik.vm.verify-bytecode=false \
-	dalvik.vm.dexopt-flags=v=n,o=v \
-	dalvik.vm.execution-mode=int:jit \
 	persist.sys.timezone=Europe/Rome \
 	persist.sys.language=en \
 	persist.sys.country=US \
 	ro.com.google.locationfeatures=1 \
-	dalvik.vm.lockprof.threshold=500 \
-	ro.kernel.android.checkjni=0 \
+	ro.additionalmounts=/storage/sdcard1 \
+	ro.vold.switchablepair=/storage/sdcard0,/storage/sdcard1 \
+	persist.sys.vold.switchexternal=0 \
+	ro.disable_phablet_ui=1
+
+PRODUCT_PROPERTY_OVERRIDES += \
+	dalvik.vm.verify-bytecode=false \
+	dalvik.vm.dexopt-flags=v=n,o=v \
+	dalvik.vm.execution-mode=int:jit \
 	dalvik.vm.checkjni=false \
 	dalvik.vm.dexopt-data-only=1 \
+	dalvik.vm.lockprof.threshold=500
+
+PRODUCT_PROPERTY_OVERRIDES += \
+	ro.kernel.android.checkjni=0 \
 	ro.vold.umsdirtyratio=20 \
 	persist.sys.use_dithering=0 \
 	persist.sys.purgeable_assets=0 \
 	windowsmgr.max_events_per_sec=240 \
 	view.touch_slop=2 \
-	view.minimum_fling_velocity=25 \
-	updateme.disableinstalledapps=1 \
-	updateme.disablescripts=1 \
-	ro.additionalmounts=/storage/sdcard1 \
-	ro.vold.switchablepair=/storage/sdcard0,/storage/sdcard1 \
-	persist.sys.vold.switchexternal=0 \
-	ro.disable_phablet_ui=1
+	view.minimum_fling_velocity=25
 
 DEVICE_PACKAGE_OVERLAYS := device/softwinner/907/overlay
 
@@ -96,20 +98,6 @@ PRODUCT_PACKAGES += \
 	hwcomposer.exDroid \
 	lights.sun4i \
 	display.sun4i \
-        libcedarxbase \
-        libcedarxosal \
-	libcedarv \
-	libcedarv_adapter \
-        libcedarv_base \
-	libCedarA \
-	libCedarX \
-	libstagefright_soft_cedar_h264dec \
-        libswdrm \
-	libaw_audio \
-	libaw_audioa \
-	libfacedetection \
-	librtmp \
-	libve \
 	audio.primary.exDroid \
 	audio.a2dp.default \
 	audio.usb.default \
@@ -117,6 +105,23 @@ PRODUCT_PACKAGES += \
 	chat \
 	u3gmonitor \
 	devlistener
+
+# CedarX libs
+PRODUCT_PACKAGES += \
+	libCedarA \
+	libCedarX \
+	libaw_audio \
+	libaw_audioa \
+	libcedarv \
+	libcedarv_adapter \
+	libcedarv_base \
+	libcedarxbase \
+	libcedarxosal \
+	libfacedetection \
+	librtmp \
+	libstagefright_soft_cedar_h264dec \
+	libswdrm \
+	libve
 
 # CM9 apps
 PRODUCT_PACKAGES += \
