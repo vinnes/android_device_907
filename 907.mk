@@ -116,11 +116,13 @@ PRODUCT_PACKAGES += \
 	libcedarv_adapter \
 	libcedarv_base \
 	libcedarxbase \
+	libcedarxsftstream \
 	libcedarxosal \
 	libfacedetection \
 	librtmp \
 	libstagefright_soft_cedar_h264dec \
 	libswdrm \
+	libthirdpartstream \
 	libve
 
 # CM9 apps
