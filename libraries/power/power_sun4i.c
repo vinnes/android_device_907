@@ -105,6 +105,9 @@ static void sun4i_power_set_interactive(struct power_module *module, int on)
 
     sysfs_write("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq",
                 on ? "1008000" : "696000");
+
+    sysfs_write("/sys/devices/system/cpu/cpufreq/interactive/input_boost",
+                on ? "1" : "0");
 }
 
 static void sun4i_power_hint(struct power_module *module, power_hint_t hint,
@@ -113,10 +116,16 @@ static void sun4i_power_hint(struct power_module *module, power_hint_t hint,
     struct sun4i_power_module *sun4i = (struct sun4i_power_module *) module;
     char buf[80];
     int len;
+    int duration = 1;
 
     switch (hint) {
     case POWER_HINT_INTERACTION:
+    case POWER_HINT_CPU_BOOST:
+        if (data != NULL)
+            duration = (int) data;
+
         if (boostpulse_open(sun4i) >= 0) {
+            snprintf(buf, sizeof(buf), "%d", duration);
 	    len = write(sun4i->boostpulse_fd, "1", 1);
 
 	    if (len < 0) {

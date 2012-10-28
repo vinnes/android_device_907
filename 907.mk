@@ -98,6 +98,7 @@ PRODUCT_PACKAGES += \
 	hwcomposer.exDroid \
 	lights.sun4i \
 	display.sun4i \
+	power.sun4i \
 	audio.primary.exDroid \
 	audio.a2dp.default \
 	audio.usb.default \
