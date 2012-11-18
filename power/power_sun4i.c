@@ -26,6 +26,7 @@
 #include <hardware/power.h>
 
 #define BOOSTPULSE_PATH "/sys/devices/system/cpu/cpufreq/interactive/boostpulse"
+#define MALI_BOOSTPULSE_PATH "/sys/devices/platform/mali_dev.0/boostpulse"
 
 struct sun4i_power_module {
     struct power_module base;
@@ -72,6 +73,18 @@ static void sun4i_power_init(struct power_module *module)
                 "50");
     sysfs_write("/sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay",
                 "100000");
+
+    /*
+     * Mali boost rate: 1200MHz PLL / 400MHz Mali freq, duration
+     * 500 msec.
+     */
+
+    sysfs_write("/sys/module/mali/parameters/mali_boost_rate",
+                "1200");
+
+    sysfs_write("/sys/module/mali/parameters/mali_boost_duration",
+                "500");
+
 }
 
 static int boostpulse_open(struct sun4i_power_module *sun4i)
@@ -99,8 +112,7 @@ static int boostpulse_open(struct sun4i_power_module *sun4i)
 static void sun4i_power_set_interactive(struct power_module *module, int on)
 {
     /*
-     * Lower maximum frequency when screen is off.  CPU 0 and 1 share a
-     * cpufreq policy.
+     * Lower maximum frequency when screen is off.
      */
 
     sysfs_write("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq",
@@ -129,6 +141,8 @@ static void sun4i_power_hint(struct power_module *module, power_hint_t hint,
 	        strerror_r(errno, buf, sizeof(buf));
 		ALOGE("Error writing to %s: %s\n", BOOSTPULSE_PATH, buf);
 	    }
+
+	    sysfs_write(MALI_BOOSTPULSE_PATH, buf);
 	}
         break;
 
