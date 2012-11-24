@@ -31,10 +31,11 @@
 #define BOOSTPULSE_ONDEMAND "/sys/devices/system/cpu/cpufreq/ondemand/boostpulse"
 #define BOOSTPULSE_MALI "/sys/devices/platform/mali_dev.0/boostpulse"
 
-#define MAX_BUF_SZ  10
+#define MAX_BUF_SZ  20
 
 static char screen_off_max_freq[MAX_BUF_SZ] = "696000";
 static char scaling_max_freq[MAX_BUF_SZ] = "1008000";
+static char current_governor[MAX_BUF_SZ] = { 0 };
 
 struct sun4i_power_module {
     struct power_module base;
@@ -120,6 +121,8 @@ static void sun4i_power_init(struct power_module *module)
         return;
     }
 
+    memcpy(current_governor, governor, MAX_BUF_SZ);
+
     if (strncmp(governor, "interactive", sizeof(governor)) == 0) {
 
         /*
@@ -166,6 +169,7 @@ static void sun4i_power_init(struct power_module *module)
 
 static int boostpulse_open(struct sun4i_power_module *sun4i)
 {
+    struct power_module *module;
     char buf[80];
     char governor[80];
 
@@ -177,6 +181,9 @@ static int boostpulse_open(struct sun4i_power_module *sun4i)
             sun4i->boostpulse_warned = 1;
 
         } else {
+            if (strncmp(governor, current_governor, strlen(governor)) != 0)
+                sun4i_power_init(module);
+
             if (strncmp(governor, "interactive", sizeof(governor)) == 0)
                 sun4i->boostpulse_fd = open(BOOSTPULSE_INTERACTIVE, O_WRONLY);
             else if (strncmp(governor, "ondemand", sizeof(governor)) == 0)
