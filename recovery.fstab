@@ -7,5 +7,4 @@
 /emmc		vfat		/dev/block/nandi
 /recovery	emmc		/dev/block/nandg
 /sdcard		vfat		/dev/block/mmcblk0p1	/dev/block/mmcblk0
-/sd-ext		auto		/dev/block/mmcblk0p2
 /system		ext4		/dev/block/nandd

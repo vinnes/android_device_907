@@ -13,7 +13,6 @@ on init
 
     mkdir /boot
     mkdir /sdcard
-    mkdir /sd-ext
     mkdir /datadata
     mkdir /emmc
     mkdir /system

@@ -69,12 +69,8 @@ TW_FLASH_FROM_STORAGE := true
 #TWRP_EVENT_LOGGING := true 
 TW_INTERNAL_STORAGE_PATH := "/emmc"
 TW_INTERNAL_STORAGE_MOUNT_POINT := "emmc"
-TW_EXTERNAL_STORAGE_PATH := "/external_sd"
-TW_EXTERNAL_STORAGE_MOUNT_POINT := "external_sd"
-SP1_NAME := "emmc"
-SP1_DISPLAY_NAME := "InternalCard"
-SP1_BACKUP_METHOD := image
-SP1_MOUNTABLE := 1
+TW_EXTERNAL_STORAGE_PATH := "/sdcard"
+TW_EXTERNAL_STORAGE_MOUNT_POINT := "sdcard"
 
 #Misc stuff
 TARGET_USE_CUSTOM_LUN_FILE_PATH = "/sys/class/android_usb/android0/f_mass_storage/lun%d/file"
