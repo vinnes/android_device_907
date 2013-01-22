@@ -56,17 +56,35 @@ ENABLE_WEBGL := true
 #Recovery Stuff
 #BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery_keys.c
 BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
+BOARD_SDCARD_INTERNAL_DEVICE := /dev/block/nandi
 BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
 #TARGET_RECOVERY_INITRC := device/softwinner/907/recovery_init.rc
+
+#twrp recovery
+TARGET_RECOVERY_INITRC := device/softwinner/907/recovery_init.rc
+TARGET_RECOVERY_PIXEL_FORMAT := "RGB_565"
+DEVICE_RESOLUTION := 1024x768
+TW_FLASH_FROM_STORAGE := true
+#RECOVERY_GRAPHICS_USE_LINELENGTH := true
+#TWRP_EVENT_LOGGING := true 
+TW_INTERNAL_STORAGE_PATH := "/emmc"
+TW_INTERNAL_STORAGE_MOUNT_POINT := "emmc"
+TW_EXTERNAL_STORAGE_PATH := "/external_sd"
+TW_EXTERNAL_STORAGE_MOUNT_POINT := "external_sd"
+SP1_NAME := "emmc"
+SP1_DISPLAY_NAME := "InternalCard"
+SP1_BACKUP_METHOD := image
+SP1_MOUNTABLE := 1
 
 #Misc stuff
 TARGET_USE_CUSTOM_LUN_FILE_PATH = "/sys/class/android_usb/android0/f_mass_storage/lun%d/file"
 TARGET_USE_CUSTOM_SECOND_LUN_NUM := 1
 TARGET_RECOVERY_PRE_COMMAND := "echo -n boot-recovery | busybox dd of=/dev/block/nandf count=1 conv=sync; sync"
 BOARD_USE_LEGACY_TOUCHSCREEN := true
+BOARD_USE_PREBUILT_TOUCHSCREEN := device/softwinner/907/modules/ft5x_ts.ko
 TARGET_HARDWARE_INCLUDE := $(TOP)/device/softwinner/907/libraries/include
 TARGET_PROVIDES_INIT_RC := true
-TARGET_BOOTANIMATION_PRELOAD := true
+#TARGET_BOOTANIMATION_PRELOAD := true
 TARGET_RELEASETOOL_OTA_FROM_TARGET_SCRIPT := device/softwinner/907/releasetools/907_ota_from_target_files
 
 # Wifi stuff
