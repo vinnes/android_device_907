@@ -61,6 +61,7 @@ ENABLE_WEBGL := true
 #TARGET_RECOVERY_INITRC := device/softwinner/907/recovery_init.rc
 
 #twrp recovery
+BOARD_HAS_SDCARD_INTERNAL := true
 TARGET_RECOVERY_INITRC := device/softwinner/907/recovery_init.rc
 TARGET_RECOVERY_PIXEL_FORMAT := "RGB_565"
 DEVICE_RESOLUTION := 1024x768
