@@ -21,6 +21,10 @@ on init
     mkdir /bootloader
     mount tmpfs tmpfs /tmp
     mount vfat /dev/block/nandi /emmc
+
+    write /sys/devices/virtual/bdi/179:0/read_ahead_kb 2048
+    write /sys/devices/virtual/bdi/7:0/read_ahead_kb 2048
+    write /sys/devices/virtual/bdi/93:0/read_ahead_kb 2048
     
     insmod /lib/modules/ft5x_ts.ko
     insmod /lib/modules/goodix_touch_3F.ko
