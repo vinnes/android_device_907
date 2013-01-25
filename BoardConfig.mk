@@ -27,6 +27,7 @@ TARGET_NO_RADIOIMAGE := true
 #CPU stuff
 TARGET_CPU_ABI := armeabi-v7a
 TARGET_CPU_ABI2 := armeabi
+TARGET_ARCH := arm
 TARGET_ARCH_VARIANT := armv7-a-neon
 #ARCH_ARM_HAVE_VFP := true
 #TARGET_ARCH_VARIANT_CPU := cortex-a9
