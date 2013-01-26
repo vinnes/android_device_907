@@ -28,29 +28,8 @@ mka otapackage
 
 
 Prerequisites:
-
-1. Needs realtek:
-	git clone https://github.com/allwinner-dev-team/android_hardware_realtek.git
-	cd android_hardware_realtek
-	git checkout jellybean
-
-	a. Copy the folder wlan to 
-	hardware/realtek/
-	
-	b. Move the folder hardware/realtek/wlan/wpa_supplicant_8_lib to
-	media/Storage/git/jellybean/device/softwinner/907/libraries/wpa_supplicant_8_lib
-
-2. Prebuilts
+1. Prebuilts
 	cd into vendor/cm and do
 	./get-prebuilts
-
-	a. Extract UpdateMe.apk/assets/update_me.xml to
-	/media/Storage/git/jellybean/device/softwinner/907/prebuilt/
-
-	b. Extract proprietary/Term.apk/lib/armeabi/libjackpal-androidterm4.so into
-	vendor/cm/proprietary/lib/armeabi/
-
-	c. Copy UpdateMe.apk to
-	device/softwinner/907/prebuilt/app/UpdateMe.apk
 
 
