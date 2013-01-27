@@ -11,7 +11,9 @@ and paste these lines inside new file .repo/local_manifest.xml
 <?xml version="1.0" encoding="UTF-8"?>
 <manifest>
   <!-- remote  name="github" fetch="git://github.com/" /-->
+  <remove-project name="CyanogenMod/android_system_core"/>
   <project remote="github" revision="cm-10.1" name="ugers/android_device_907" path="device/softwinner/907" />
+  <project remote="github" revision="cm-10.1" name="ugers/android_system_core" path="system/core" />
 </manifest>
 
 now type this command
