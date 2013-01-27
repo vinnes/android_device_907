@@ -12,8 +12,10 @@ and paste these lines inside new file .repo/local_manifest.xml
 <manifest>
   <!-- remote  name="github" fetch="git://github.com/" /-->
   <remove-project name="CyanogenMod/android_system_core"/>
+  <remove-project name="CyanogenMod/android_system_bluetooth"/>
   <project remote="github" revision="cm-10.1" name="ugers/android_device_907" path="device/softwinner/907" />
   <project remote="github" revision="cm-10.1" name="ugers/android_system_core" path="system/core" />
+  <project remote="github" revision="cm-10.1" name="ugers/android_system_bluetooth" path="system/bluetooth" />
 </manifest>
 
 now type this command
