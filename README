@@ -1,7 +1,6 @@
 Compilation Notes
 
 Sources
-
 * Github repository
 
 repo init -u git://github.com/CyanogenMod/android.git -b cm-10.1
@@ -22,13 +21,10 @@ repo sync -j16
 finally you're ready to build it
 
 source build/envsetup.sh
-lunch cm_907-userdebug && mka
-
-mka otapackage
-
+bunch cm_907-userdebug
 
 Prerequisites:
-1. Prebuilts
+Prebuilts
 	cd into vendor/cm and do
 	./get-prebuilts
 
