@@ -25,7 +25,6 @@ paste these lines inside new file .repo/manifests/local_manifest.xml
   <remove-project name="CyanogenMod/android_system_vold"/>
   <remove-project name="CyanogenMod/android_system_bluetooth"/>
   <project remote="github" revision="jellybean-cm" name="ugers/android_device_907" path="device/softwinner/907" />
-  <project remote="github" revision="jellybean-cm" name="shaun2029/android_hardware_realtek" path="hardware/realtek" />
   <project remote="github" revision="jellybean-cm" name="shaun2029/android_hardware_libhardware" path="hardware/libhardware" />
   <project remote="github" revision="jellybean-cm" name="shaun2029/android_frameworks_av" path="frameworks/av" />
   <project remote="github" revision="jellybean-cm" name="shaun2029/android_frameworks_native" path="frameworks/native" />
