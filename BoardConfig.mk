@@ -28,15 +28,11 @@ TARGET_NO_RADIOIMAGE := true
 TARGET_CPU_ABI := armeabi-v7a
 TARGET_CPU_ABI2 := armeabi
 TARGET_ARCH_VARIANT := armv7-a-neon
-#ARCH_ARM_HAVE_VFP := true
-#TARGET_ARCH_VARIANT_CPU := cortex-a9
-#TARGET_ARCH_VARIANT_FPU := neon
-#ARCH_ARM_HAVE_NEON := true
-#ARCH_ARM_HAVE_ARMV7A := true
 TARGET_GLOBAL_CFLAGS += -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 TARGET_GLOBAL_CPPFLAGS += -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 ARCH_ARM_HAVE_TLS_REGISTER := true
 
+#Bluetooth and Vibro
 BOARD_HAVE_BLUETOOTH := true
 BOARD_HAS_VIBRATOR_IMPLEMENTATION := ../../device/softwinner/907/vibrator.c
 
@@ -59,7 +55,7 @@ ENABLE_WEBGL := true
 #BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
 #TARGET_RECOVERY_INITRC := device/softwinner/907/recovery_init.rc
 
-#twrp recovery
+#TWRP recovery
 BOARD_HAS_SDCARD_INTERNAL := true
 TARGET_RECOVERY_INITRC := device/softwinner/907/recovery_init.rc
 TARGET_RECOVERY_PIXEL_FORMAT := "RGB_565"
