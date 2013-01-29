@@ -31,6 +31,7 @@ PRODUCT_TAGS += dalvik.gc.type-precise
 
 PRODUCT_PROPERTY_OVERRIDES += \
 	ro.opengles.version = 131072 \
+        ro.opengles.surface.rgb565=true \
 	debug.egl.hw=1 \
 	ro.display.switch=1 \
 	ro.sf.lcd_density=160 \
