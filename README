@@ -25,7 +25,7 @@ repo sync -j16
 finally you're ready to build it
 
 source build/envsetup.sh
-bunch cm_907-userdebug
+brunch cm_907-userdebug
 
 Prerequisites:
 Prebuilts
