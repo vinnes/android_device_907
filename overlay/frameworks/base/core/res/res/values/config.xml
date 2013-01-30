@@ -27,6 +27,11 @@
          rotations as the default behavior. -->
     <bool name="config_allowAllRotations">true</bool>
 
+    <string-array name="config_locationProviderPackageNames" translatable="false">
+        <item>com.android.location.fused</item>
+        <item>com.google.android.location</item>
+    </string-array>
+
     <!-- Indicate whether the SD card is accessible without removing the battery. -->
     <bool name="config_batterySdCardAccessibility">true</bool>
 
@@ -94,4 +99,5 @@
     <integer name="config_lowBatteryWarningLevel">10</integer>
     
     <string name="config_datause_iface">wlan0</string>
+    <integer name="config_multiuserMaximumUsers">8</integer>
 </resources>
