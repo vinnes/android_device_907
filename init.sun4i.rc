@@ -63,6 +63,7 @@ on boot
 	insmod /system/lib/modules/ov5640.ko
 	insmod /system/lib/modules/sun4i_csi1.ko
 	insmod /system/lib/modules/sun4i_csi0.ko
+        insmod /system/lib/modules/hi704.ko
 	# usb ethernet drivers
 	insmod /system/lib/modules/usbnet.ko
 	insmod /system/lib/modules/asix.ko
