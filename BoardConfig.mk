@@ -49,7 +49,7 @@ USE_OPENGL_RENDERER := true
 BOARD_USE_SKIA_LCDTEXT := true
 ENABLE_WEBGL := true
 
-#Recovery Stuff
+#CWM recovery
 #BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery_keys.c
 #BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
 #BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
