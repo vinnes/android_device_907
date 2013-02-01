@@ -44,7 +44,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	dalvik.vm.verify-bytecode=false \
 	dalvik.vm.dexopt-flags=v=n,o=v \
 	dalvik.vm.execution-mode=int:jit \
-	persist.sys.timezone=Europe/Russia \
+	persist.sys.timezone=Europe/Moscow \
 	persist.sys.language=ru \
 	persist.sys.country=RU \
 	ro.com.google.locationfeatures=1 \
