@@ -1,4 +1,6 @@
 <resources>
+    <integer name="cell_count_x">5</integer>
+    <integer name="cell_count_y">5</integer>
     <bool name="config_largeHeap">true</bool>
     <bool name="is_large_screen">true</bool>
 </resources>
