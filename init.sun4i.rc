@@ -14,7 +14,7 @@ on fs
     mount ext4 /dev/block/nande /data wait noatime nosuid nodev
     mount ext4 /dev/block/nandh /cache wait noatime nosuid nodev
     mount vfat /dev/block/nandi /storage/sdcard0
-    mount vfat /dev/block/mmcblk0p1 /dev/block/mmcblk0 /storage/sdcard1
+    mount vfat /dev/block/mmcblk0p1 /storage/sdcard1
 
 on boot	
         # Enable interactive governor
