@@ -35,9 +35,13 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/etc/3g_dongle.cfg:system/etc/3g_dongle.cfg \
 	device/softwinner/907/prebuilt/etc/camera.cfg:system/etc/camera.cfg \
 	device/softwinner/907/prebuilt/etc/gps.conf:system/etc/gps.conf \
-	device/softwinner/907/prebuilt/etc/media_profiles.xml:system/etc/media_profiles.xml \
 	device/softwinner/907/prebuilt/etc/usb_modeswitch.sh:system/etc/usb_modeswitch.sh \
 	device/softwinner/907/prebuilt/etc/vold.fstab:system/etc/vold.fstab
+
+# Media files
+PRODUCT_COPY_FILES += \
+    device/softwinner/907/prebuilt/etc/media_codecs.xml:system/etc/media_codecs.xml \
+    device/softwinner/907/prebuilt/etc/media_profiles.xml:system/etc/media_profiles.xml
 
 PRODUCT_COPY_FILES += \
 	$(call find-copy-subdir-files,*,device/softwinner/907/prebuilt/etc/init.d,system/etc/init.d)
@@ -83,9 +87,6 @@ $(shell mkdir -p out/target/product/907/obj/SHARED_LIBRARIES/libMali_intermediat
 $(shell mkdir -p out/target/product/907/obj/SHARED_LIBRARIES/libUMP_intermediates)
 $(shell touch out/target/product/907/obj/SHARED_LIBRARIES/libMali_intermediates/export_includes)
 $(shell touch out/target/product/907/obj/SHARED_LIBRARIES/libUMP_intermediates/export_includes)
-
-# OMX codec support
-PRODUCT_COPY_FILES += device/softwinner/907/prebuilt/etc/media_codecs.xml:system/etc/media_codecs.xml
 
 # Audio policy
 PRODUCT_COPY_FILES += device/softwinner/907/libraries/audio/audio_policy.conf:system/etc/audio_policy.conf
