@@ -88,6 +88,8 @@ $(shell mkdir -p out/target/product/907/obj/SHARED_LIBRARIES/libUMP_intermediate
 $(shell touch out/target/product/907/obj/SHARED_LIBRARIES/libMali_intermediates/export_includes)
 $(shell touch out/target/product/907/obj/SHARED_LIBRARIES/libUMP_intermediates/export_includes)
 
-# Audio policy
-PRODUCT_COPY_FILES += device/softwinner/907/libraries/audio/audio_policy.conf:system/etc/audio_policy.conf
+# Audio and Effects
+PRODUCT_COPY_FILES += \
+        device/softwinner/907/libraries/audio/audio_policy.conf:system/etc/audio_policy.conf \
+        device/softwinner/907/prebuilt/etc/audio_effects.conf:system/etc/audio_effects.conf
 
