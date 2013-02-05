@@ -1,7 +1,6 @@
-on early-init
+on init
 	export EXTERNAL_STORAGE /storage/sdcard0
 	export SECONDARY_STORAGE /storage/sdcard1
-	mkdir /storage 0050 system sdcard_r
 	mkdir /storage/sdcard0 0000 system system
 	mkdir /storage/sdcard1 0000 system system
 	mkdir /storage/sdcard2 0000 system system
@@ -13,8 +12,6 @@ on fs
     mount ext4 /dev/block/nandd /system wait ro
     mount ext4 /dev/block/nande /data wait noatime nosuid nodev
     mount ext4 /dev/block/nandh /cache wait noatime nosuid nodev
-    mount vfat /dev/block/nandi /storage/sdcard0
-    mount vfat /dev/block/mmcblk0p1 /storage/sdcard1
 
 on boot	
         # Enable interactive governor
