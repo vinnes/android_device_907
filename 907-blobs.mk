@@ -23,7 +23,7 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/bin/mkntfs:system/bin/mkntfs \
 	device/softwinner/907/prebuilt/bin/reboot-recovery.sh:system/bin/reboot-recovery.sh \
 	device/softwinner/907/prebuilt/bin/usb_modeswitch:system/bin/usb_modeswitch \
-	device/softwinner/907/prebuilt/bin/rild:system/bin/rild
+	device/softwinner/907/prebuilt/bin/rild:system/bin/rild \
         $(LOCAL_PATH)/vold/vold:system/bin/vold
 
 # /system/etc
@@ -42,7 +42,8 @@ PRODUCT_COPY_FILES += \
 # Media files
 PRODUCT_COPY_FILES += \
     device/softwinner/907/prebuilt/etc/media_codecs.xml:system/etc/media_codecs.xml \
-    device/softwinner/907/prebuilt/etc/media_profiles.xml:system/etc/media_profiles.xml
+    device/softwinner/907/prebuilt/etc/media_profiles.xml:system/etc/media_profiles.xml \
+    device/softwinner/907/prebuilt/etc/audio_effects.conf:system/etc/audio_effects.conf
 
 PRODUCT_COPY_FILES += \
 	$(call find-copy-subdir-files,*,device/softwinner/907/prebuilt/etc/init.d,system/etc/init.d)
@@ -67,9 +68,13 @@ PRODUCT_COPY_FILES += \
 # /system/usr
 PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/usr/idc/ft5x_ts.idc:system/usr/idc/ft5x_ts.idc \
+	device/softwinner/907/prebuilt/usr/idc/gt80x.idc:system/usr/idc/gt80x.idc \
+	device/softwinner/907/prebuilt/usr/idc/gt811_ts.idc:system/usr/idc/gt811_ts.idc \
+	device/softwinner/907/prebuilt/usr/idc/ssd253x.idc:system/usr/idc/ssd253x.idc \
 	device/softwinner/907/prebuilt/usr/idc/Goodix-TS-board-3.idc:system/usr/idc/Goodix-TS-board-3.idc \
 	device/softwinner/907/prebuilt/usr/keylayout/axp20-supplyer.kl:system/usr/keylayout/axp20-supplyer.kl \
 	device/softwinner/907/prebuilt/usr/keylayout/sun4i-keyboard.kl:system/usr/keylayout/sun4i-keyboard.kl \
+	device/softwinner/907/prebuilt/usr/keylayout/hv_keypad.kl:system/usr/keylayout/hv_keypad.kl \
 	device/softwinner/907/prebuilt/usr/icu/icudt46l.dat:system/usr/icu/icudt46l.dat
 
 # temporary prebuilt wpa_supplicant
@@ -89,8 +94,7 @@ $(shell mkdir -p out/target/product/907/obj/SHARED_LIBRARIES/libUMP_intermediate
 $(shell touch out/target/product/907/obj/SHARED_LIBRARIES/libMali_intermediates/export_includes)
 $(shell touch out/target/product/907/obj/SHARED_LIBRARIES/libUMP_intermediates/export_includes)
 
-# Audio and Effects
+# Audio
 PRODUCT_COPY_FILES += \
-        device/softwinner/907/libraries/audio/audio_policy.conf:system/etc/audio_policy.conf \
-        device/softwinner/907/prebuilt/etc/audio_effects.conf:system/etc/audio_effects.conf
+        device/softwinner/907/libraries/audio/audio_policy.conf:system/etc/audio_policy.conf
 
