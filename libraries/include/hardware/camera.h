@@ -17,7 +17,7 @@
 #ifndef ANDROID_INCLUDE_CAMERA_H
 #define ANDROID_INCLUDE_CAMERA_H
 
-#include <hardware/camera_common.h>
+#include "camera_common.h"
 
 /**
  * Camera device HAL, initial version [ CAMERA_DEVICE_API_VERSION_1_0 ]
@@ -91,7 +91,7 @@ typedef struct preview_stream_ops {
     // consecutive or parallel preview streams, cameras, or app runs.
     int (*set_timestamp)(struct preview_stream_ops *w, int64_t timestamp);
 
-    // Allwinner
+    // star add // Allwinner	
     int (*perform)(struct preview_stream_ops* w, int cmd0, int cmd1, int value);
     int (*set_buffers_geometryex)(struct preview_stream_ops* pw,
                 int w, int h, int format, int screenid);

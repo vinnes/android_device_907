@@ -62,7 +62,7 @@ enum
     DISPLAY_TVDAC_SVIDEO            = 3
 };
 
-enum   /*value0 parameter definition*/
+enum
 {
     /*output type definition*/
     DISPLAY_DEVICE_NONE             = 0,
@@ -71,7 +71,7 @@ enum   /*value0 parameter definition*/
 	DISPLAY_DEVICE_HDMI				= 3,
 	DISPLAY_DEVICE_VGA				= 4,
 
-    /*当Display Mode为Signle模式时，确定*/
+    /*When when Display Mode Signle mode, OK*/
     DISPLAY_FBINDISPLAYNO           = 0x10,
     DISPLAY_PIXELMODE               = 0x11,
     DISPLAY_SETMASTER				= 0x12
@@ -83,7 +83,12 @@ enum
 	DISPLAY_MODE_SINGLE				= 0,
 	DISPLAY_MODE_DUALLCD			= 1,
 	DISPLAY_MODE_DUALDIFF			= 2,
-	DISPLAY_MODE_DUALSAME			= 3	
+	DISPLAY_MODE_DUALSAME			= 3,
+	DISPLAY_MODE_DUALSAME_TWO_VIDEO	= 4,
+	DISPLAY_MODE_SINGLE_VAR_FE      = 5,
+	DISPLAY_MODE_SINGLE_VAR_BE      = 6,
+	DISPLAY_MODE_SINGLE_FB_VAR      = 7,
+	DISPLAY_MODE_SINGLE_VAR_GPU     = 8,
 };
 
 enum 
@@ -114,16 +119,22 @@ enum
     DISPLAY_VGA_H1680_V1050    			 = 0x17,
     DISPLAY_VGA_H1440_V900     			 = 0x18,
     DISPLAY_VGA_H1360_V768     			 = 0x19,
-    DISPLAY_VGA_H1280_V1024    			 = 0x20,
-    DISPLAY_VGA_H1024_V768     			 = 0x21,
-    DISPLAY_VGA_H800_V600      			 = 0x22,
-    DISPLAY_VGA_H640_V480      			 = 0x23,
-    DISPLAY_VGA_H1440_V900_RB  			 = 0x24,//not support yet
-    DISPLAY_VGA_H1680_V1050_RB 			 = 0x25,//not support yet
-    DISPLAY_VGA_H1920_V1080_RB 			 = 0x26,
-    DISPLAY_VGA_H1920_V1080    			 = 0x27,
-    DISPLAY_VGA_H1280_V720     			 = 0x28,
+    DISPLAY_VGA_H1280_V1024    			 = 0x1a,
+    DISPLAY_VGA_H1024_V768     			 = 0x1b,
+    DISPLAY_VGA_H800_V600      			 = 0x1c,
+    DISPLAY_VGA_H640_V480      			 = 0x1d,
+    DISPLAY_VGA_H1440_V900_RB  			 = 0x1e,//not support yet
+    DISPLAY_VGA_H1680_V1050_RB 			 = 0x1f,//not support yet
+    DISPLAY_VGA_H1920_V1080_RB 			 = 0x20,
+    DISPLAY_VGA_H1920_V1080    			 = 0x21,
+    DISPLAY_VGA_H1280_V720     			 = 0x22,
 
+    DISPLAY_TVFORMAT_1080P_25HZ          = 0x23,
+    DISPLAY_TVFORMAT_1080P_30HZ          = 0x24,
+    DISPLAY_TVFORMAT_1080P_24HZ_3D_FP    = 0x25,
+    DISPLAY_TVFORMAT_720P_50HZ_3D_FP     = 0x26,
+    DISPLAY_TVFORMAT_720P_60HZ_3D_FP     = 0x27,
+    
     DISPLAY_DEFAULT                      = 0xFF
 };      
 
@@ -137,13 +148,18 @@ enum
 	DISPLAY_OUTPUT_FORMAT			= 5,
 	DISPLAY_OUTPUT_TYPE				= 6,
 	DISPLAY_OUTPUT_ISOPEN           = 7,
-	DISPLAY_OUTPUT_HOTPLUG          = 8
+	DISPLAY_OUTPUT_HOTPLUG          = 8,
+	DISPLAY_APP_WIDTH               = 9,
+	DISPLAY_APP_HEIGHT              = 10,
+	DISPLAY_VALID_WIDTH            = 11,
+	DISPLAY_VALID_HEIGHT           = 12
 };
+
 
 enum
 {
-	DISPLAY_MODE					= 0,
-	DISPLAY_DEVICE_MODE				= 1
+	DISPLAY_FORMAT_ARGB8888 = 0,
+	DISPLAY_FORMAT_PYUV420UVC = 1,
 };
 
 /* Image structure */
@@ -275,15 +291,73 @@ struct display_device_t
 
     int (*getmaxwidthdisplay)   (struct display_device_t *dev);
 
-    /*获取当前屏幕正在显示的BUF ID*/
+    /*The BUF ID is being displayed on the screen to get the current*/
     int (*getdisplaybufid)      (struct display_device_t *dev, int displayno);
 
-    /*获取当前显示设备模式*/
+    /*Get the current display device*/
     int (*getdisplaymode)      	(struct display_device_t *dev);
-    
-    int (*getdisplaycount)	    (struct display_device_t *dev);
 
-    int (*setdisplaybacklightmode)(struct display_device_t *dev, int mode);
+    /*设置当前显示区域大小百分比*/
+    int (*setdisplayareapercent)(struct display_device_t *dev, int displayno,int percent);
+    
+    /*获取当前显示区域大小百分比*/
+    int (*getdisplayareapercent)(struct display_device_t *dev, int displayno);
+    
+    int (*setdisplaybrightness)	(struct display_device_t *dev, int displayno,int bright);
+    int (*getdisplaybrightness)	(struct display_device_t *dev, int displayno);
+    int (*setdisplaycontrast)	(struct display_device_t *dev, int displayno,int contrast);
+    int (*getdisplaycontrast)	(struct display_device_t *dev, int displayno);
+    int (*setdisplaysaturation)	(struct display_device_t *dev, int displayno,int saturation);
+    int (*getdisplaysaturation)	(struct display_device_t *dev, int displayno);
+    int (*setdisplayhue)	    (struct display_device_t *dev, int displayno,int hue);
+    int (*getdisplayhue)	    (struct display_device_t *dev, int displayno);    
+
+    /*判断某种hdmi制式是否被电视支持*/
+    int (*issupporthdmimode)	(struct display_device_t *dev,int mode);
+    
+    /*判断电视是否支持3D输出*/
+    int (*issupport3dmode)		(struct display_device_t *dev);
+
+    int (*getdisplaycount)	    (struct display_device_t *dev);
+	int (*setdisplaybacklightmode)(struct display_device_t *dev, int mode);
+
+    /*设置硬件光标位置*/
+    int (*sethwcursorpos)       (struct display_device_t *dev,int displayno,int posx,int posy);
+
+    /*获取硬件光标X位置*/
+    int (*gethwcursorposx)      (struct display_device_t *dev,int displayno);
+
+    /*获取硬件光标Y位置*/
+    int (*gethwcursorposy)      (struct display_device_t *dev,int displayno);
+
+    /*显示硬件光标*/
+    int (*hwcursorshow)         (struct display_device_t *dev,int displayno);
+
+    /*隐藏硬件光标*/
+    int (*hwcursorhide)         (struct display_device_t *dev,int displayno);
+
+    /*获取硬件光标用户空间地址*/
+    int (*hwcursorgetvaddr)     (struct display_device_t *dev,int displayno);
+
+    /*获取硬件光标用户空间物理地址*/
+    int (*hwcursorgetpaddr)     (struct display_device_t *dev,int displayno);
+    
+    /*初始化硬件光标*/
+    int (*hwcursorinit)         (struct display_device_t *dev,int displayno);
+
+    int (*setOrientation)       (struct display_device_t *dev,int orientation);
+    
+    /*申请display buffer*/
+    int (*requestdispbuf)		(struct display_device_t *dev,int width,int height,int format,int buf_num);
+    
+    /*释放display buffer*/
+    int (*releasedispbuf)		(struct display_device_t *dev,int buf_hdl);
+    
+    /*转化framebuffer的内容到指定的display buffer*/
+    int (*convertfb)			(struct display_device_t *dev,int srcfb_id,int srcfb_bufno,int dst_buf_hdl, int dst_bufno,int width,int height,int format);
+    
+    /*获取display buffer的地址*/
+    int (*getdispbufaddr)		(struct display_device_t *dev,int buf_hdl,int bufno,int width,int height,int format);
 };
 
 

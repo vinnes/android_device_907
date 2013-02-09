@@ -269,7 +269,7 @@ static int display_gettvdacstatus(struct display_device_t *dev)
 *
 * date:             2011-7-17:11:22:29
 *
-* Description:      锟斤拷取锟斤拷幕output type
+* Description:      获取屏幕output type
 *
 * parameters:       
 *
@@ -322,7 +322,7 @@ static int display_getoutputtype(struct display_device_t *dev,int displayno)
 *
 * date:             2011-7-17:11:22:29
 *
-* Description:      锟斤拷取锟斤拷幕output type tvformat
+* Description:      获取屏幕output type tvformat
 *
 * parameters:       
 *
@@ -482,7 +482,7 @@ static int  display_gettvtype(int  tvformat)
 *
 * date:             2011-7-17:11:22:42
 *
-* Description:      锟斤拷锟斤拷TV Format锟斤拷锟斤拷锟斤拷TV锟斤拷锟斤拷状态 
+* Description:      根据TV Format来检查TV插入状态 
 *
 * parameters:       
 *
@@ -519,7 +519,7 @@ static int  display_gettvstatus(struct display_device_t *dev,int displayno)
 *
 * date:             2011-7-17:11:22:44
 *
-* Description:      锟斤拷取锟斤拷示锟斤拷锟斤拷锟饺诧拷锟斤拷状态 
+* Description:      获取显示屏的热插拔状态 
 *
 * parameters:       
 *
@@ -946,7 +946,7 @@ static int display_copyfbsoft(struct display_device_t *dev,int srcfb_id,int srcf
 *
 * date:             2011-7-17:11:22:58
 *
-* Description:      锟斤拷FB num为fb_id锟斤拷bufno锟斤拷示锟斤拷锟斤拷 
+* Description:      将FB num为fb_id的bufno显示出来 
 *
 * parameters:       
 *
@@ -1135,7 +1135,7 @@ static int  display_getwidth(struct display_context_t* ctx,int displayno,int for
     return -1;
 }
 
-#ifdef UNDERSCAN
+#if 1
 static int  display_getvalidwidth(struct display_context_t* ctx,int displayno,int format)
 {
     switch (format) 
@@ -1319,7 +1319,7 @@ static int  display_getheight(struct display_context_t* ctx,int displayno,int fo
     return -1;
 }
 
-#ifdef UNDERSCAN
+#if 1
 static int  display_getvalidheight(struct display_context_t* ctx,int displayno,int format)
 {
     switch (format) 
@@ -1438,7 +1438,7 @@ static int  display_getvalidheight(struct display_context_t* ctx,int displayno,i
 *
 * date:             2011-7-17:11:23:48
 *
-* Description:      锟酵凤拷fb id锟斤拷framebuffer锟斤拷锟斤拷锟斤拷锟斤拷源 
+* Description:      释放fb id的framebuffer的相关资源 
 *
 * parameters:       
 *
@@ -2656,7 +2656,7 @@ static int display_releasemode(struct display_device_t *dev,int mode)
     int                         outputtype1;
 
 	//ALOGD("g_displaymode = %d\n",g_displaymode);
-    /*锟斤拷锟酵放革拷模式拥锟叫碉拷锟斤拷源*/
+    /*先释放该模式拥有的资源*/
     if(g_displaymode == DISPLAY_MODE_SINGLE)
     {
         outputtype0 = display_getoutputtype(dev,g_masterdisplay);
@@ -3216,12 +3216,12 @@ static int display_singleswitchtosame(struct display_device_t *dev,int mode,bool
     else
     {
     	ALOGD("display_releasemode1!\n");
-        /*锟斤拷为锟酵凤拷原锟斤拷模式锟斤拷锟斤拷源*/
+        /*先为释放原有模式的资源*/
         display_releasemode(dev,mode);
         
         ALOGD("display_releasemode2!\n");
 
-        /*锟斤拷为锟斤拷锟斤拷锟矫碉拷模式锟斤拷锟斤拷锟斤拷源*/
+        /*再为新设置的模式申请资源*/
         display_requestmode(dev,mode);
         
         ALOGD("display_requestmode!\n");
@@ -3249,12 +3249,12 @@ static int display_sameswitchtosingle(struct display_device_t *dev,int mode,bool
     else
     {
     	ALOGD("display_releasemode1!\n");
-        /*锟斤拷为锟酵凤拷原锟斤拷模式锟斤拷锟斤拷源*/
+        /*先为释放原有模式的资源*/
         display_releasemode(dev,mode);
         
         ALOGD("display_releasemode2!\n");
 
-        /*锟斤拷为锟斤拷锟斤拷锟矫碉拷模式锟斤拷锟斤拷锟斤拷源*/
+        /*再为新设置的模式申请资源*/
         display_requestmode(dev,mode);
         
         ALOGD("display_requestmode!\n");
@@ -3387,12 +3387,12 @@ static int display_setmode(struct display_device_t *dev,int mode,struct display_
     	{
             g_displaymode = mode;
 	    	//ALOGD("display_releasemode1!\n");
-	        /*锟斤拷为锟酵凤拷原锟斤拷模式锟斤拷锟斤拷源*/
+	        /*先为释放原有模式的资源*/
 	        display_releasemode(dev,mode);
 	        
 	        //ALOGD("display_releasemode2!\n");
 	
-	        /*锟斤拷为锟斤拷锟斤拷锟矫碉拷模式锟斤拷锟斤拷锟斤拷源*/
+	        /*再为新设置的模式申请资源*/
 	        display_requestmode(dev,mode);
 	        
 	        //ALOGD("display_requestmode!\n");
