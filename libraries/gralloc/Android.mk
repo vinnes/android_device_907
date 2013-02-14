@@ -35,7 +35,6 @@ LOCAL_SHARED_LIBRARIES := liblog libcutils libMali libGLESv1_CM libUMP
 LOCAL_C_INCLUDES := device/softwinner/907/libraries/include
 
 LOCAL_CFLAGS := -DLOG_TAG=\"gralloc\" -DGRALLOC_32_BITS -DSTANDARD_LINUX_SCREEN
-endif
 
 LOCAL_SRC_FILES := \
 	gralloc_module.cpp \
