@@ -24,6 +24,8 @@ include $(CLEAR_VARS)
 LOCAL_PRELINK_MODULE := false
 LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
 
+MALI_DDK_TEST_PATH := hardware/arm/
+
 LOCAL_MODULE := gralloc.sun4i
 LOCAL_MODULE_TAGS := optional
 
@@ -32,7 +34,8 @@ LOCAL_SHARED_LIBRARIES := liblog libcutils libMali libGLESv1_CM libUMP
 # Include the UMP header files
 LOCAL_C_INCLUDES := device/softwinner/907/libraries/include
 
-LOCAL_CFLAGS:= -DLOG_TAG=\"gralloc\" -DGRALLOC_32_BITS -DSTANDARD_LINUX_SCREEN
+LOCAL_CFLAGS := -DLOG_TAG=\"gralloc\" -DGRALLOC_32_BITS -DSTANDARD_LINUX_SCREEN
+endif
 
 LOCAL_SRC_FILES := \
 	gralloc_module.cpp \
