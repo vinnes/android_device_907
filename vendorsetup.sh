@@ -16,3 +16,18 @@
 
 add_lunch_combo full_907-userdebug
 add_lunch_combo cm_907-userdebug
+echo ""
+echo "Applying patches for AllwinnerA10"
+echo ""
+for p in $(find device/softwinner/907/patches/ -name "*.diff") 
+	do 
+		echo -n "Apply patch "$(basename $p | awk -F"." '{print $1}')
+		patch -p1 < $p > /dev/null 2>&1
+		if [ $? == 0 ]; then
+			echo "     [DONE]"
+		else
+			echo "     [FAIL]"
+		fi
+		echo "" 
+	done
+echo ""
