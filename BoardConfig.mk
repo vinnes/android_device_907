@@ -33,6 +33,7 @@ TARGET_GLOBAL_CFLAGS += -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 TARGET_GLOBAL_CPPFLAGS += -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 ARCH_ARM_HAVE_TLS_REGISTER := true
 
+#Bluetooth and Vibro stuff
 BOARD_HAVE_BLUETOOTH := true
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/softwinner/907/bluetooth
 BOARD_HAS_VIBRATOR_IMPLEMENTATION := ../../device/softwinner/907/vibrator.c
@@ -83,13 +84,13 @@ TARGET_BOOTANIMATION_PRELOAD := true
 TARGET_RELEASETOOL_OTA_FROM_TARGET_SCRIPT := device/softwinner/907/releasetools/907_ota_from_target_files
 
 # Wifi stuff
-WPA_SUPPLICANT_VERSION := VER_0_8_X
-BOARD_WPA_SUPPLICANT_DRIVER := WEXT
+BOARD_WIFI_VENDOR                := realtek
+WPA_SUPPLICANT_VERSION           := VER_0_8_X
+BOARD_WPA_SUPPLICANT_DRIVER      := WEXT
 BOARD_WPA_SUPPLICANT_PRIVATE_LIB := lib_driver_cmd_rtl
-BOARD_HOSTAPD_DRIVER        := WEXT
-BOARD_HOSTAPD_PRIVATE_LIB   := lib_driver_cmd_rtl
-
-BOARD_WLAN_DEVICE := rtl8192cu
+BOARD_HOSTAPD_DRIVER             := WEXT
+BOARD_HOSTAPD_PRIVATE_LIB        := lib_driver_cmd_rtl
+BOARD_WLAN_DEVICE                := rtl8192cu
 
 WIFI_DRIVER_MODULE_NAME   := 8192cu
 WIFI_DRIVER_MODULE_PATH   := "/system/lib/modules/8192cu.ko"
@@ -108,6 +109,7 @@ TARGET_PREBUILT_KERNEL := device/softwinner/907/kernel
 BOARD_KERNEL_BASE := 0x40000000
 BOARD_KERNEL_CMDLINE := console=ttyS0,115200 rw init=/init loglevel=8
 
+# G-Sensor Stuff
 SW_BOARD_USES_GSENSOR_TYPE := "bma250"
 SW_BOARD_GSENSOR_DIRECT_X := "true"
 SW_BOARD_GSENSOR_DIRECT_Y := "true"
