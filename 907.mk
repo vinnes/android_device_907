@@ -93,10 +93,13 @@ PRODUCT_PACKAGES += \
 
 # Hardware libs
 PRODUCT_PACKAGES += \
+	audio.primary.exDroid \
+	audio.a2dp.default \
+	audio.usb.default \
+	display.sun4i \
 	gralloc.sun4i \
 	hwcomposer.exDroid \
 	lights.sun4i \
-	display.sun4i \
         libcedarxbase \
         libcedarxosal \
 	libcedarv \
@@ -111,15 +114,12 @@ PRODUCT_PACKAGES += \
 	libfacedetection \
 	librtmp \
 	libve \
-	audio.primary.exDroid \
-	audio.a2dp.default \
-	audio.usb.default \
 	libaudioutils \
 	chat \
 	u3gmonitor \
 	devlistener
 
-# CM9 apps
+# CyanogenMOD
 PRODUCT_PACKAGES += \
 	com.android.future.usb.accessory
 
@@ -128,6 +128,7 @@ PRODUCT_PACKAGES += \
 	make_ext4fs \
 	e2fsck
 
+$(call inherit-product, frameworks/native/build/tablet-dalvik-heap.mk)
 $(call inherit-product, build/target/product/full_base.mk)
 
 # Should be after the full_base include, which loads languages_full
