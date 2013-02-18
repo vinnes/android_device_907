@@ -37,7 +37,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	ro.sf.lcd_density=160 \
 	hwui.render_dirty_regions=false \
 	wifi.interface = wlan0 \
-	wifi.supplicant_scan_interval = 90 \
+	wifi.supplicant_scan_interval = 180 \
 	persist.sys.strictmode.visual=0 \
 	persist.sys.strictmode.disable=1 \
 	persist.sys.usb.config=mass_storage,adb \
@@ -60,7 +60,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	view.minimum_fling_velocity=25 \
 	ro.additionalmounts=/storage/sdcard1 \
 	ro.vold.switchablepair=/storage/sdcard0,/storage/sdcard1 \
-	persist.sys.vold.switchexternal=0
+	persist.sys.vold.switchexternal=0 \
+	debug.sf.hw=1 \
+	logcat.live=disable \
+	ro.config.nocheckin=1
 
 DEVICE_PACKAGE_OVERLAYS := device/softwinner/907/overlay
 
