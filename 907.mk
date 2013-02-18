@@ -98,6 +98,7 @@ PRODUCT_PACKAGES += \
 	audio.usb.default \
 	display.sun4i \
 	gralloc.sun4i \
+	power.sun4i \
 	hwcomposer.exDroid \
 	lights.sun4i \
         libcedarxbase \
