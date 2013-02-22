@@ -29,5 +29,3 @@ Prerequisites:
 Prebuilts
 	cd into vendor/cm and do
 	./get-prebuilts
-
-
