@@ -37,16 +37,16 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	ro.sf.lcd_density=160 \
 	hwui.render_dirty_regions=false \
 	wifi.interface = wlan0 \
-	wifi.supplicant_scan_interval = 90 \
+	wifi.supplicant_scan_interval = 180 \
 	persist.sys.strictmode.visual=0 \
 	persist.sys.strictmode.disable=1 \
 	persist.sys.usb.config=mass_storage,adb \
 	dalvik.vm.verify-bytecode=false \
 	dalvik.vm.dexopt-flags=v=n,o=v \
 	dalvik.vm.execution-mode=int:jit \
-	persist.sys.timezone=Europe/Moscow \
-	persist.sys.language=ru \
-	persist.sys.country=RU \
+	persist.sys.timezone=Europe/London \
+	persist.sys.language=en \
+	persist.sys.country=GB \
 	ro.com.google.locationfeatures=1 \
 	dalvik.vm.lockprof.threshold=500 \
 	ro.kernel.android.checkjni=0 \
@@ -60,7 +60,10 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	view.minimum_fling_velocity=25 \
 	ro.additionalmounts=/storage/sdcard1 \
 	ro.vold.switchablepair=/storage/sdcard0,/storage/sdcard1 \
-	persist.sys.vold.switchexternal=0
+	persist.sys.vold.switchexternal=0 \
+	debug.sf.hw=1 \
+	logcat.live=disable \
+	ro.config.nocheckin=1
 
 DEVICE_PACKAGE_OVERLAYS := device/softwinner/907/overlay
 
@@ -98,6 +101,7 @@ PRODUCT_PACKAGES += \
 	audio.usb.default \
 	display.sun4i \
 	gralloc.sun4i \
+	power.sun4i \
 	hwcomposer.exDroid \
 	lights.sun4i \
         libcedarxbase \
