@@ -9,3 +9,25 @@ diff --git a/frameworks/av/media/libstagefright/codecs/g711/dec/SoftG711.h b/fra
      bool mSignalledError;
 
      void initPorts();
+diff --git a/frameworks/av/media/libstagefright/include/MPEG4Extractor.h b/frameworks/av/media/libstagefright/include/MPEG4Extractor.h
+--- a/frameworks/av/media/libstagefright/include/MPEG4Extractor.h
++++ b/frameworks/av/media/libstagefright/include/MPEG4Extractor.h
+@@ -58,6 +58,7 @@ class MPEG4Extractor : public MediaExtractor {
+
+     sp<DataSource> mDataSource;
+     status_t mInitCheck;
++    bool mIsQtff;
+     bool mHasVideo;
+
+     Track *mFirstTrack, *mLastTrack;
+diff --git a/frameworks/av/media/libstagefright/include/NuCachedSource2.h b/frameworks/av/media/libstagefright/include/NuCachedSource2.h
+--- a/frameworks/av/media/libstagefright/include/NuCachedSource2.h
++++ b/frameworks/av/media/libstagefright/include/NuCachedSource2.h
+@@ -100,6 +100,7 @@ struct NuCachedSource2 : public DataSource {
+     PageCache *mCache;
+     off64_t mCacheOffset;
+     status_t mFinalStatus;
++    bool mForceReconnect;
+     off64_t mLastAccessPos;
+     sp<AMessage> mAsyncResult;
+     bool mFetching;
