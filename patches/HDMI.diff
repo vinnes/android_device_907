@@ -2,9 +2,9 @@ diff --git a/frameworks/base/core/java/android/content/Intent.java b/frameworks/
 --- a/frameworks/base/core/java/android/content/Intent.java
 +++ b/frameworks/base/core/java/android/content/Intent.java
 @@ -1863,6 +1863,30 @@ public static Intent createChooser(Intent target, CharSequence title) {
-    @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
-    public static final String ACTION_SHUTDOWN = "android.intent.action.ACTION_SHUTDOWN";
-    /**
+     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
+     public static final String ACTION_SHUTDOWN = "android.intent.action.ACTION_SHUTDOWN";
+     /**
 +     * Broadcast Action:  HDMI Hotplug Changed.
 +     * This is broadcast when the hdmi hotplug status (completely turned
 +     * off, not sleeping).  Once the broadcast is complete, the final shutdown
@@ -29,6 +29,6 @@ diff --git a/frameworks/base/core/java/android/content/Intent.java b/frameworks/
 +     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
 +    public static final String ACTION_TVDACSTATUS_CHANGED = "android.intent.action.TVDACSTATUS_CHANGED";
 +    /**
-     * Activity Action:  Start this activity to request system shutdown.
-     * The optional boolean extra field {@link #EXTRA_KEY_CONFIRM} can be set to true
-     * to request confirmation from the user before shutting down.
+      * Activity Action:  Start this activity to request system shutdown.
+      * The optional boolean extra field {@link #EXTRA_KEY_CONFIRM} can be set to true
+      * to request confirmation from the user before shutting down.
