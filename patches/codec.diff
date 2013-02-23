@@ -1,0 +1,11 @@
+diff --git a/frameworks/av/media/libstagefright/codecs/g711/dec/SoftG711.h b/frameworks/av/media/libstagefright/codecs/g711/dec/SoftG711.h
+--- a/frameworks/av/media/libstagefright/codecs/g711/dec/SoftG711.h
++++ b/frameworks/av/media/libstagefright/codecs/g711/dec/SoftG711.h
+@@ -47,6 +47,7 @@ struct SoftG711 : public SimpleSoftOMXComponent {
+
+     bool mIsMLaw;
+     OMX_U32 mNumChannels;
++    OMX_U32 nSampleRate;
+     bool mSignalledError;
+
+     void initPorts();
