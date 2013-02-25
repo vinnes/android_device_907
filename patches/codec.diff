@@ -1,0 +1,46 @@
+diff --git a/frameworks/av/media/libstagefright/codecs/g711/dec/SoftG711.h b/frameworks/av/media/libstagefright/codecs/g711/dec/SoftG711.h
+--- a/frameworks/av/media/libstagefright/codecs/g711/dec/SoftG711.h
++++ b/frameworks/av/media/libstagefright/codecs/g711/dec/SoftG711.h
+@@ -47,6 +47,7 @@ struct SoftG711 : public SimpleSoftOMXComponent {
+
+     bool mIsMLaw;
+     OMX_U32 mNumChannels;
++    OMX_U32 nSampleRate;
+     bool mSignalledError;
+
+     void initPorts();
+diff --git a/frameworks/av/media/libstagefright/include/MPEG4Extractor.h b/frameworks/av/media/libstagefright/include/MPEG4Extractor.h
+--- a/frameworks/av/media/libstagefright/include/MPEG4Extractor.h
++++ b/frameworks/av/media/libstagefright/include/MPEG4Extractor.h
+@@ -58,6 +58,7 @@ class MPEG4Extractor : public MediaExtractor {
+
+     sp<DataSource> mDataSource;
+     status_t mInitCheck;
++    bool mIsQtff;
+     bool mHasVideo;
+
+     Track *mFirstTrack, *mLastTrack;
+diff --git a/frameworks/av/media/libstagefright/include/NuCachedSource2.h b/frameworks/av/media/libstagefright/include/NuCachedSource2.h
+--- a/frameworks/av/media/libstagefright/include/NuCachedSource2.h
++++ b/frameworks/av/media/libstagefright/include/NuCachedSource2.h
+@@ -100,6 +100,7 @@ struct NuCachedSource2 : public DataSource {
+     PageCache *mCache;
+     off64_t mCacheOffset;
+     status_t mFinalStatus;
++    bool mForceReconnect;
+     off64_t mLastAccessPos;
+     sp<AMessage> mAsyncResult;
+     bool mFetching;
+diff --git a/frameworks/av/include/media/stagefright/ACodec.h b/frameworks/av/include/media/stagefright/ACodec.h
+--- a/frameworks/av/include/media/stagefright/ACodec.h
++++ b/frameworks/av/include/media/stagefright/ACodec.h
+@@ -163,6 +163,9 @@ struct ACodec : public AHierarchicalStateMachine {
+
+     sp<ANativeWindow> mNativeWindow;
+
++    sp<ANativeWindow> mNativeWindowSoft;
++    int32_t mVideoWidth,mVideoHeight;
++
+     Vector<BufferInfo> mBuffers[2];
+     bool mPortEOS[2];
+     status_t mInputEOSResult;

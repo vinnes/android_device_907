@@ -29,5 +29,4 @@ Prerequisites:
 Prebuilts
 	cd into vendor/cm and do
 	./get-prebuilts
-
-
+Patches - (if you have already modify your tree and patches can't be applied, run: repo forall -c git reset --hard)
