@@ -16,9 +16,9 @@
 
 PRODUCT_COPY_FILES := \
 	device/softwinner/907/kernel:kernel \
-        device/softwinner/907/modules:system/lib/modules \
-        device/softwinner/907/modules/ft5x_ts.ko:root/lib/modules/ft5x_ts.ko \
-        device/softwinner/907/prebuilt/bin/reboot-recovery.sh:root/sbin/reboot-recovery.sh \
+  device/softwinner/907/modules:system/lib/modules \
+  device/softwinner/907/modules/ft5x_ts.ko:root/lib/modules/ft5x_ts.ko \
+  device/softwinner/907/prebuilt/bin/reboot-recovery.sh:root/sbin/reboot-recovery.sh \
 	device/softwinner/907/init.rc:root/init.rc \
 	device/softwinner/907/initlogo.rle:root/initlogo.rle \
 	device/softwinner/907/init.sun4i.rc:root/init.sun4i.rc \
@@ -31,7 +31,7 @@ PRODUCT_TAGS += dalvik.gc.type-precise
 
 PRODUCT_PROPERTY_OVERRIDES += \
 	ro.opengles.version = 131072 \
-        ro.opengles.surface.rgb565=true \
+  ro.opengles.surface.rgb565=true \
 	debug.egl.hw=1 \
 	ro.display.switch=1 \
 	ro.sf.lcd_density=160 \
@@ -83,15 +83,7 @@ PRODUCT_COPY_FILES += \
 	frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
 	packages/wallpapers/LivePicker/android.software.live_wallpaper.xml:/system/etc/permissions/android.software.live_wallpaper.xml
 
-# Publish that we support the live wallpaper feature.
 PRODUCT_PACKAGES += \
-	LiveWallpapers \
-	LiveWallpapersPicker \
-	MagicSmokeWallpapers \
-	HoloSpiralWallpaper 
-
-PRODUCT_PACKAGES += \
-	VisualizationWallpapers \
 	librs_jni
 
 # Hardware libs
@@ -104,15 +96,15 @@ PRODUCT_PACKAGES += \
 	power.sun4i \
 	hwcomposer.exDroid \
 	lights.sun4i \
-        libcedarxbase \
-        libcedarxosal \
+  libcedarxbase \
+  libcedarxosal \
 	libcedarv \
 	libcedarv_adapter \
-        libcedarv_base \
+  libcedarv_base \
 	libCedarA \
 	libCedarX \
 	libstagefright_soft_cedar_h264dec \
-        libswdrm \
+  libswdrm \
 	libaw_audio \
 	libaw_audioa \
 	libfacedetection \
