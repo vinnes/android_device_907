@@ -19,8 +19,5 @@
     <!-- Show Expanded Desktop preference -->
     <bool name="config_show_expandedDesktop">true</bool>
 
-<<<<<<< HEAD
 </resources>
-=======
-</resources>
->>>>>>> c19feff90a5b75e5e9b82c7995bb392daa248712
+
