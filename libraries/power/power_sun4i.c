@@ -27,6 +27,7 @@
 
 #define SCALINGMAXFREQ_PATH "/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq"
 #define BOOSTPULSE_PATH "/sys/devices/system/cpu/cpufreq/interactive/boostpulse"
+#define MALI_BOOSTPULSE_PATH "/sys/devices/platform/mali_dev.0/boostpulse"
 
 #define MAX_BUF_SZ  10
 
@@ -96,6 +97,11 @@ static void sun4i_power_init(struct power_module *module)
                 "85");
     sysfs_write("/sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay",
                 "20000");
+    /* Mali boost rate: 1200MHz PLL / 400MHz Mali freq, duration 500 msec. */
+    sysfs_write("/sys/module/mali/parameters/mali_boost_rate",
+                "1200");
+    sysfs_write("/sys/module/mali/parameters/mali_boost_duration",
+                "500");
 }
 
 static int boostpulse_open(struct sun4i_power_module *sun4i)
@@ -173,6 +179,7 @@ static void sun4i_power_hint(struct power_module *module, power_hint_t hint,
 	            strerror_r(errno, buf, sizeof(buf));
 		          ALOGE("Error writing to %s: %s\n", BOOSTPULSE_PATH, buf);
 	       }
+	       sysfs_write(MALI_BOOSTPULSE_PATH, buf);
 	     }
         break;
 
