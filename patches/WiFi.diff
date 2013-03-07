@@ -84,26 +84,3 @@ diff --git a/frameworks/base/wifi/java/android/net/wifi/WifiStateMachine.java b/
                      if (mP2pSupported) {
                          transitionTo(mWaitForP2pDisableState);
                      } else {
-diff --git a/frameworks/base/core/res/res/values/config.xml b/frameworks/base/core/res/res/values/config.xml
---- a/frameworks/base/core/res/res/values/config.xml
-+++ b/frameworks/base/core/res/res/values/config.xml
-@@ -194,6 +194,7 @@
-          Wifi interfaces.  If the device doesn't want to support tethering over Wifi this
-          should be empty.  An example would be "softap.*" -->
-     <string-array translatable="false" name="config_tether_wifi_regexs">
-+      <item>"wlan\\d"</item>
-     </string-array>
-
-     <!-- List of regexpressions describing the interface (if any) that represent tetherable
-@@ -255,10 +256,7 @@
-     <!== [0,1,5,7] for TYPE_MOBILE, TYPE_WIFI, TYPE_MOBILE_HIPRI and TYPE_BLUETOOTH -->
-     <integer-array translatable="false" name="config_tether_upstream_types">
-         <item>0</item>
--        <item>1</item>
--        <item>5</item>
--        <item>7</item>
--        <item>9</item>
-+        <!-- <item>4</item> -->
-     </integer-array>
-
-     <!-- If the DUN connection for this CDMA device supports more than just DUN -->
