@@ -1,0 +1,10 @@
+diff --git a/frameworks/base/core/java/android/hardware/Camera.java b/frameworks/base/core/java/android/hardware/Camera.java
+--- a/frameworks/base/core/java/android/hardware/Camera.java
++++ b/frameworks/base/core/java/android/hardware/Camera.java
+@@ -3842,4 +3842,6 @@ private boolean same(String s1, String s2) {
+             return false;
+         }
+     };
++    // Allwinner platform - set video screen
++    public static native int setCameraScreen(int screen);
+ }
