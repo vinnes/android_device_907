@@ -32,3 +32,16 @@ diff --git a/frameworks/base/core/java/android/content/Intent.java b/frameworks/
       * Activity Action:  Start this activity to request system shutdown.
       * The optional boolean extra field {@link #EXTRA_KEY_CONFIRM} can be set to true
       * to request confirmation from the user before shutting down.
+diff --git a/frameworks/base/packages/SystemUI/AndroidManifest.xml b/frameworks/base/packages/SystemUI/AndroidManifest.xml
+--- a/frameworks/base/packages/SystemUI/AndroidManifest.xml
++++ b/frameworks/base/packages/SystemUI/AndroidManifest.xml
+@@ -45,6 +45,9 @@
+     <uses-permission android:name="android.permission.UPDATE_DEVICE_STATS" />
+     <uses-permission android:name="android.permission.MASTER_CLEAR" />
+     <uses-permission android:name="android.permission.VIBRATE" />
++
++    <!-- Allwinner HDMI -->
++    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+     <!-- ActivityManager -->
+     <uses-permission android:name="android.permission.GET_TASKS" />
