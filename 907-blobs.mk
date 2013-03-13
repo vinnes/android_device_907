@@ -24,7 +24,7 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/bin/reboot-recovery.sh:system/bin/reboot-recovery.sh \
 	device/softwinner/907/prebuilt/bin/usb_modeswitch:system/bin/usb_modeswitch \
 	device/softwinner/907/prebuilt/bin/rild:system/bin/rild \
-        device/softwinner/907/vold/vold:system/bin/vold
+        #device/softwinner/907/vold/vold:system/bin/vold
 
 # /system/etc
 PRODUCT_COPY_FILES += \
