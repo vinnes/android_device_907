@@ -409,6 +409,11 @@ on property:vold.decrypt=trigger_shutdown_framework
 service ueventd /sbin/ueventd
     class core
     critical
+    seclabel u:r:ueventd:s0
+
+on property:selinux.reload_policy=1
+    restart ueventd
+    restart installd
 
 service console /system/bin/sh
     class core
@@ -465,7 +470,7 @@ service ril-daemon /system/bin/rild -l liballwinner-ril.so -- -d /dev/ttyUSB2
 service surfaceflinger /system/bin/surfaceflinger
     class main
     user system
-    group graphics
+    group graphics drmrpc
     onrestart restart zygote
 
 service zygote /system/bin/app_process -Xzygote /system/bin --zygote --start-system-server
