@@ -46,7 +46,7 @@ PRODUCT_COPY_FILES += \
     device/softwinner/907/prebuilt/etc/audio_effects.conf:system/etc/audio_effects.conf
 
 # NAND tends to be slow, lets preload some things
-PRODUCT_COPY_FILES += device/softwinner/907/prebuilt/etc/01preload:system/etc/init.d/01preload
+PRODUCT_COPY_FILES += device/softwinner/907/prebuilt/etc/init.d/01preload:system/etc/init.d/01preload
 
 PRODUCT_COPY_FILES += \
 	$(call find-copy-subdir-files,*,device/softwinner/907/prebuilt/etc/init.d,system/etc/init.d)
