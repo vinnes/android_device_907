@@ -134,7 +134,7 @@ $(call inherit-product, frameworks/native/build/tablet-dalvik-heap.mk)
 $(call inherit-product, build/target/product/full_base.mk)
 
 # Should be after the full_base include, which loads languages_full
-PRODUCT_AAPT_CONFIG := normal large xlarge mdpi
+PRODUCT_AAPT_CONFIG := normal xhdpi mdpi
 PRODUCT_AAPT_PREF_CONFIG := mdpi
 
 PRODUCT_NAME := full_907
