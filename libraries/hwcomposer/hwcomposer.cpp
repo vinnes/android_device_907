@@ -30,8 +30,10 @@
 #include <cutils/log.h>
 #include <cutils/atomic.h>
 
+#include <utils/Timers.h>
+
 #include <hardware/hwcomposer.h>
-#include <drv_display_sun4i.h>
+#include <sunxi_disp_ioctl.h>
 #include <fb.h>
 #include <EGL/egl.h>
 
@@ -67,6 +69,34 @@ hwc_module_t HAL_MODULE_INFO_SYM =
         methods: &hwc_module_methods,
     }
 };
+
+static int hwc_open_disp(void)
+{
+        int fd, tmp, ret;
+
+	fd = open("/dev/disp", O_RDWR);
+	if (fd < 0) {
+		ALOGE("Failed to open overlay device : %s\n", strerror(errno));
+		return -1;
+	}
+
+	/* check version */
+	tmp = SUNXI_DISP_VERSION;
+	ret = ioctl(fd, DISP_CMD_VERSION, &tmp);
+	if (ret == -1) {
+		printf("Warning: kernel sunxi disp driver does not support "
+		       "versioning.\n");
+	} else if (ret < 0) {
+		fprintf(stderr, "Error: ioctl(VERSION) failed: %s\n",
+			strerror(-ret));
+		return ret;
+	} else {
+		printf("sunxi disp kernel module version is %d.%d\n",
+		       ret >> 16, ret & 0xFFFF);
+	}
+
+	return fd;
+}
 
 static int hwc_setcolorkey(sun4i_hwc_context_t  *ctx)
 {
@@ -177,13 +207,9 @@ static int hwc_requestlayer(sun4i_hwc_context_t *ctx,uint32_t screenid)
 
     if(ctx->dispfd == 0)
     {
-        ctx->dispfd                 = open("/dev/disp", O_RDWR);
+        ctx->dispfd = hwc_open_disp();
         if (ctx->dispfd < 0)
-        {
-            ALOGE("Failed to open overlay device : %s\n", strerror(errno));
-
             return  -1;
-        }
     }
 
     ALOGV("screenid = %d\n",screenid);
@@ -263,13 +289,9 @@ static void hwc_computerlayerdisplayframe(hwc_composer_device_1_t *dev)
 
     if(ctx->dispfd == 0)
     {
-        ctx->dispfd                 = open("/dev/disp", O_RDWR);
+        ctx->dispfd = hwc_open_disp();
         if (ctx->dispfd < 0)
-        {
-            ALOGE("Failed to open overlay device : %s\n", strerror(errno));
-
-            return ;
-        }
+            return;
     }
 
     curlayer->posX_last = curlayer->posX;
@@ -579,13 +601,9 @@ static int hwc_startset(hwc_composer_device_1_t *dev)
 
     if(ctx->dispfd == 0)
     {
-        ctx->dispfd                 = open("/dev/disp", O_RDWR);
+        ctx->dispfd = hwc_open_disp();
         if (ctx->dispfd < 0)
-        {
-            ALOGE("Failed to open overlay device : %s\n", strerror(errno));
-
-            return -1;
-        }
+            return  -1;
     }
 
     args[0]                = ctx->hwc_screen;
@@ -599,13 +617,9 @@ static int hwc_endset(hwc_composer_device_1_t *dev)
 
     if(ctx->dispfd == 0)
     {
-        ctx->dispfd                 = open("/dev/disp", O_RDWR);
+        ctx->dispfd = hwc_open_disp();
         if (ctx->dispfd < 0)
-        {
-            ALOGE("Failed to open overlay device : %s\n", strerror(errno));
-
-            return -1;
-        }
+            return  -1;
     }
 
     args[0]                = ctx->hwc_screen;
@@ -632,13 +646,9 @@ static int hwc_setlayerframepara(sun4i_hwc_context_t *ctx,uint32_t value)
 
     if(ctx->dispfd == 0)
     {
-        ctx->dispfd                 = open("/dev/disp", O_RDWR);
+        ctx->dispfd = hwc_open_disp();
         if (ctx->dispfd < 0)
-        {
-            ALOGE("Failed to open overlay device : %s\n", strerror(errno));
-
-            return -1;
-        }
+            return  -1;
     }
 
     screen                          = ctx->hwc_screen;
@@ -790,13 +800,9 @@ static int hwc_setlayerpara(sun4i_hwc_context_t *ctx,uint32_t value)
 
     if(ctx->dispfd == 0)
     {
-        ctx->dispfd                 = open("/dev/disp", O_RDWR);
+        ctx->dispfd = hwc_open_disp();
         if (ctx->dispfd < 0)
-        {
-            ALOGE("Failed to open overlay device : %s\n", strerror(errno));
-
             return  -1;
-        }
     }
 
     if(screenid > 1)
@@ -2023,7 +2029,10 @@ static int hwc_device_close(struct hw_device_t *dev)
 
 static void *hwc_vsync_thread(void *data)
 {
-    int arg;
+    #define HZ 60
+    struct timespec spec;
+    int err = 0;
+    nsecs_t period, now, next_vsync, sleep, next_fake_vsync = 0;
     hwc_context_t *ctx = (hwc_context_t *)data;
     int fb = open("/dev/graphics/fb0", O_RDWR);
     if(fb < 0) {
@@ -2034,12 +2043,29 @@ static void *hwc_vsync_thread(void *data)
     setpriority(PRIO_PROCESS, 0, HAL_PRIORITY_URGENT_DISPLAY);
 
     while (true) {
-        arg = 0;
+        period = 1000000000/HZ;
+        now = systemTime(CLOCK_MONOTONIC);
+        next_vsync = next_fake_vsync;
+        sleep = next_vsync - now;
+        if (sleep < 0) {
+            // we missed, find where the next vsync should be
+            sleep = (period - ((now - next_vsync) % period));
+            next_vsync = now + sleep;
+        }
+        next_fake_vsync = next_vsync + period;
+
+        spec.tv_sec  = next_vsync / 1000000000;
+        spec.tv_nsec = next_vsync % 1000000000;
+
+        do {
+            err = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &spec, NULL);
+        } while (err < 0 && errno == EINTR);
+
+/*      arg = 0;
         //ioctl(fb, FBIO_WAITFORVSYNC, &arg);
-        #define HZ 30
-        usleep(1000000/HZ);
+*/
         if (ctx->vsync_enabled)
-            ctx->procs->vsync(ctx->procs, 0, time(NULL));
+            ctx->procs->vsync(ctx->procs, 0, next_vsync);
     }
 
     close(fb);
