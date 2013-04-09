@@ -3,6 +3,7 @@
 /dev/snd/dsp1             0660   system     audio
 /dev/snd/mixer            0660   system     audio
 /dev/snd/*                0660   system     audio
+/dev/input/*              0660   root       input
 /dev/disp                 0777   system     system 
 /dev/g2d             	  0777   system     system 
 /dev/cedar_dev            0666   system     system 
@@ -10,6 +11,7 @@
 /dev/ump  	  0777   system	    graphics
 /dev/mali		  0777   system	    graphics
 /dev/ump		  0777   system     graphics
+/dev/graphics/*           0660   root       graphics
 /dev/video0  	  0777   system	    system
 /dev/video1		  0777   system	    system
 /dev/snd/pcmC0D0c 		  0777   system     system
@@ -35,6 +37,9 @@
 #mxc622x
 /dev/mxc622x			  0777   system     system
 /dev/ecompass_ctrl		  0777   system     system
+
+#dmard06 revent --- masterx66
+/dev/dmard06            0777 system     system
 
 #ChristianTroy
 #/sys/devices/platform/sw-ehci.1/usb2/2-1/2-1.1/2-1.1:1.0/bluetooth/hci0/rfkill* state  0777 system system
