@@ -94,6 +94,13 @@ PRODUCT_PACKAGES += \
 	librs_jni \
         rild_sun4i
 
+# Bluetooth
+PRODUCT_PACKAGES += \
+    bluetoothd \
+    hciconfig \
+    hcitool
+
+
 # Hardware libs
 PRODUCT_PACKAGES += \
 	audio.primary.exDroid \
