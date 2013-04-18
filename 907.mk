@@ -87,7 +87,6 @@ PRODUCT_COPY_FILES += \
 	packages/wallpapers/LivePicker/android.software.live_wallpaper.xml:/system/etc/permissions/android.software.live_wallpaper.xml
 
 PRODUCT_PACKAGES += \
-        Tag \
         Mms
 
 PRODUCT_PACKAGES += \
@@ -96,9 +95,9 @@ PRODUCT_PACKAGES += \
 
 # Bluetooth
 PRODUCT_PACKAGES += \
-    bluetoothd \
-    hciconfig \
-    hcitool
+	bluetoothd \
+	hciconfig \
+	hcitool
 
 
 # Hardware libs
