@@ -35,7 +35,7 @@ UTC_DATE := $(shell date +%s)
 DATE     := $(shell date +%Y%m%d)
 
 #Set build fingerprint / ID / Product Name ect.
-PRODUCT_BUILD_PROP_OVERRIDES += PRODUCT_NAME=nakasi TARGET_DEVICE=grouper BUILD_FINGERPRINT="google/nakasi/grouper:4.2.2/JDQ39/402395:user/release-keys" PRIVATE_BUILD_DESC="nakasi-user 4.2.2 JDQ39 402395 release-keys"
+PRODUCT_BUILD_PROP_OVERRIDES += PRODUCT_NAME=nakasi TARGET_DEVICE=grouper BUILD_FINGERPRINT="google/nakasi/grouper:4.2.2/JDQ39E/402395:user/release-keys" PRIVATE_BUILD_DESC="nakasi-user 4.2.2 JDQ39E 402395 release-keys"
 
 # Allow ADB (to access dev settings)
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.debuggable=1 persist.sys.usb.config=mass_storage persist.service.adb.enable=1
