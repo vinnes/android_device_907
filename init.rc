@@ -6,6 +6,7 @@
 
 import /init.sun4i.rc
 import /init.sun4i.usb.rc
+import /init.trace.rc
 
 on early-init
     # Set init and its forked children's oom_adj.
@@ -31,7 +32,6 @@ loglevel 3
     export PATH /sbin:/vendor/bin:/system/sbin:/system/bin:/system/xbin
     export LD_LIBRARY_PATH /vendor/lib:/system/lib
     export ANDROID_BOOTLOGO 1
-    export ANDROID_CACHE /cache
     export ANDROID_ROOT /system
     export ANDROID_ASSETS /system/app
     export ANDROID_DATA /data
@@ -39,8 +39,6 @@ loglevel 3
     export ASEC_MOUNTPOINT /mnt/asec
     export LOOP_MOUNTPOINT /mnt/obb
     export BOOTCLASSPATH /system/framework/core.jar:/system/framework/core-junit.jar:/system/framework/bouncycastle.jar:/system/framework/ext.jar:/system/framework/framework.jar:/system/framework/framework2.jar:/system/framework/android.policy.jar:/system/framework/services.jar:/system/framework/apache-xml.jar
-    export TERMINFO /system/etc/terminfo
- 	  export TERM linux
 
 # Backward compatibility
     symlink /system/etc /etc
@@ -219,8 +217,6 @@ on post-fs-data
     chmod 0660 /data/misc/wifi/wpa_supplicant.conf
     mkdir /data/misc/dhcp 0770 dhcp dhcp
     chown dhcp dhcp /data/misc/dhcp
-    mkdir /data/misc/radio 0777 system radio
-    mkdir /data/camera 0777 root root
     mkdir /data/local 0751 root root
 
     # For security reasons, /data/local/tmp should always be empty.
@@ -365,11 +361,11 @@ on boot
 #   ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
     setprop net.tcp.buffersize.default 4096,87380,110208,4096,16384,110208
     setprop net.tcp.buffersize.wifi    524288,1048576,2097152,262144,524288,1048576
-    setprop net.tcp.buffersize.lte     524288,1048576,2097152,262144,524288,1048576
-    setprop net.tcp.buffersize.umts    4094,87380,110208,4096,16384,110208
-    setprop net.tcp.buffersize.hspa    4094,87380,262144,4096,16384,262144
-    setprop net.tcp.buffersize.edge    4093,26280,35040,4096,16384,35040
-    setprop net.tcp.buffersize.gprs    4092,8760,11680,4096,8760,11680
+    setprop net.tcp.buffersize.lte     4096,87380,1220608,4096,16384,563200
+    setprop net.tcp.buffersize.umts    4096,87380,563200,4096,16384,110208
+    setprop net.tcp.buffersize.hspa    4096,87380,704512,4096,16384,110208
+    setprop net.tcp.buffersize.edge    4096,26280,35040,4096,16384,35040
+    setprop net.tcp.buffersize.gprs    4096,8760,11680,4096,8760,11680
 
 # allow system to modify ksm control files
     chown root system /sys/kernel/mm/ksm/pages_to_scan
@@ -383,9 +379,6 @@ on boot
 
 # Set this property so surfaceflinger is not started by system_init
     setprop system_init.startsurfaceflinger 0
-
-# Run sysinit
-    exec /system/bin/sysinit
 
     class_start core
     class_start main
@@ -501,7 +494,7 @@ service drm /system/bin/drmserver
 service media /system/bin/mediaserver
     class main
     user media
-    group audio camera inet net_bt net_bt_admin net_bw_acct drmrpc
+    group audio camera inet net_bt net_bt_admin net_bw_acct drmrpc qcom_diag
     ioprio rt 4
 
 service bootanim /system/bin/bootanimation
