@@ -14,9 +14,9 @@ diff --git a/system/bluetooth/bluedroid/bluetooth.c b/system/bluetooth/bluedroid
          snprintf(path, sizeof(path), "/sys/class/rfkill/rfkill%d/type", id);
          fd = open(path, O_RDONLY);
          if (fd < 0) {
-diff --git a/android/build/core/pathmap.mk b/android/build/core/pathmap.mk
---- a/android/build/core/pathmap.mk
-+++ b/android/build/core/pathmap.mk
+diff --git abuild/core/pathmap.mk b/build/core/pathmap.mk
+--- a/build/core/pathmap.mk
++++ b/build/core/pathmap.mk
 @@ -27,6 +27,9 @@
  # A mapping from shorthand names to include directories.
  #
