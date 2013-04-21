@@ -56,3 +56,15 @@ diff --git a/system/core/rootdir/ueventd.rc b/system/core/rootdir/ueventd.rc
  /dev/alarm                0664   system     radio
  /dev/tty0                 0660   root       system
  /dev/graphics/*           0660   root       graphics
+diff --git a/system/core/init/property_service.c b/system/core/init/property_service.c
+--- a/system/core/init/property_service.c
++++ b/system/core/init/property_service.c
+@@ -88,7 +88,7 @@ struct {
+     { "service.",         AID_SYSTEM,   0 },
+     { "service.",         AID_RADIO,    0 },
+     { "wlan.",            AID_SYSTEM,   0 },
+-    { "bluetooth.",       AID_BLUETOOTH,   0 },
++    { "bluetooth.",       AID_SYSTEM,   0 },
+     { "dhcp.",            AID_SYSTEM,   0 },
+     { "dhcp.",            AID_DHCP,     0 },
+     { "debug.",           AID_SYSTEM,   0 },
