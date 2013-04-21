@@ -99,7 +99,7 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/lib/cedarx/libCedarA.so:system/lib/libCedarA.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libcedarv.so:system/lib/libcedarv.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libcedarv_adapter.so:system/lib/libcedarv_adapter.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libcedarvbase.so:system/lib/libcedarvbase.so \
+	device/softwinner/907/prebuilt/lib/cedarx/libcedarv_base.so:system/lib/libcedarv_base.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libCedarX.so:system/lib/libCedarX.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libcedarxbase.so:system/lib/libcedarxbase.so  \
 	device/softwinner/907/prebuilt/lib/cedarx/libcedarxosal.so:system/lib/libcedarxosal.so \
