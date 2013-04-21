@@ -93,6 +93,22 @@ PRODUCT_COPY_FILES += \
 	system/bluetooth/data/input.conf:system/etc/bluetooth/input.conf \
 	system/bluetooth/data/network.conf:system/etc/bluetooth/network.conf \
 
+PRODUCT_COPY_FILES += \
+	device/softwinner/907/prebuilt/lib/cedarx/libaw_audio.so:system/lib/libaw_audio.so \
+	device/softwinner/907/prebuilt/lib/cedarx/libaw_audioa.so:system/lib/libaw_audioa.so \
+	device/softwinner/907/prebuilt/lib/cedarx/libCedarA.so:system/lib/libCedarA.so \
+	device/softwinner/907/prebuilt/lib/cedarx/libcedarv.so:system/lib/libcedarv.so \
+	device/softwinner/907/prebuilt/lib/cedarx/libcedarv_adapter.so:system/lib/libcedarv_adapter.so \
+	device/softwinner/907/prebuilt/lib/cedarx/libcedarvbase.so:system/lib/libcedarvbase.so \
+	device/softwinner/907/prebuilt/lib/cedarx/libCedarX.so:system/lib/libCedarX.so \
+	device/softwinner/907/prebuilt/lib/cedarx/libcedarxbase.so:system/lib/libcedarxbase.so  \
+	device/softwinner/907/prebuilt/lib/cedarx/libcedarxosal.so:system/lib/libcedarxosal.so \
+	device/softwinner/907/prebuilt/lib/cedarx/libfacedetection.so:system/lib/libfacedetection.so \
+	device/softwinner/907/prebuilt/lib/cedarx/librtmp.so:system/lib/librtmp.so \
+	device/softwinner/907/prebuilt/lib/cedarx/libstagefright_soft_cedar_h264dec.so:system/lib/libstagefright_soft_cedar_h264dec.so \
+	device/softwinner/907/prebuilt/lib/cedarx/libswdrm.so:system/lib/libswdrm.so \
+	device/softwinner/907/prebuilt/lib/cedarx/libve.so:system/lib/libve.so\
+
 PRODUCT_PACKAGES += \
         Mms
 
