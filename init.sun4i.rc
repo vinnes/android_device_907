@@ -9,9 +9,8 @@ on init
 	symlink /storage/sdcard1 /mnt/extsd
 
 on fs
-    mount ext4 /dev/block/nandd /system wait ro
-    mount ext4 /dev/block/nande /data wait noatime nosuid nodev
-    mount ext4 /dev/block/nandh /cache wait noatime nosuid nodev
+	setprop ro.crypto.umount_sd false
+	mount_all /fstab.sun4i
 
 on boot	
         # Enable interactive governor
@@ -101,6 +100,10 @@ on post-fs
 
 on post-fs-data
 	mkdir /data/misc/sensors 0777 system system
+        # change back to bluetooth from system
+        chown bluetooth net_bt_stack /data/misc/bluetooth
+
+        # Set indication (checked by vold) that we have finished this action
 	setprop vold.post_fs_data_done 1
 
 # wifi related service
