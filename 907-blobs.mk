@@ -23,8 +23,6 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/bin/mkntfs:system/bin/mkntfs \
 	device/softwinner/907/prebuilt/bin/reboot-recovery.sh:system/bin/reboot-recovery.sh \
 	device/softwinner/907/prebuilt/bin/usb_modeswitch:system/bin/usb_modeswitch
-	#device/softwinner/907/prebuilt/bin/rild:system/bin/rild \
-        #device/softwinner/907/vold/vold:system/bin/vold
 
 # /system/etc
 PRODUCT_COPY_FILES += \
@@ -60,7 +58,6 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/lib/egl/libGLESv1_CM_mali.so:system/lib/egl/libGLESv1_CM_mali.so \
 	device/softwinner/907/prebuilt/lib/egl/libGLESv2_mali.so:system/lib/egl/libGLESv2_mali.so \
 	device/softwinner/907/prebuilt/lib/liballwinner-ril.so:system/lib/liballwinner-ril.so \
-	#device/softwinner/907/prebuilt/lib/hw/camera.exDroid.so:system/lib/hw/camera.exDroid.so
 	device/softwinner/907/prebuilt/lib/hw/sensors.exDroid.so:system/lib/hw/sensors.exDroid.so \
 	device/softwinner/907/prebuilt/lib/libMali.so:system/lib/libMali.so \
 	device/softwinner/907/prebuilt/lib/libUMP.so:system/lib/libUMP.so \
