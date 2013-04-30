@@ -1,12 +1,13 @@
 CyanogenMod sun4i
-
+===============
 Compilation Notes
+-----------------
 
 * Build from Sources
 
 1)Create a directory
 
-For example: mkdir cyanogen
+	mkdir cyanogen
 
 2)Change to the created directory
 
@@ -14,7 +15,7 @@ For example: mkdir cyanogen
 
 3)Init the CyanogenMod repository
 
-repo init -u git://github.com/CyanogenMod/android.git -b cm-10.1
+	repo init -u git://github.com/CyanogenMod/android.git -b cm-10.1
 
 4)Paste this lines inside new file .repo/manifests/local_manifest.xml
 and paste this lines inside new file .repo/local_manifest.xml
@@ -29,12 +30,12 @@ and paste this lines inside new file .repo/local_manifest.xml
 
 5)Now type this command:
 
-repo sync -j16
+	repo sync -j16
 
 6)Finally you're ready to build it:
 
-source build/envsetup.sh
-brunch cm_907-userdebug
+	source build/envsetup.sh
+	brunch cm_907-userdebug
 
 7)Prerequisites:
 Prebuilts
