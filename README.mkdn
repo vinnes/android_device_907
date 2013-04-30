@@ -38,7 +38,9 @@ and paste this lines inside new file .repo/local_manifest.xml
 	brunch cm_907-userdebug
 
 7)Prerequisites:
-*Prebuilts:
-	cd into vendor/cm and do:
-		./get-prebuilts
-*Patches - (if you have already modify your tree and patches can't be applied, run: repo forall -c git reset --hard)
+Prebuilts:
+
+	cd vendor/cm
+	./get-prebuilts
+
+Patches - (if you have already modify your tree and patches can't be applied, run: repo forall -c git reset --hard)
