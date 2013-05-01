@@ -111,6 +111,10 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/lib/cedarx/libswdrm.so:system/lib/libswdrm.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libve.so:system/lib/libve.so\
 
+#wlan
+PRODUCT_PACKAGES += \
+	libnetcmdiface
+
 PRODUCT_PACKAGES += \
 	librs_jni \
         rild_sun4i
