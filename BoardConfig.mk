@@ -80,7 +80,7 @@ BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/fi
 #TW_INTERNAL_STORAGE_MOUNT_POINT := "emmc"
 #TW_EXTERNAL_STORAGE_PATH := "/sdcard"
 #TW_EXTERNAL_STORAGE_MOUNT_POINT := "sdcard"
-#BOARD_UMS_LUNFILE := "/sys/devices/platform/msm_hsusb/gadget/lun0/file
+#BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
 
 #Misc stuff
 TARGET_USE_CUSTOM_LUN_FILE_PATH = "/sys/class/android_usb/android0/f_mass_storage/lun%d/file"
