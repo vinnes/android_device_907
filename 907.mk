@@ -21,6 +21,7 @@ PRODUCT_COPY_FILES := \
         device/softwinner/907/prebuilt/bin/reboot-recovery.sh:root/sbin/reboot-recovery.sh \
 	device/softwinner/907/init.rc:root/init.rc \
 	device/softwinner/907/initlogo.rle:root/initlogo.rle \
+	device/softwinner/907/init.recovery.sun4i.rc:root/init.recovery.sun4i.rc \
 	device/softwinner/907/init.sun4i.rc:root/init.sun4i.rc \
         device/softwinner/907/fstab.sun4i:root/fstab.sun4i \
 	device/softwinner/907/init.sun4i.usb.rc:root/init.sun4i.usb.rc \
