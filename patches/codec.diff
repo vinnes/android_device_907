@@ -44,6 +44,32 @@ diff --git a/frameworks/av/include/media/stagefright/ACodec.h b/frameworks/av/in
      Vector<BufferInfo> mBuffers[2];
      bool mPortEOS[2];
      status_t mInputEOSResult;
+diff --git a/frameworks/av/include/media/stagefright/MediaSource.h b/frameworks/av/include/media/stagefright/MediaSource.h
+--- a/frameworks/av/include/media/stagefright/MediaSource.h
++++ b/frameworks/av/include/media/stagefright/MediaSource.h
+@@ -68,6 +68,7 @@ struct MediaSource : public virtual RefBase {
+             SEEK_NEXT_SYNC,
+             SEEK_CLOSEST_SYNC,
+             SEEK_CLOSEST,
++            SEEK_VENDOR_OPT = 100,
+         };
+ 
+         ReadOptions();
+diff --git a/frameworks/av/include/media/stagefright/MediaExtractor.h b/frameworks/av/include/media/stagefright/MediaExtractor.h
+--- a/frameworks/av/include/media/stagefright/MediaExtractor.h
++++ b/frameworks/av/include/media/stagefright/MediaExtractor.h
+@@ -36,8 +36,9 @@ class MediaExtractor : public RefBase {
+     virtual sp<MediaSource> getTrack(size_t index) = 0;
+ 
+     enum GetTrackMetaDataFlags {
+-        kIncludeExtensiveMetaData = 1
+-    };
++        kIncludeExtensiveMetaData = 1,
++        kIncludeExtensiveMetaDataBitrate = 256
++};
+     virtual sp<MetaData> getTrackMetaData(
+             size_t index, uint32_t flags = 0) = 0;
+
 diff --git a/frameworks/av/include/media/stagefright/MediaErrors.h b/frameworks/av/include/media/stagefright/MediaErrors.h
 --- a/frameworks/av/include/media/stagefright/MediaErrors.h
 +++ b/frameworks/av/include/media/stagefright/MediaErrors.h
