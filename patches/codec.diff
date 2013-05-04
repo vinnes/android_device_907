@@ -93,18 +93,6 @@ diff --git a/frameworks/av/include/media/stagefright/MediaErrors.h b/frameworks/
 
      // The following constant values should be in sync with
      // drm/drm_framework_common.h
-diff --git a/frameworks/av/include/media/IMediaRecorder.h b/frameworks/av/include/media/IMediaRecorder.h
---- a/frameworks/av/include/media/IMediaRecorder.h
-+++ b/frameworks/av/include/media/IMediaRecorder.h
-@@ -56,6 +56,8 @@ class IMediaRecorder: public IInterface
-     virtual status_t close() = 0;
-     virtual status_t release() = 0;
-     virtual sp<ISurfaceTexture> querySurfaceMediaSource() = 0;
-+    virtual status_t queueBuffer(int index, int addr_y, int addr_c, int64_t timestamp) = 0;
-+    virtual  sp<IMemory> getOneBsFrame(int mode) = 0;
- };
-
- // ----------------------------------------------------------------------------
 diff --git a/frameworks/base/core/java/android/provider/MediaStore.java b/frameworks/base/core/java/android/provider/MediaStore.java
 --- a/frameworks/base/core/java/android/provider/MediaStore.java
 +++ b/frameworks/base/core/java/android/provider/MediaStore.java
