@@ -9,6 +9,18 @@ diff --git a/frameworks/av/media/libstagefright/codecs/g711/dec/SoftG711.h b/fra
      bool mSignalledError;
 
      void initPorts();
+diff --git a/frameworks/av/media/libstagefright/chromium_http/support.h b/frameworks/av/media/libstagefright/chromium_http/support.h
+--- a/frameworks/av/media/libstagefright/chromium_http/support.h
++++ b/frameworks/av/media/libstagefright/chromium_http/support.h
+@@ -96,6 +96,8 @@ struct SfDelegate : public net::URLRequest::Delegate {
+ 
+     void setUID(uid_t uid);
+ 
++    void setUA(int ua);
++
+     virtual void OnReceivedRedirect(
+             net::URLRequest *request, const GURL &new_url, bool *defer_redirect);
+
 diff --git a/frameworks/av/media/libstagefright/include/MPEG4Extractor.h b/frameworks/av/media/libstagefright/include/MPEG4Extractor.h
 --- a/frameworks/av/media/libstagefright/include/MPEG4Extractor.h
 +++ b/frameworks/av/media/libstagefright/include/MPEG4Extractor.h
