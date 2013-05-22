@@ -32,7 +32,7 @@ PRODUCT_CHARACTERISTICS := tablet
 PRODUCT_TAGS += dalvik.gc.type-precise
 
 PRODUCT_PROPERTY_OVERRIDES += \
-        ro.opengles.surface.rgb565=true \
+	ro.sys.bootfast=true \
         ro.debuggable=1 \
 	ro.com.google.locationfeatures=1 \
 	ro.kernel.android.checkjni=0 \
