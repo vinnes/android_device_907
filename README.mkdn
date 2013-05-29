@@ -11,9 +11,9 @@ Install both MX Player and BubbleUPNP from Play store. Open BubbleUPNP and from 
 Sources
 * Github repository
 
-repo init -u git://github.com/CyanogenMod/android.git -b jellybean
+	repo init -u git://github.com/CyanogenMod/android.git -b jellybean
 
-paste these lines inside new file .repo/manifests/local_manifest.xml
+Paste these lines inside new file .repo/manifests/local_manifest.xml
 
 	<?xml version="1.0" encoding="UTF-8"?>
 	<manifest>
@@ -36,14 +36,14 @@ paste these lines inside new file .repo/manifests/local_manifest.xml
 	  <project remote="github" revision="jellybean-cm" name="shaun2029/android_system_bluetooth" path="system/bluetooth" />
 	</manifest>
 
-now type this command
+Now type this command
 
-repo sync -j8
+	repo sync -j8
 
-finally you're ready to build it
+Finally you're ready to build it
 
-source build/envsetup.sh
-brunch cm_907-userdebug
+	source build/envsetup.sh
+	brunch cm_907-userdebug
 
 Prerequisites:
 Prebuilts
