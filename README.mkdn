@@ -9,7 +9,7 @@ FAQs
 Install both MX Player and BubbleUPNP from Play store. Open BubbleUPNP and from "Library" section select the file to play. Choose MX Player as default player and enjoy the HW accelerated video playback
 
 Sources
-* Github repository
+Github repository
 
 	repo init -u git://github.com/CyanogenMod/android.git -b jellybean
 
@@ -46,6 +46,7 @@ Finally you're ready to build it
 	brunch cm_907-userdebug
 
 Prerequisites:
-Prebuilts
+Prebuilts:
+
 	cd into vendor/cm and do
 	./get-prebuilts
