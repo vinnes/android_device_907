@@ -41,7 +41,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	ro.additionalmounts=/storage/sdcard1 \
 	ro.vold.switchablepair=/storage/sdcard0,/storage/sdcard1 \
 	ro.config.nocheckin=1 \
-        ro.carrier=wifi-only \
 	debug.egl.hw=1 \
 	debug.sf.hw=1 \
 	dalvik.vm.verify-bytecode=false \
