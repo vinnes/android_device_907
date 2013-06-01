@@ -405,7 +405,7 @@ public class FocusOverlayManager {
 
     private void autoFocus() {
         Log.v(TAG, "Start autofocus.");
-        mListener.autoFocus();
+        //mListener.autoFocus();
         mState = STATE_SUCCESS;
         // Pause the face view because the driver will keep sending face
         // callbacks after the focus completes.
