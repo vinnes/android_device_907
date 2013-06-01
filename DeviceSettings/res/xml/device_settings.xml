@@ -7,7 +7,7 @@
     <ListPreference
                         android:title="@string/title_dpi"
                         android:key="pref_dpi_list"
-                        android:defaultValue="213"
+                        android:defaultValue="160"
                         android:summary="@string/summary_dpi"
                         android:entries="@array/dpi_names"
                         android:entryValues="@array/dpi_values"/>
