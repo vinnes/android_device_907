@@ -18,7 +18,7 @@ $(call inherit-product, device/softwinner/907/full_907.mk)
 $(call inherit-product, device/softwinner/907/907-blobs.mk)
 
 # Inherit some common CyanogenMod stuff.
-$(call inherit-product, vendor/cm/config/common_full_tablet_wifionly.mk)
+$(call inherit-product, vendor/aokp/config/common_full_tablet_wifionly.mk)
 
 # Inherit GSM common stuff
 $(call inherit-product, vendor/cm/config/gsm.mk)
