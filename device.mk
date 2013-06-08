@@ -24,7 +24,7 @@ $(call inherit-product, vendor/aokp/config/common_tablet.mk)
 $(call inherit-product, vendor/aokp/config/gsm.mk)
 
 ## Device identifier. This must come after all inclusions
-PRODUCT_NAME := cm_907
+PRODUCT_NAME := aokp_907
 PRODUCT_BRAND := Google
 PRODUCT_DEVICE := 907
 PRODUCT_MODEL := Nexus 7
