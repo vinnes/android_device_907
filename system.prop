@@ -15,8 +15,9 @@ persist.sys.timezone=Europe/London \
 persist.sys.language=en \
 persist.sys.country=GB \
 
-wifi.interface = wlan0
-wifi.supplicant_scan_interval = 60
+wifi.interface=wlan0
+wifi.supplicant_scan_interval=60
+debug.egl.hw=1
 
 #Disable StrictMode
 persist.sys.strictmode.visual=0
