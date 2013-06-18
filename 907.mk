@@ -41,7 +41,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	ro.additionalmounts=/storage/sdcard1 \
 	ro.vold.switchablepair=/storage/sdcard0,/storage/sdcard1 \
 	ro.config.nocheckin=1 \
-	debug.egl.hw=1 \
 	debug.sf.hw=1 \
 	dalvik.vm.lockprof.threshold=500 \
 	dalvik.vm.checkjni=false \
@@ -106,7 +105,7 @@ PRODUCT_PACKAGES += \
 
 # Device specific settings
 PRODUCT_PACKAGES += \
-    AllwinnerA10Settings
+	AllwinnerA10Settings
 
 PRODUCT_PACKAGES += \
 	librs_jni \
