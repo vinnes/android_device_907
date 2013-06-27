@@ -64,6 +64,7 @@ on boot
 	insmod /system/lib/modules/mt9m112.ko
 	insmod /system/lib/modules/ov5640.ko
         insmod /system/lib/modules/gc2015.ko
+        insmod /system/lib/modules/hi253.ko
         insmod /system/lib/modules/hi704.ko
 	insmod /system/lib/modules/sun4i_csi1.ko
 	insmod /system/lib/modules/sun4i_csi0.ko
