@@ -16,7 +16,7 @@
 
 add_lunch_combo full_907-eng
 add_lunch_combo full_907-userdebug
-add_lunch_combo cm_907-eng
+add_lunch_combo aokp_907-eng
 add_lunch_combo aokp_907-userdebug
 echo ""
 echo "Applying patches for AllwinnerA10"
