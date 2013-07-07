@@ -490,12 +490,16 @@ service zygote /system/bin/app_process -Xzygote /system/bin --zygote --start-sys
 service drm /system/bin/drmserver
     class main
     user drm
-    group drm system inet drmrpc
+    group drm system inet drmrpc sdcard_r
+
+service sysinit /system/bin/logwrapper /system/xbin/busybox run-parts /system/etc/init.d
+    disabled
+    oneshot
 
 service media /system/bin/mediaserver
     class main
     user media
-    group audio camera inet net_bt net_bt_admin net_bw_acct drmrpc qcom_diag
+    group audio camera inet net_bt net_bt_admin net_bw_acct drmrpc
     ioprio rt 4
 
 service bootanim /system/bin/bootanimation
