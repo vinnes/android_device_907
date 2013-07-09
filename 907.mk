@@ -160,7 +160,8 @@ PRODUCT_PACKAGES += \
 # EXT4 Support
 PRODUCT_PACKAGES += \
 	make_ext4fs \
-	e2fsck
+	e2fsck \
+	cpueater
 
 $(call inherit-product, frameworks/native/build/tablet-dalvik-heap.mk)
 $(call inherit-product, build/target/product/full_base.mk)
