@@ -4,10 +4,12 @@ Compilation Notes
 -----------------
 
 * FAQs
+
 HW accelerated playback of local contents is limited to few files format but there's a nice workaround: since network playback works flawlessly we'll install an UPNP server that will automatically open our files from the loopback network interface. In this case stagefright player will kick in and will play every file without any trouble.
 Install both MX Player and BubbleUPNP from Play store. Open BubbleUPNP and from "Library" section select the file to play. Choose MX Player as default player and enjoy the HW accelerated video playback
 
 * Build from Sources
+
 1)Create a directory
 
 	mkdir cyanogen
