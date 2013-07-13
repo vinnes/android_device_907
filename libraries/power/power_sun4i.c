@@ -155,7 +155,12 @@ static void sun4i_power_init(struct power_module *module)
         sysfs_write("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate",
                     "50000");
     }
-    /* Mali boost rate: 1200MHz PLL / 400MHz Mali freq, duration 500 msec. */
+    
+    /*
+     * Mali boost rate: 1200MHz PLL / 400MHz Mali freq, duration
+     * 500 msec.
+     */
+
     sysfs_write("/sys/module/mali/parameters/mali_boost_rate",
                 "1200");
     sysfs_write("/sys/module/mali/parameters/mali_boost_duration",
