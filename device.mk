@@ -18,10 +18,10 @@ $(call inherit-product, device/softwinner/907/full_907.mk)
 $(call inherit-product, device/softwinner/907/907-blobs.mk)
 
 # Inherit some common AOKP stuff.
-$(call inherit-product, vendor/aokp/config/common_tablet.mk)
+$(call inherit-product, vendor/aokp/configs/common_tablet.mk)
 
 # Inherit GSM common stuff
-$(call inherit-product, vendor/aokp/config/gsm.mk)
+$(call inherit-product, vendor/aokp/configs/gsm.mk)
 
 ## Device identifier. This must come after all inclusions
 PRODUCT_NAME := aokp_907
