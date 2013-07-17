@@ -1,4 +1,4 @@
-Android Open Kang Project Sun4i
+ParanoidAndroid Sun4i
 ====================================
 
 
@@ -7,15 +7,15 @@ Download the source
 
 1)Create a directory
 
-	mkdir aokp
+	mkdir paranoid
 
 2)Change to the created directory
 
-	cd aokp
+	cd paranoid
 
-3)Init the AOKP repository
+3)Init the ParanoidAndroid repository
 
-	repo init -u https://github.com/AOKP/platform_manifest.git -b jb-mr1
+	repo init -u git://github.com/ParanoidAndroid/manifest.git -b jellybean
 
 4)Paste this lines inside new file .repo/manifests/local_manifest.xml
 and paste this lines inside new file .repo/local_manifest.xml
@@ -23,9 +23,9 @@ and paste this lines inside new file .repo/local_manifest.xml
 	<?xml version="1.0" encoding="UTF-8"?>
 	<manifest>
 	  <!-- remote  name="github" fetch="git://github.com/" /-->
-	  <remove-project name="AOKP/android_bootable_recovery"/>
-	  <remove-project name="AOKP/android_system_vold"/>
-	  <project remote="github" revision="AOKP-4.2" name="ugers/android_device_907" path="device/softwinner/907" />
+	  <remove-project name="ParanoidAndroid/android_bootable_recovery"/>
+	  <remove-project name="ParanoidAndroid/android_system_vold"/>
+	  <project remote="github" revision="ParanoidAndroid-4.2" name="ugers/android_device_907" path="device/softwinner/907" />
 	  <project remote="github" revision="cm-10.1" name="ugers/android_system_vold" path="system/vold" />
 	  <project remote="github" revision="twrp2.5" name="TeamWin/Team-Win-Recovery-Project" path="bootable/recovery" />
 	</manifest>
@@ -38,7 +38,7 @@ and paste this lines inside new file .repo/local_manifest.xml
 6)Finally you're ready to build it:
 
 	source build/envsetup.sh
-        brunch aokp_907-userdebug
+        brunch pa_907-userdebug
 
 Patches - (if you have already modify your tree and patches can't be applied, run: repo forall -c git reset --hard)
 Remember to `make clobber` every now and then!
