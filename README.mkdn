@@ -37,8 +37,7 @@ and paste this lines inside new file .repo/local_manifest.xml
 
 6)Finally you're ready to build it:
 
-	source build/envsetup.sh
-        brunch pa_907-userdebug
+	./rom-build.sh 907
 
 Patches - (if you have already modify your tree and patches can't be applied, run: repo forall -c git reset --hard)
 Remember to `make clobber` every now and then!
