@@ -2,13 +2,13 @@
 $(call inherit-product, device/softwinner/907/full_907.mk)
 $(call inherit-product, device/softwinner/907/907-blobs.mk)
 
-# Inherit some common AOKP stuff.
-$(call inherit-product, vendor/aokp/configs/common_tablet.mk)
+# Inherit AOKP common bits
+$(call inherit-product, vendor/aokp/configs/common.mk)
 
 # Inherit GSM common stuff
 $(call inherit-product, vendor/aokp/configs/gsm.mk)
 
-# Grouper Overlay
+# tablets Overlay
 PRODUCT_PACKAGE_OVERLAYS += vendor/aokp/overlay/common_tablets
 
 
