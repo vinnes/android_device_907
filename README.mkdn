@@ -15,7 +15,7 @@ Download the source
 
 3)Init the ParanoidAndroid repository
 
-	repo init -u git://github.com/ParanoidAndroid/manifest.git -b jellybean
+	repo init -u git://github.com/ParanoidAndroid/manifest.git -b jellybean-legacy
 
 4)Paste this lines inside new file .repo/manifests/local_manifest.xml
 and paste this lines inside new file .repo/local_manifest.xml
