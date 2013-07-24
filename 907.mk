@@ -193,7 +193,8 @@ PRODUCT_PACKAGES += \
 
 # Device specific settings
 PRODUCT_PACKAGES += \
-	AllwinnerA10Settings
+	AllwinnerA10Settings \
+	HALO
 
 PRODUCT_PACKAGES += \
 	librs_jni \
