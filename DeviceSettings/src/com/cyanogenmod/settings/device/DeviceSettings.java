@@ -45,7 +45,6 @@ public class DeviceSettings extends PreferenceActivity implements OnSharedPrefer
      */
     public static final String TAG = "AllwinnerA10Settings";
 
-    public static final String KEY_DPI = "pref_dpi_list";
     public static final String KEY_WLAN_MAC = "wlan_mac";
     public static final String KEY_EXT_INT = "ext_internal";
 
@@ -79,18 +78,6 @@ public class DeviceSettings extends PreferenceActivity implements OnSharedPrefer
         return false;
     }
 
-
-    @Override 
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-		
-		if(key.equals(KEY_DPI))
-		{
-			int dpi = Integer.valueOf(sharedPreferences.getString(KEY_DPI, "213"));
-			setLcdDensity(dpi);	
-		}
-	
-    }
-
 	
     private void initPreferenceActivity()
     {
@@ -110,14 +97,6 @@ public class DeviceSettings extends PreferenceActivity implements OnSharedPrefer
 	CommandResult result = new CMDProcessor().su.runWaitFor("getprop "+key);
 	return (result.getOutput().getFirst().equals("") || result.getOutput().getFirst() == null) ? def : result.getOutput().getFirst() ;
   }	
-  
-  private void setLcdDensity(int newDensity)
-  {
-        Helpers.getMount("rw");
-        new CMDProcessor().su.runWaitFor("busybox sed -i 's|ro.sf.lcd_density=.*|"
-                + "ro.sf.lcd_density" + "=" + newDensity + "|' " + "/system/build.prop");
-        Helpers.getMount("ro");
-  }
     
   private void setCustomMacDialog()
   {
