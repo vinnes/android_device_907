@@ -2,12 +2,8 @@
 
     <string name="app_name">Настройки Allwinner A10</string>
     
-    <string name="title_display">Экран</string>
     <string name="title_wifi">Wifi</string>
-    <string name="title_system">Система</string>
-    
-    <string name="title_dpi">Изменение DPI</string>
-    <string name="summary_dpi">Для применения изменений необходима перезагрузка</string>
+    <string name="title_system">Система</string>    
 
     <string name="title_wlan_mac">Изменение MAC-адреса</string>
     <string name="summary_wlan_mac">Задание пользовательского wifi МАС-адреса</string>
