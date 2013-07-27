@@ -38,7 +38,7 @@ import android.widget.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class DeviceSettings extends PreferenceActivity implements OnSharedPreferenceChangeListener  {
+public class DeviceSettings extends PreferenceActivity  {
 
     /**
      * Called when the activity is first created.
