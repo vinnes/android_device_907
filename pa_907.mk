@@ -22,7 +22,10 @@ OVERLAY_TARGET := pa_hdpi
 PREFS_FROM_SOURCE ?= false
 
 # Build paprefs from sources
-DEVELOPER_VERSION ?= true
+DEVELOPER_VERSION ?= false
+
+#skip asserts for now
+TARGET_OTA_ASSERT_SKIP := true
 
 # CM Package Extras
 -include vendor/pa/packages/cm.mk
