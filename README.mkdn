@@ -1,4 +1,4 @@
-CyanogenMod sun4i
+CyanogenMod Sun4i
 ===============
 Compilation Notes
 -----------------
