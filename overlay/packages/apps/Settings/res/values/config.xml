@@ -19,5 +19,7 @@
     <bool name="config_show_expandedDesktop">true</bool>    
     <!-- Volume Rocker Wake Support. Some devices do not support (PMU) this.
          Setting to false will disable Volume Rocker Wake support -->
-    <bool name="config_show_volumeRockerWake">true</bool>  
+    <bool name="config_show_volumeRockerWake">true</bool> 
+    
+    <bool name="has_advanced_settings">true</bool>
 </resources>
