@@ -2,7 +2,7 @@ ParanoidAndroid Sun4i
 ====================================
 
 
-Download the source
+Compilation Notes
 --------------
 
 1)Create a directory
