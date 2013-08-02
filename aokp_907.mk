@@ -5,10 +5,13 @@ $(call inherit-product, device/softwinner/907/907-blobs.mk)
 # Inherit AOKP common bits
 $(call inherit-product, vendor/aokp/configs/common.mk)
 
+#skip asserts for now
+TARGET_OTA_ASSERT_SKIP := true
+
 # Inherit GSM common stuff
 $(call inherit-product, vendor/aokp/configs/gsm.mk)
 
-# tablets Overlay
+# Tablets Overlay
 PRODUCT_PACKAGE_OVERLAYS += vendor/aokp/overlay/common_tablets
 
 
