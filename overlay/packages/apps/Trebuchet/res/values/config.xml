@@ -14,6 +14,6 @@
     <bool name="config_workspaceTabletGrid">true</bool>
     
     <!-- Actual cell count -->
-    <integer name="target_cell_count_x">7</integer>
+    <integer name="target_cell_count_x">8</integer>
     <integer name="target_cell_count_y">5</integer> 
 </resources>
