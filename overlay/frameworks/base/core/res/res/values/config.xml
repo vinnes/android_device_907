@@ -117,7 +117,9 @@
     <!-- Maximum number of database connections opened and managed by framework layer
          to handle queries on each database when using Write-Ahead Logging. -->
     <integer name="db_connection_pool_size">3</integer>
-    
+
+    <!-- When a database query is executed, the results retuned are paginated
+         in pages of size (in KB) indicated by this value -->
     <integer name="config_cursorWindowSize">2048</integer>
     
     <!-- Close low battery warning when battery level reaches this value -->    
