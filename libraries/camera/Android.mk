@@ -38,7 +38,6 @@ LOCAL_LDFLAGS += \
 	device/softwinner/907/prebuilt/lib/cedarx/libfacedetection.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libcedarv_adapter.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libcedarxbase.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libCedarX.so
 	
 # cedarx libraries
 #LOCAL_SHARED_LIBRARIES += \
