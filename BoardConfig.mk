@@ -66,6 +66,10 @@ TARGET_BOOTANIMATION_PRELOAD := true
 TARGET_BOOTANIMATION_TEXTURE_CACHE := true
 TARGET_BOOTANIMATION_USE_RGB565 := true
 
+# Cedarx
+CEDARX_CHIP_VERSION := F23
+CEDARX_USE_SWAUDIO := N
+
 #CWM Recovery
 #BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery_keys.c
 BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
@@ -121,7 +125,7 @@ WIFI_DRIVER_FW_PATH_AP    := ""
 WIFI_DRIVER_FW_PATH_P2P   := ""
 WIFI_DRIVER_FW_PATH_PARAM := ""
 
-TARGET_CUSTOM_WIFI := device/softwinner/907/libraries/realtek/wlan/wifi_realtek.c
+TARGET_CUSTOM_WIFI := device/softwinner/907/libraries/realtek/wlan/libhardware_legacy/wifi/wifi_realtek.c
 
 # Beware: set only prebuilt OR source+config
 TARGET_PREBUILT_KERNEL := device/softwinner/907/kernel
