@@ -121,7 +121,7 @@ WIFI_DRIVER_FW_PATH_AP    := ""
 WIFI_DRIVER_FW_PATH_P2P   := ""
 WIFI_DRIVER_FW_PATH_PARAM := ""
 
-TARGET_CUSTOM_WIFI := device/softwinner/907/libraries/realtek/wlan/wifi_realtek.c
+TARGET_CUSTOM_WIFI := device/softwinner/907/libraries/realtek/wlan/libhardware_legacy/wifi/wifi_realtek.c
 
 # Beware: set only prebuilt OR source+config
 TARGET_PREBUILT_KERNEL := device/softwinner/907/kernel
