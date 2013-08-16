@@ -130,7 +130,8 @@ PRODUCT_PACKAGES += \
 	libaudioutils \
 	chat \
 	u3gmonitor \
-	devlistener
+	devlistener \
+	dispctl
 
 PRODUCT_PACKAGES += \
 	libthirdpartstream \
