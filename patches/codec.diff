@@ -192,3 +192,19 @@ diff --git a/frameworks/native/include/media/openmax/OMX_Core.h b/frameworks/nat
  
  /** @ingroup buf */
  typedef struct OMX_BUFFERHEADERTYPE
+diff --git a/frameworks/native/include/media/openmax/OMX_Index.h b/frameworks/native/include/media/openmax/OMX_Index.h
+--- a/frameworks/native/include/media/openmax/OMX_Index.h
++++ b/frameworks/native/include/media/openmax/OMX_Index.h
+@@ -264,6 +264,12 @@
+        private indexes are not guaranteed unique and therefore should
+        only be sent to the appropriate component. */
+ 
++  OMX_IndexParamEnableAndroidBuffers    = 0x7FF00000,
++  OMX_IndexParamGetAndroidNativeBuffer,
++  OMX_IndexParamUseAndroidNativeBuffer,
++  OMX_IndexParamUseAndroidNativeBuffer2,
++
++  OMX_IndexParamVendorFlushBuffer,
+     OMX_IndexMax = 0x7FFFFFFF
+ 
+ } OMX_INDEXTYPE;
