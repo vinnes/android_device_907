@@ -183,19 +183,19 @@ static int display_requestbuf(struct display_device_t *dev,int width,int height,
     }
 	else
 	{
-		LOGE("####unsupported format:%d in display_requestbuf\n",format);
+		ALOGE("####unsupported format:%d in display_requestbuf\n",format);
 	}
     mem_id = display_get_free_mem_id(dev);
     if(mem_id < 0)
     {
-        LOGE("#### get free mem fail\n");
+        ALOGE("#### get free mem fail\n");
         return -1;
     }
     args[0] = mem_id;
     args[1] = size * buf_num;
     if(ioctl(ctx->mFD_disp,DISP_CMD_MEM_REQUEST,(unsigned long)args) < 0)
     {
-        LOGE("#### request buf fail,no:%d\n", mem_id);
+        ALOGE("#### request buf fail,no:%d\n", mem_id);
         return 0;
     }
     ctx->mem_width[mem_id] = width;
@@ -211,7 +211,7 @@ static int display_releasebuf(struct display_device_t *dev,int buf_hdl)
     unsigned long               args[4];
     if(buf_hdl < 100)
     {
-        LOGE("####dst_buf_hdl:%d invalid in display_release_buf\n",buf_hdl);
+        ALOGE("####dst_buf_hdl:%d invalid in display_release_buf\n",buf_hdl);
         return -1;
     }
     args[0] = buf_hdl - 100;
@@ -240,7 +240,7 @@ static int display_convertfb(struct display_device_t *dev,int srcfb_id,int srcfb
     int                         mem_id;
     if(dst_buf_hdl < 100)
     {
-        LOGE("####dst_buf_hdl:%d invalid in display_convertfb\n",dst_buf_hdl);
+        ALOGE("####dst_buf_hdl:%d invalid in display_convertfb\n",dst_buf_hdl);
         return -1;
     }
 	ioctl(ctx->mFD_fb[srcfb_id],FBIOGET_FSCREENINFO,&fix_src);
@@ -293,7 +293,7 @@ static int display_convertfb(struct display_device_t *dev,int srcfb_id,int srcfb
     err = ioctl(ctx->mFD_mp , G2D_CMD_STRETCHBLT ,(unsigned long)&blit_para);				
     if(err < 0)		
     {    
-        LOGE("copy fb failed!\n");
+        ALOGE("copy fb failed!\n");
         return  -1;      
     }
     return  0;
@@ -364,7 +364,7 @@ static int display_copyfb(struct display_device_t *dev,int srcfb_id,int srcfb_bu
     		break;
     		
     	default:
-    	    LOGE("invalid bits_per_pixel :%d\n", var_src.bits_per_pixel);
+    	    ALOGE("invalid bits_per_pixel :%d\n", var_src.bits_per_pixel);
     		return -1;
 	}
 
@@ -399,7 +399,7 @@ static int display_copyfb(struct display_device_t *dev,int srcfb_id,int srcfb_bu
     err = ioctl(ctx->mFD_mp , G2D_CMD_STRETCHBLT ,(unsigned long)&blit_para);				
     if(err < 0)		
     {    
-        LOGE("copy fb failed!\n");
+        ALOGE("copy fb failed!\n");
         
         return  -1;      
     }
@@ -1000,7 +1000,7 @@ static int display_hwcursorrequest(struct display_device_t *dev,int displayno)
     {
         if(ctx->mFD_disp)
         {
-       	 	LOGV("open hwc file start!\n");
+       	 	ALOGV("open hwc file start!\n");
        	 	if(ctx->width[displayno] <= 1440)
 			{
 				index = 0;
@@ -1024,39 +1024,39 @@ static int display_hwcursorrequest(struct display_device_t *dev,int displayno)
     		FILE* 			hwcfile = fopen(hwcfilename, "r");
     		if(hwcfile == NULL)
     		{
-    			LOGV("open hwc file failed!\n");
+    			ALOGV("open hwc file failed!\n");
     			
     			return -1;
     		}
     		
-    		LOGV("open hwc file success!\n");
+    		ALOGV("open hwc file success!\n");
     		
     		size_t 			count = fread(hwcbuffer, 1, 1024, hwcfile);
     		if(count == 0)
     		{
-    			LOGV("read hwc file failed!\n");
+    			ALOGV("read hwc file failed!\n");
     			
     			fclose(hwcfile);
     			
     			return -1;
     		}
     		
-    		LOGV("read hwc file success!\n");
+    		ALOGV("read hwc file success!\n");
     		
     		FILE* 			hwcpal = fopen(hwcpalname, "r");
     		if(hwcpal == NULL)
     		{
-    			LOGV("open hwc pal file failed!\n");
+    			ALOGV("open hwc pal file failed!\n");
     			
     			return -1;
     		}
     		
-    		LOGV("open hwc pal file success!\n");
+    		ALOGV("open hwc pal file success!\n");
     		
     		count = fread(hwcpalbuf, 1, 1024, hwcpal);
     		if(count == 0)
     		{
-    			LOGV("read hwc pal file failed!\n");
+    			ALOGV("read hwc pal file failed!\n");
     			
     			fclose(hwcfile);
     			fclose(hwcpal);
@@ -1064,7 +1064,7 @@ static int display_hwcursorrequest(struct display_device_t *dev,int displayno)
     			return -1;
     		}
     		
-    		LOGV("read hwc file success!\n");
+    		ALOGV("read hwc file success!\n");
     		hwcpattern.addr = (unsigned int)&hwcbuffer;
     		
     		fclose(hwcfile);
@@ -1131,7 +1131,7 @@ static int display_hwcursorsetsizeindex(struct display_device_t *dev,int display
     		FILE* 			hwcfile = fopen(hwcfilename, "r");
     		if(hwcfile == NULL)
     		{
-    			LOGV("open hwc file failed!\n");
+    			ALOGV("open hwc file failed!\n");
     			
     			return -1;
     		}
@@ -1139,7 +1139,7 @@ static int display_hwcursorsetsizeindex(struct display_device_t *dev,int display
     		size_t 			count = fread(hwcbuffer, 1, 1024, hwcfile);
     		if(count == 0)
     		{
-    			LOGV("read hwc file failed!\n");
+    			ALOGV("read hwc file failed!\n");
     			
     			fclose(hwcfile);
     			
@@ -1149,7 +1149,7 @@ static int display_hwcursorsetsizeindex(struct display_device_t *dev,int display
     		FILE* 			hwcpal = fopen(hwcpalname, "r");
     		if(hwcpal == NULL)
     		{
-    			LOGV("open hwc pal file failed!\n");
+    			ALOGV("open hwc pal file failed!\n");
     			
     			return -1;
     		}
@@ -1157,7 +1157,7 @@ static int display_hwcursorsetsizeindex(struct display_device_t *dev,int display
     		count = fread(hwcpalbuf, 1, 1024, hwcpal);
     		if(count == 0)
     		{
-    			LOGV("read hwc pal file failed!\n");
+    			ALOGV("read hwc pal file failed!\n");
     			
     			fclose(hwcfile);
     			fclose(hwcpal);
@@ -1236,7 +1236,7 @@ static int display_hwcursorshow(struct display_device_t *dev,int displayno)
     {
         if(ctx->mFD_disp)
         {
-            LOGV("display_hwcursorshow\n");
+            ALOGV("display_hwcursorshow\n");
 		    args[0] = displayno;
             args[1] = 0;
             args[2] = 0;
@@ -1259,7 +1259,7 @@ static int display_hwcursorhide(struct display_device_t *dev,int displayno)
     {
         if(ctx->mFD_disp)
         {
-        	LOGV("display_hwcursorhide\n");
+        	ALOGV("display_hwcursorhide\n");
         
 		    args[0] = displayno;
             args[1] = 0;
@@ -1284,7 +1284,7 @@ static int display_sethwcursorpos(struct display_device_t *dev,int displayno,int
     {
         if(ctx->mFD_disp)
         {
-            LOGV("display_sethwcursorpos posx = %d,posy = %d\n",posx,posy);
+            ALOGV("display_sethwcursorpos posx = %d,posy = %d\n",posx,posy);
             pos.x        = posx;
 	        pos.y        = posy;
 
@@ -1364,29 +1364,29 @@ static int display_spriterequest(struct display_device_t *dev,int displayno)
             ret     = ioctl(ctx->mFD_disp,DISP_CMD_MEM_REQUEST,(unsigned long)args);
             if(ret < 0)
             {
-                LOGE("request mem fail\n");
+                ALOGE("request mem fail\n");
                 
                 return -1;
             }
             
             args[0] = MAX_CURSOR_MEMIDX + displayno;
             phyaddr = ioctl(ctx->mFD_disp,DISP_CMD_MEM_GETADR,(unsigned long)args);
-            LOGV("display memory phyaddr = %x\n",phyaddr);
+            ALOGV("display memory phyaddr = %x\n",phyaddr);
 
 	        args[0] = displayno;
             args[1] = DISP_FORMAT_ARGB8888;
             args[2] = DISP_SEQ_ARGB;
             args[3] = 0;
 	        ioctl( ctx->mFD_disp, DISP_CMD_SPRITE_SET_FORMAT, (void*)args);
-            LOGV("DISP_CMD_SPRITE_SET_FORMAT\n");
+            ALOGV("DISP_CMD_SPRITE_SET_FORMAT\n");
         	args[0] = displayno;
             args[1] = 0;
             args[2] = 0;
             args[3] = 0;
         	ioctl( ctx->mFD_disp, DISP_CMD_SPRITE_OPEN, (void*)args);
-            LOGV("DISP_CMD_SPRITE_OPEN\n");
+            ALOGV("DISP_CMD_SPRITE_OPEN\n");
 	        memset(&para, 0, sizeof(__disp_sprite_block_para_t));
-	        LOGV("memset\n");
+	        ALOGV("memset\n");
 	        para.fb.addr[0] = phyaddr;
         	para.fb.size.width = MAX_CURSOR_SIZE;
         	para.fb.size.height = MAX_CURSOR_SIZE;
@@ -1403,12 +1403,12 @@ static int display_spriterequest(struct display_device_t *dev,int displayno)
             args[1] = (unsigned long)&para;
             args[2] = 0;
             args[3] = 0;
-            LOGV("ctx->mFD_cursor before = %x\n",ctx->mFD_cursor);
+            ALOGV("ctx->mFD_cursor before = %x\n",ctx->mFD_cursor);
 		    ctx->mFD_cursor = ioctl(ctx->mFD_disp, DISP_CMD_SPRITE_BLOCK_REQUEST, (void*)args);
-		    LOGV("ctx->mFD_cursor = %x\n",ctx->mFD_cursor);
+		    ALOGV("ctx->mFD_cursor = %x\n",ctx->mFD_cursor);
             if(ctx->mFD_cursor == 0)
             {
-                LOGE("request sprite block fail\n");
+                ALOGE("request sprite block fail\n");
 
                 args[0] = MAX_CURSOR_MEMIDX + displayno;
                 args[1] = MAX_CURSOR_SIZE * MAX_CURSOR_SIZE * 4;
@@ -1468,16 +1468,16 @@ static int display_spriteshow(struct display_device_t *dev,int displayno)
 
     if(ctx)
     {
-        LOGV("display_hwcursorshow!\n");
+        ALOGV("display_hwcursorshow!\n");
         if(ctx->mFD_cursor == 0)
         {
-            LOGV("display_hwcursorshow2!\n");
+            ALOGV("display_hwcursorshow2!\n");
             return 0;
         }
 
         if(ctx->mFD_disp)
         {
-            LOGV("display_hwcursorshow3!displayno = %d,ctx->mFD_cursor = %x\n",displayno,ctx->mFD_cursor);
+            ALOGV("display_hwcursorshow3!displayno = %d,ctx->mFD_cursor = %x\n",displayno,ctx->mFD_cursor);
 		    args[0] = displayno;
             args[1] = (unsigned long)ctx->mFD_cursor;
             args[2] = 0;
@@ -1533,7 +1533,7 @@ static int display_setspritepos(struct display_device_t *dev,int displayno,int p
 
         if(ctx->mFD_disp)
         {
-            LOGV("display_sethwcursorpos posx = %d,posy = %d\n",posx,posy);
+            ALOGV("display_sethwcursorpos posx = %d,posy = %d\n",posx,posy);
             scnwin.x        = posx;
 	        scnwin.y        = posy;
 	        scnwin.width    = MAX_CURSOR_SIZE;
@@ -1626,7 +1626,7 @@ static int display_spritegetvaddr(struct display_device_t *dev,int displayno)
             args[0] = MAX_CURSOR_MEMIDX + displayno;
             ioctl(ctx->mFD_disp,DISP_CMD_MEM_SELIDX,(unsigned long)args);
             vaddr = (unsigned long)mmap(NULL, MAX_CURSOR_SIZE * MAX_CURSOR_SIZE * 4, PROT_READ | PROT_WRITE, MAP_SHARED, ctx->mFD_disp, 0L);
-            LOGV("sprite vaddr:0x%x\n",vaddr);
+            ALOGV("sprite vaddr:0x%x\n",vaddr);
             
 	        return vaddr;
         }
@@ -1655,7 +1655,7 @@ static int display_spritegetpaddr(struct display_device_t *dev,int displayno)
             
             args[0] = MAX_CURSOR_MEMIDX + displayno;
             paddr = ioctl(ctx->mFD_disp,DISP_CMD_MEM_GETADR,(unsigned long)args);
-            LOGV("sprite paddr:0x%x\n",paddr);
+            ALOGV("sprite paddr:0x%x\n",paddr);
 
 	        return paddr;
         }
@@ -1722,7 +1722,7 @@ static int display_setareapercent(struct display_device_t *dev,int displayno,int
     __disp_rect_t scn_win;
     int i = 0;
 
-    LOGD("####display_setareapercent:screen:%d,percent:%d\n", displayno,percent);
+    ALOGD("####display_setareapercent:screen:%d,percent:%d\n", displayno,percent);
 
     if(ctx->mode == DISPLAY_MODE_DUALSAME || ctx->mode == DISPLAY_MODE_DUALSAME_TWO_VIDEO)
     {
@@ -1793,7 +1793,7 @@ static int display_open_output(struct display_device_t *dev, int screen, int out
     unsigned long 				arg[4];
     int							ret = 0;
     
-    LOGV("####display_open_output,%d,%d,%d\n", screen,out_type,out_format);
+    ALOGV("####display_open_output,%d,%d,%d\n", screen,out_type,out_format);
     
     if(out_type == DISPLAY_DEVICE_HDMI)
     {
@@ -1883,7 +1883,7 @@ static int display_getparameter(struct display_device_t *dev, int displayno, int
 
 	if(displayno < 0 || displayno > MAX_DISPLAY_NUM)
 	{
-        LOGE("Invalid Display No!\n");
+        ALOGE("Invalid Display No!\n");
 
         return  -1;
     }
@@ -1928,7 +1928,7 @@ static int display_getparameter(struct display_device_t *dev, int displayno, int
 			ioctl(ctx->mFD_fb[displayno],FBIOGET_VSCREENINFO,&var_src);                
 			return var_src.yres_virtual/2;
         default:
-            LOGE("Invalid Display Parameter!\n");
+            ALOGE("Invalid Display Parameter!\n");
 
             return  -1;
     }
@@ -1938,7 +1938,7 @@ static int display_setorientation(struct display_device_t *dev,int orientation)
 {
     struct 	display_context_t*  ctx = (struct display_context_t*)dev;
 
-    LOGD("####display_setorientation %d\n", orientation);
+    ALOGD("####display_setorientation %d\n", orientation);
     
     if(ctx->mode == DISPLAY_MODE_SINGLE_VAR_GPU)
     {
@@ -2010,7 +2010,7 @@ static int display_setorientation(struct display_device_t *dev,int orientation)
 
         ctx->orientation = orientation;
 
-        LOGV("%d,%d,  %d,%d,  %d,%d\n",
+        ALOGV("%d,%d,  %d,%d,  %d,%d\n",
         layer_para.src_win.x,layer_para.src_win.y,layer_para.scn_win.x,layer_para.scn_win.y,layer_para.scn_win.width,layer_para.scn_win.height);
 
 
@@ -2027,7 +2027,7 @@ static int display_setmode(struct display_device_t *dev,int mode,struct display_
     __disp_fb_create_para_t 	fb_para;
     int i = 0;
 
-    LOGD("####display_setmode:%d,screen0_type:%d,screen0_format:%d,screen1_type:%d,screen1:format:%d\n", 
+    ALOGD("####display_setmode:%d,screen0_type:%d,screen0_format:%d,screen1_type:%d,screen1:format:%d\n", 
         mode,para->d0type,para->d0format,para->d1type,para->d1format);
 
     if(mode == DISPLAY_MODE_DUALSAME)
@@ -2471,14 +2471,14 @@ static int display_init(struct display_context_t* ctx)
     ctx->mFD_disp = open("/dev/disp", O_RDWR, 0);
     if (ctx->mFD_disp < 0) 
     {
-        LOGE("Error opening display driver");
+        ALOGE("Error opening display driver");
         return -1;
     } 
 
     /*ctx->mFD_mp                     = open("/dev/g2d", O_RDWR, 0);
     if(ctx->mFD_mp < 0)
     {
-        LOGE("Error opening g2d driver");
+        ALOGE("Error opening g2d driver");
         return -1;
     }*/
 
@@ -2489,7 +2489,7 @@ static int display_init(struct display_context_t* ctx)
     	ctx->mFD_fb[i]			= open(node_name,O_RDWR,0);
     	if(ctx->mFD_fb[i] <= 0)
     	{
-            LOGE("Error opening fb%d driver",i);
+            ALOGE("Error opening fb%d driver",i);
             return -1;
         }
     }
@@ -2583,7 +2583,7 @@ static int display_init(struct display_context_t* ctx)
                 ctx->app_width[sel] = ctx->valid_width[sel];
                 ctx->app_height[sel] = ctx->valid_height[sel];
 
-                LOGD("####disp_init, mode:%d,out_type:%d,tv_mode:%d,app_width:%d,app_height:%d\n",
+                ALOGD("####disp_init, mode:%d,out_type:%d,tv_mode:%d,app_width:%d,app_height:%d\n",
                     ctx->mode, ctx->out_type[sel],ctx->out_format[sel],ctx->app_width[sel],ctx->app_height[sel]);
             }
         }
