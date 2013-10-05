@@ -44,6 +44,9 @@ on boot
 service ueventd /sbin/ueventd
     critical
 
+service dispctl /sbin/dispctl
+    oneshot
+
 service erase_misc /sbin/sh -c "dd if=/dev/zero count=1 | tr '\000' '\377' > /dev/block/nandf; sync"
     oneshot
 

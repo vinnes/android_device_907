@@ -13,74 +13,54 @@
 
 #include <EGL/egl.h>
 
-#define  MAX_FBNUM        8
-#define  MAX_LAYERNUM    8
-
-typedef struct sun4i_hwc_layer
+enum
 {
-    hwc_layer_1_t            base;
+    HWC_STATUS_HAVE_FRAME       = 1,
+    HWC_STATUS_COMPOSITED       = 2,
+    HWC_STATUS_OPENED           = 4,
+    HWC_STATUS_HAVE_VIDEO       = 8,
 
-    uint32_t            dispW;
-    uint32_t            dispH;
-    uint32_t            org_dispW;
-    uint32_t            org_dispH;
+    HWC_STATUS_HAVE_FRAME_MASK  = 0xfffffffe,
+    HWC_STATUS_OPENED_MASK      = 0xfffffffb,
+    HWC_STATUS_HAVE_VIDEO_MASK  = 0xfffffff7,
+};
 
-    uint32_t            cropX;
-    uint32_t            cropY;
-    uint32_t            cropW;
-    uint32_t            cropH;
-
-    uint32_t            posX;
-    uint32_t                posY;
-    uint32_t            posW;
-    uint32_t            posH;
-
-    uint32_t            posX_last;
-    uint32_t            posY_last;
-    uint32_t            posW_last;
-    uint32_t            posH_last;
-
-    uint32_t            posX_org;
-    uint32_t            posY_org;
-    uint32_t            posW_org;
-    uint32_t            posH_org;
-
-    uint32_t            cur_framehandle;
-    uint32_t            screen;
-    uint32_t            currenthandle;
-    uint32_t            cur_frameid;
-} sun4i_hwc_layer_1_t;
-
-typedef struct hwc_context_t
+typedef struct hwc_context_t 
 {
-    hwc_composer_device_1_t     device;
-    hwc_procs_t             *procs;
-    int                        dispfd;
-    sun4i_hwc_layer_1_t        hwc_layer;
-    uint32_t                hwc_screen;
-    bool                    hwc_layeropen;
-    bool                    hwc_frameset;  /*is frame set*/
-    bool                    hwc_reqclose;  /*is request close with parameter cmd*/
-    uint32_t                cur_hdmimode;
-    uint32_t                cur_3dmode;
-    bool                    cur_half_enable;
-    bool                    cur_3denable;
-    /* our private state goes below here */
-    bool                    wait_layer_open;
+    hwc_composer_device_1_t 	device;
+    hwc_procs_t 			*procs;
+    int						dispfd;
+    int                     mFD_fb[2];
+    e_hwc_mode_t            mode;
+    screen_para_t           screen_para;
+    bool		    b_video_in_valid_area;
+
+    uint32_t                ui_layerhdl[2];
+    uint32_t                video_layerhdl[2];
+    uint32_t                status[2];
+    uint32_t		        w;
+    uint32_t		        h;
+    uint32_t		        format;
+    bool		    cur_3denable;
+    e_hwc_3d_src_mode_t     cur_3d_src;
+    e_hwc_3d_out_mode_t     cur_3d_out;
+    uint32_t                cur_3d_w;
+    uint32_t                cur_3d_h;
+    e_hwc_format_t          cur_3d_format;
+    hwc_rect_t              rect_in;
+    hwc_rect_t              rect_out;
+    hwc_rect_t              rect_out_active[2];
+    __disp_tv_mode_t        org_hdmi_mode;
+    __disp_rect_t           org_scn_win;
+    libhwclayerpara_t       cur_frame_para;
+    bool                    layer_para_set;
     bool                    vsync_enabled;
     pthread_t               vsync_thread;
 }sun4i_hwc_context_t;
-
-#ifdef __GNUC__
-#define likely(x)       __builtin_expect(!!(x),1)
-#define unlikely(x)     __builtin_expect(!!(x),0)
-#else
-#define likely(x)       (x)
-#define unlikely(x)     (x)
-#endif
 
 extern "C" int clock_nanosleep(clockid_t clock_id, int flags,
                            const struct timespec *request,
                            struct timespec *remain);
 
 #endif
+

@@ -30,20 +30,12 @@ LOCAL_SHARED_LIBRARIES += \
 	libjpeg \
 	libskia \
 	libandroid_runtime
-
-LOCAL_LDFLAGS += \
-	$(LOCAL_PATH)/libcedara_decoder.a \
-	$(LOCAL_PATH)/libjpgenc.a \
-	device/softwinner/907/prebuilt/lib/cedarx/libcedarxosal.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libfacedetection.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libcedarv_adapter.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libcedarxbase.so \
 	
 # cedarx libraries
-#LOCAL_SHARED_LIBRARIES += \
-	#libfacedetection \
-	#libcedarxosal \
-	#libCedarX
+LOCAL_SHARED_LIBRARIES += \
+	libfacedetection \
+	libcedarxosal \
+	libCedarX
 	
 LOCAL_C_INCLUDES += 								\
 	external/jpeg 									\
@@ -52,9 +44,8 @@ LOCAL_C_INCLUDES += 								\
 	frameworks/native/include/media/openmax			\
 	hardware/libhardware/include/hardware			\
 	framework/native/include						\
-	device/softwinner/907/libraries/camera/include_camera \
-	$(TARGET_HARDWARE_INCLUDE) \
-	frameworks/native/include/media/hardware
+	frameworks/av/media/CedarX-Projects/CedarX/include/include_camera \
+	$(TARGET_HARDWARE_INCLUDE)
 
 LOCAL_SRC_FILES := \
 	HALCameraFactory.cpp \
@@ -70,7 +61,6 @@ LOCAL_SRC_FILES := \
 	OSAL_Mutex.c \
 	OSAL_Queue.c
 	
-
 LOCAL_CFLAGS += -D__SUN4I__
 
 LOCAL_MODULE := camera.$(TARGET_BOARD_PLATFORM)

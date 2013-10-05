@@ -164,3 +164,4 @@ typedef struct camera_module {
 __END_DECLS
 
 #endif /* ANDROID_INCLUDE_CAMERA_COMMON_H */
+

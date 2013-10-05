@@ -35,31 +35,14 @@ __BEGIN_DECLS
  */
 #define DISPLAY_HARDWARE_DISPLAY0 "display0"
 
-enum
-{
-    DISPLAY_FALSE = 0,
-    DISPLAY_TRUE,
-};
-
-enum
-{
-    DISPLAY_PLUGOUT = 0,
-    DISPLAY_PLUGIN,
-};
-
-enum
-{
-	DISPLAY_DEVICE_ON,
-	DISPLAY_DEVICE_PLUGIN_OFF,
-	DISPLAY_DEVICE_PLUGOUT
-};
 
 enum
 {
     DISPLAY_TVDAC_NONE              = 0,
     DISPLAY_TVDAC_YPBPR             = 1,
     DISPLAY_TVDAC_CVBS              = 2,
-    DISPLAY_TVDAC_SVIDEO            = 3
+    DISPLAY_TVDAC_SVIDEO            = 3,
+    DISPLAY_TVDAC_ALL               = 4,
 };
 
 enum
@@ -70,11 +53,6 @@ enum
 	DISPLAY_DEVICE_TV				= 2,
 	DISPLAY_DEVICE_HDMI				= 3,
 	DISPLAY_DEVICE_VGA				= 4,
-
-    /*When when Display Mode Signle mode, OK*/
-    DISPLAY_FBINDISPLAYNO           = 0x10,
-    DISPLAY_PIXELMODE               = 0x11,
-    DISPLAY_SETMASTER				= 0x12
 };
 
 
@@ -152,57 +130,15 @@ enum
 	DISPLAY_APP_WIDTH               = 9,
 	DISPLAY_APP_HEIGHT              = 10,
 	DISPLAY_VALID_WIDTH            = 11,
-	DISPLAY_VALID_HEIGHT           = 12
+	DISPLAY_VALID_HEIGHT           = 12,
 };
 
-
+#define DISPLAY_OUTPUT_VALIDWIDTH DISPLAY_VALID_WIDTH
+#define DISPLAY_OUTPUT_VALIDHEIGHT DISPLAY_VALID_HEIGHT
 enum
 {
 	DISPLAY_FORMAT_ARGB8888 = 0,
 	DISPLAY_FORMAT_PYUV420UVC = 1,
-};
-
-/* Image structure */
-struct display_output_t 
-{
-    /*output type*/
-	uint32_t			type;
-
-    /*framebuffer number 0:master,1:slave*/
-    uint32_t            fb_id;
-
-    /*fb width set*/
-    uint32_t            fb_width;
-
-    /*fb height set*/
-    uint32_t            fb_height;
-    
-    /* width */
-    uint32_t    		width;
-    
-    /* height */
-    uint32_t    		height;
-    
-    /* width */
-    uint32_t    		valid_width;
-    
-    /* height */
-    uint32_t    		valid_height;
-    
-    /* format DISPLAY_FORMAT_xxx */
-    int32_t     		format;
-    
-    int32_t				fbmode;
-    
-    int32_t				layermode;
-
-    int32_t             tvformat;
-    
-    int32_t				hotplug;
-    int32_t             isopen;
-    
-    /* handle to the image */
-    native_handle_t* 	handle;
 };
 
 struct display_rect_t
@@ -291,16 +227,16 @@ struct display_device_t
 
     int (*getmaxwidthdisplay)   (struct display_device_t *dev);
 
-    /*The BUF ID is being displayed on the screen to get the current*/
+    /*»сИЎµ±З°ЖБД»ХэФЪПФКѕµДBUF ID*/
     int (*getdisplaybufid)      (struct display_device_t *dev, int displayno);
 
-    /*Get the current display device*/
+    /*»сИЎµ±З°ПФКѕЙи±ёДЈКЅ*/
     int (*getdisplaymode)      	(struct display_device_t *dev);
 
-    /*���õ�ǰ��ʾ�����С�ٷֱ�*/
+    /*ЙиЦГµ±З°ПФКѕЗшУтґуРЎ°Щ·Ц±И*/
     int (*setdisplayareapercent)(struct display_device_t *dev, int displayno,int percent);
     
-    /*��ȡ��ǰ��ʾ�����С�ٷֱ�*/
+    /*»сИЎµ±З°ПФКѕЗшУтґуРЎ°Щ·Ц±И*/
     int (*getdisplayareapercent)(struct display_device_t *dev, int displayno);
     
     int (*setdisplaybrightness)	(struct display_device_t *dev, int displayno,int bright);
@@ -312,52 +248,48 @@ struct display_device_t
     int (*setdisplayhue)	    (struct display_device_t *dev, int displayno,int hue);
     int (*getdisplayhue)	    (struct display_device_t *dev, int displayno);    
 
-    /*�ж�ĳ��hdmi��ʽ�Ƿ񱻵���֧��*/
+    /*ЕР¶ПДіЦЦhdmiЦЖКЅКЗ·с±»µзКУЦ§іЦ*/
     int (*issupporthdmimode)	(struct display_device_t *dev,int mode);
     
-    /*�жϵ����Ƿ�֧��3D���*/
+    /*ЕР¶ПµзКУКЗ·сЦ§іЦ3DКдіц*/
     int (*issupport3dmode)		(struct display_device_t *dev);
 
     int (*getdisplaycount)	    (struct display_device_t *dev);
 	int (*setdisplaybacklightmode)(struct display_device_t *dev, int mode);
 
-    /*����Ӳ�����λ��*/
+    /*ЙиЦГУІјю№в±кО»ЦГ*/
     int (*sethwcursorpos)       (struct display_device_t *dev,int displayno,int posx,int posy);
 
-    /*��ȡӲ�����Xλ��*/
+    /*»сИЎУІјю№в±кXО»ЦГ*/
     int (*gethwcursorposx)      (struct display_device_t *dev,int displayno);
 
-    /*��ȡӲ�����Yλ��*/
+    /*»сИЎУІјю№в±кYО»ЦГ*/
     int (*gethwcursorposy)      (struct display_device_t *dev,int displayno);
 
-    /*��ʾӲ�����*/
+    /*ПФКѕУІјю№в±к*/
     int (*hwcursorshow)         (struct display_device_t *dev,int displayno);
 
-    /*����Ӳ�����*/
+    /*ТюІШУІјю№в±к*/
     int (*hwcursorhide)         (struct display_device_t *dev,int displayno);
 
-    /*��ȡӲ������û��ռ��ַ*/
+    /*»сИЎУІјю№в±кУГ»§їХјдµШЦ·*/
     int (*hwcursorgetvaddr)     (struct display_device_t *dev,int displayno);
 
-    /*��ȡӲ������û��ռ�������ַ*/
+    /*»сИЎУІјю№в±кУГ»§їХјдОпАнµШЦ·*/
     int (*hwcursorgetpaddr)     (struct display_device_t *dev,int displayno);
     
-    /*��ʼ��Ӳ�����*/
+    /*іхКј»ЇУІјю№в±к*/
     int (*hwcursorinit)         (struct display_device_t *dev,int displayno);
+    
+    /*ЙиЦГУІјю№в±кґуРЎ*/
+    int (*hwcsetsizeindex)		(struct display_device_t *dev,int displayno,int index);
 
     int (*setOrientation)       (struct display_device_t *dev,int orientation);
-    
-    /*����display buffer*/
     int (*requestdispbuf)		(struct display_device_t *dev,int width,int height,int format,int buf_num);
-    
-    /*�ͷ�display buffer*/
     int (*releasedispbuf)		(struct display_device_t *dev,int buf_hdl);
-    
-    /*ת��framebuffer�����ݵ�ָ����display buffer*/
     int (*convertfb)			(struct display_device_t *dev,int srcfb_id,int srcfb_bufno,int dst_buf_hdl, int dst_bufno,int width,int height,int format);
-    
-    /*��ȡdisplay buffer�ĵ�ַ*/
     int (*getdispbufaddr)		(struct display_device_t *dev,int buf_hdl,int bufno,int width,int height,int format);
+    int (*set3dmode)		    (struct display_device_t *dev,int displayno);
 };
 
 
@@ -379,4 +311,5 @@ static inline int display_close(struct display_device_t* device)
 __END_DECLS
 
 #endif  // ANDROID_DISPLAY_INTERFACE_H
+
 

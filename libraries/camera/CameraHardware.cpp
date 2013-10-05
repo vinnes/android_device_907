@@ -30,7 +30,11 @@
 #include <cutils/log.h>
 
 #include <ui/Rect.h>
-#include <sunxi_disp_ioctl.h>
+#ifdef __SUN4I__
+#include <drv_display_sun4i.h>
+#else
+#include <drv_display_sun5i.h>
+#endif
 #include <videodev2.h>
 #include "CameraHardware.h"
 #include "V4L2CameraDevice.h"

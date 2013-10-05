@@ -54,6 +54,7 @@ private:
     int mMinPollDelay;
     int mMaxPollDelay;
     char poll_sysfs_file[PATH_MAX];
+	char sensor_delay_file[PATH_MAX];
     int poll_sysfs_file_len;
     int getPollFile(const char* inputName);
     static inline int accel_is_sensor_enabled(uint32_t sensor_type)
@@ -76,4 +77,5 @@ private:
 /*****************************************************************************/
 
 #endif  // ANDROID_ACCEL_SENSOR_H
+
 

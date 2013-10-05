@@ -1,3 +1,5 @@
+import init.sun7i.usb.rc
+
 on init
 	export EXTERNAL_STORAGE /storage/sdcard0
 	export SECONDARY_STORAGE /storage/sdcard1

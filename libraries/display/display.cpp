@@ -2744,3 +2744,4 @@ static int open_display(const struct hw_module_t* module, const char* name,
     return status;
 }
 
+

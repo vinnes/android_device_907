@@ -116,7 +116,7 @@ int AccelSensor::enable(int32_t handle, int en)
         else
             err = accel_disable_sensor(sensor_type);
 
-        ALOGE_IF(err, "Could not change sensor state (%s)", strerror(-err));
+      //  LOGE_IF(err, "Could not change sensor state (%s)", strerror(-err));
         if (!err) {
             mEnabled &= ~(1<<what);
             mEnabled |= (uint32_t(flags)<<what);
@@ -146,7 +146,7 @@ int AccelSensor::getPollFile(const char* inputName)
         if ((strlen(de->d_name) < 6) ||
             strncmp(de->d_name, "input", 5))
             continue;
-
+		ALOGD("FILE NAME =%s ",filename);
         strcpy(filename, de->d_name);
         strcat(filename, "/");
         path_len = strlen(sysfs_name);
@@ -161,9 +161,8 @@ int AccelSensor::getPollFile(const char* inputName)
                 /* Try to open /sys/class/input/input?/poll */
                 filename = sysfs_name + path_len;
                 strcpy(filename, "poll");
-                fd = fopen(sysfs_name, "r+");
+                fd = fopen(sysfs_name, "r");
                 if (fd) {
-                    strcpy(poll_sysfs_file,sysfs_name);
                     poll_sysfs_file_len = strlen(poll_sysfs_file);
                     fclose(fd);
                     ALOGD("Found %s\n", poll_sysfs_file);
@@ -191,8 +190,13 @@ int AccelSensor::getPollFile(const char* inputName)
                             mMinPollDelay = strtol(buf, &endptr, 10);
                         fclose(fd);
                     }
-                    ALOGD("mMinPollDelay %d, mMaxPollDelay %d\n",
-                           mMinPollDelay, mMaxPollDelay);
+                    filename = sysfs_name + path_len;
+                    strcpy(filename, "delay");
+                    fd = fopen(sysfs_name, "r +");
+                    if (fd) {
+						strcpy(sensor_delay_file, sysfs_name);
+                        fclose(fd);
+                    }					
 
                     return 0;
                 }
@@ -210,12 +214,11 @@ int AccelSensor::setDelay(int32_t handle, int64_t ns)
     char buf[6];
 
     ms = ns / 1000 / 1000;
-    ALOGD("AccelSensor....setDelay, ms=%d\n", ms);
 
     if (poll_sysfs_file_len &&
         (ms >= mMinPollDelay) &&
         (ms <= mMaxPollDelay)) {
-       fd = fopen(poll_sysfs_file, "r+");
+       fd = fopen(sensor_delay_file, "r+");
        if (fd) {
            len = 6;
            memset(buf, 0, len);
@@ -303,4 +306,5 @@ void AccelSensor::processEvent(int code, int value)
             break;
     }
 }
+
 

@@ -32,6 +32,11 @@ PRODUCT_CHARACTERISTICS := tablet
 PRODUCT_TAGS += dalvik.gc.type-precise
 
 PRODUCT_PROPERTY_OVERRIDES += \
+	ro.product.firmware=v1.2 \
+	ro.property.fontScale=1.15 \
+	audio.routing=2 \
+	audio.defCurve=false \
+	ro.chip_type=a10 \
 	ro.sys.bootfast=true \
 	ro.eventproc.start=0 \
         ro.debuggable=1 \
@@ -51,6 +56,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
         persist.service.adb.enable=1 \
         keyguard.no_require_sim=true \
 	logcat.live=disable \
+	media.stagefright.maxsubfont=72 \
 	net.dns1=8.8.8.8 \
 	net.dns2=8.8.4.4 \
 
@@ -75,7 +81,7 @@ PRODUCT_COPY_FILES += \
 	packages/wallpapers/LivePicker/android.software.live_wallpaper.xml:/system/etc/permissions/android.software.live_wallpaper.xml
 
 #Cedarx prebuild lib's from 4.1
-PRODUCT_COPY_FILES += \
+#PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/lib/cedarx/libaw_audio.so:system/lib/libaw_audio.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libaw_audioa.so:system/lib/libaw_audioa.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libCedarA.so:system/lib/libCedarA.so \
@@ -105,7 +111,9 @@ PRODUCT_PACKAGES += \
 
 # Device specific settings
 PRODUCT_PACKAGES += \
-	AllwinnerA10Settings
+	AllwinnerA10Settings \
+        dispctl \
+        ethernet \
 
 PRODUCT_PACKAGES += \
 	librs_jni \
@@ -121,7 +129,7 @@ PRODUCT_PACKAGES += \
 	audio.primary.exDroid \
 	audio.a2dp.default \
 	audio.usb.default \
-	display.exDroid \
+	display.sun4i \
 	gralloc.sun4i \
 	power.sun4i \
 	camera.exDroid \
@@ -130,8 +138,7 @@ PRODUCT_PACKAGES += \
 	libaudioutils \
 	chat \
 	u3gmonitor \
-	devlistener \
-	dispctl
+	devlistener
 
 PRODUCT_PACKAGES += \
 	libthirdpartstream \
@@ -139,6 +146,7 @@ PRODUCT_PACKAGES += \
 	libsrec_jni \
 	libjpgenc \
 	libI420colorconvert.so \
+	AWcodecTest \
 	libstagefrighthw \
 	libOmxCore \
 	libOmxVdec \

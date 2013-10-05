@@ -59,7 +59,7 @@ USE_OPENGL_RENDERER := true
 ENABLE_WEBGL := true
 BOARD_USE_SKIA_LCDTEXT := true
 BOARD_EGL_NEEDS_LEGACY_FB := true
-BOARD_NO_ALLOW_DEQUEUE_CURRENT_BUFFER := true
+#BOARD_NO_ALLOW_DEQUEUE_CURRENT_BUFFER := true
 
 #Bootanimation stuff
 TARGET_BOOTANIMATION_PRELOAD := true
@@ -125,7 +125,7 @@ WIFI_DRIVER_FW_PATH_AP    := ""
 WIFI_DRIVER_FW_PATH_P2P   := ""
 WIFI_DRIVER_FW_PATH_PARAM := ""
 
-TARGET_CUSTOM_WIFI := device/softwinner/907/libraries/realtek/wlan/libhardware_legacy/wifi/wifi_realtek.c
+#TARGET_CUSTOM_WIFI := hardware/realtek/wlan/libhardware_legacy/wifi/wifi_realtek.c
 
 # Beware: set only prebuilt OR source+config
 TARGET_PREBUILT_KERNEL := device/softwinner/907/kernel
@@ -139,4 +139,4 @@ SW_BOARD_GSENSOR_DIRECT_Y := "true"
 SW_BOARD_GSENSOR_DIRECT_Z := "true"
 SW_BOARD_GSENSOR_XY_REVERT := "true"
 
-COMMON_GLOBAL_CFLAGS += "-DICS_CAMERA_BLOB -DICS_AUDIO_BLOB"
+#COMMON_GLOBAL_CFLAGS += "-DICS_CAMERA_BLOB -DICS_AUDIO_BLOB"

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,107 +14,88 @@
  * limitations under the License.
  */
 
-//#define LOG_NDEBUG 0
 #define LOG_TAG "lights"
+#define LOGE ALOGE
+
 #include <cutils/log.h>
+
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <pthread.h>
+
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include <hardware/lights.h>
-#include <sunxi_disp_ioctl.h>
 
-static pthread_once_t g_init = PTHREAD_ONCE_INIT;
+#include <hardware/lights.h>
+#include <hardware/hardware.h>
+#include <drv_display_sun4i.h>
+
 static pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
 
-void init_g_lock(void)
+
+int fd =0;
+
+static int rgb_to_brightness(struct light_state_t const *state)
 {
-	pthread_mutex_init(&g_lock, NULL);
-}
-
-static int
-rgb_to_brightness(struct light_state_t const* state)
-{
-    int color = state->color & 0x00ffffff;
-    int bright;
-
-    bright = ((77*((color>>16)&0x00ff)) + (150*((color>>8)&0x00ff)) + (29*(color&0x00ff))) >> 8;
-
-    /* fix bright value >=5 , for HW reason */
-    if(bright < 5)
-        bright = 5;
-
-    return bright;
+	int color = state->color & 0x00ffffff;
+	return ((77 * ((color >> 16) & 0x00ff))
+		+ (150 * ((color >> 8) & 0x00ff)) +
+		(29 * (color & 0x00ff))) >> 8;
 }
 
 static int set_light_backlight(struct light_device_t *dev,
-			struct light_state_t const *state)
+			       struct light_state_t const *state)
 {
-	int err = 0;
-	int fd;
-	int tmp;
-	int brightness = rgb_to_brightness(state);
+    struct light_context_t      *ctx;
 
-	unsigned long  args[3];
-	args[0] = 0;
-	args[1] = brightness;
-	args[2] = 0;
+    int err = 0;
 
-	pthread_mutex_lock(&g_lock);
-
-	fd = open("/dev/disp", O_RDONLY);
-	if (fd < 0)
-	{
-		ALOGE("Failed to open display device fd = %x\n", fd);
-		pthread_mutex_unlock(&g_lock);
-		return -1;
-	}
-
-	/* check version */
-	tmp = SUNXI_DISP_VERSION;
-	err = ioctl(fd, DISP_CMD_VERSION, &tmp);
-	if (err == -1) {
-		printf("Warning: kernel sunxi disp driver does not support "
-		       "versioning.\n");
-	} else if (err < 0) {
-		fprintf(stderr, "Error: ioctl(VERSION) failed: %s\n",
-		       strerror(-err));
-		return err;
-	}
+    int brightness = rgb_to_brightness(state);
 	
-	err = ioctl(fd, DISP_CMD_LCD_SET_BRIGHTNESS, args);
+    pthread_mutex_lock(&g_lock);	
+    unsigned long  args[3];
 
-	close(fd);
+	args[0]  = 0;
+	args[1]  = brightness;
+	args[2]  = 0;
+	err = ioctl(fd,DISP_CMD_LCD_SET_BRIGHTNESS,args);
 
-	pthread_mutex_unlock(&g_lock);
-	return err;
+    pthread_mutex_unlock(&g_lock);
+    return err;
 }
 
+/** Close the lights device */
 static int close_lights(struct light_device_t *dev)
 {
-	ALOGV("close_light is called");
+	if(fd != 0)
+	{	
+		close(fd);
+	}
 	if (dev)
 		free(dev);
-
 	return 0;
 }
 
+/** Open a new instance of a lights device using name */
 static int open_lights(const struct hw_module_t *module, char const *name,
-						struct hw_device_t **device)
+		       struct hw_device_t **device)
 {
-	int (*set_light)(struct light_device_t *dev,
-		struct light_state_t const *state);
+	pthread_t lighting_poll_thread;
+
+	int (*set_light) (struct light_device_t *dev,
+			  struct light_state_t const *state);
 
 	if (0 == strcmp(LIGHT_ID_BACKLIGHT, name))
+	{
 		set_light = set_light_backlight;
+		fd =  open("/dev/disp", O_RDONLY);
+	}
 	else
 		return -EINVAL;
 
-	pthread_once(&g_init, init_g_lock);
-
+	pthread_mutex_init(&g_lock, NULL);
 	struct light_device_t *dev = malloc(sizeof(struct light_device_t));
 	memset(dev, 0, sizeof(*dev));
 
@@ -129,16 +110,22 @@ static int open_lights(const struct hw_module_t *module, char const *name,
 	return 0;
 }
 
-static struct hw_module_methods_t lights_module_methods = {
+static struct hw_module_methods_t lights_methods =
+{
 	.open =  open_lights,
 };
 
-struct hw_module_t HAL_MODULE_INFO_SYM = {
+/*
+ * The backlight Module
+ */
+struct hw_module_t HAL_MODULE_INFO_SYM =
+{
 	.tag = HARDWARE_MODULE_TAG,
 	.version_major = 1,
 	.version_minor = 0,
 	.id = LIGHTS_HARDWARE_MODULE_ID,
-	.name = "lights Module",
-	.author = "The CyanogenMod Project",
-	.methods = &lights_module_methods,
+	.name = "SoftWinner lights Module",
+	.author = "SOFTWINNER",
+	.methods = &lights_methods,
 };
+

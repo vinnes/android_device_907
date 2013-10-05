@@ -29,7 +29,11 @@
 #include <ui/GraphicBufferMapper.h>
 #include <type_camera.h>
 #include <hwcomposer.h>
-#include <sunxi_disp_ioctl.h>
+#ifdef __SUN4I__
+#include <drv_display_sun4i.h>
+#else
+#include <drv_display_sun5i.h>
+#endif
 
 #include "V4L2Camera.h"
 #include "PreviewWindow.h"

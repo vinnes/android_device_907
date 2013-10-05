@@ -179,8 +179,7 @@ enum {
 
 /* Allowed events for hwc_methods::eventControl() */
 enum {
-    HWC_EVENT_VSYNC     = 0,
-    HWC_EVENT_ORIENTATION    // To notify HWC about the device orientation
+    HWC_EVENT_VSYNC     = 0
 };
 
 /* Display types and associated mask bits. */
@@ -200,3 +199,4 @@ enum {
 __END_DECLS
 
 #endif /* ANDROID_INCLUDE_HARDWARE_HWCOMPOSER_DEFS_H */
+

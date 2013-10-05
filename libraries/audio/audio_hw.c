@@ -139,7 +139,7 @@ D/tinyalsa(  602): mix id:15 name:ADC Input Mux
 /* ALSA cards for A10 */
 #define CARD_OMAP4_ABE 0
 #define CARD_OMAP4_HDMI 1
-#define CARD_TUNA_DEFAULT CARD_OMAP4_ABE
+#define CARD_sunxi_DEFAULT CARD_OMAP4_ABE
 
 /* ALSA ports for A10 */
 #define PORT_MM 0
@@ -520,7 +520,7 @@ struct mixer_ctls
     struct mixer_ctl *earpiece_volume;
 };
 
-struct tuna_audio_device {
+struct sunxi_audio_device {
     struct audio_hw_device hw_device;
 
     pthread_mutex_t lock;       /* see note below on mutex acquisition order */
@@ -532,8 +532,8 @@ struct tuna_audio_device {
     struct pcm *pcm_modem_ul;
     int in_call;
     float voice_volume;
-    struct tuna_stream_in *active_input;
-    struct tuna_stream_out *active_output;
+    struct sunxi_stream_in *active_input;
+    struct sunxi_stream_out *active_output;
     bool mic_mute;
     int tty_mode;
     struct echo_reference_itfe *echo_reference;
@@ -547,7 +547,7 @@ struct tuna_audio_device {
 #endif
 };
 
-struct tuna_stream_out {
+struct sunxi_stream_out {
     struct audio_stream_out stream;
 
     pthread_mutex_t lock;       /* see note below on mutex acquisition order */
@@ -557,14 +557,14 @@ struct tuna_stream_out {
     char *buffer;
     int standby;
     struct echo_reference_itfe *echo_reference;
-    struct tuna_audio_device *dev;
+    struct sunxi_audio_device *dev;
     int write_threshold;
     bool low_power;
 };
 
 #define MAX_PREPROCESSORS 3 /* maximum one AGC + one NS + one AEC per input stream */
 
-struct tuna_stream_in {
+struct sunxi_stream_in {
     struct audio_stream_in stream;
 
     pthread_mutex_t lock;       /* see note below on mutex acquisition order */
@@ -590,7 +590,7 @@ struct tuna_stream_in {
     size_t ref_frames_in;
     int read_status;
 
-    struct tuna_audio_device *dev;
+    struct sunxi_audio_device *dev;
 };
 
 /**
@@ -599,11 +599,11 @@ struct tuna_stream_in {
  */
 
 
-static void select_output_device(struct tuna_audio_device *adev);
-static void select_input_device(struct tuna_audio_device *adev);
+static void select_output_device(struct sunxi_audio_device *adev);
+static void select_input_device(struct sunxi_audio_device *adev);
 static int adev_set_voice_volume(struct audio_hw_device *dev, float volume);
-static int do_input_standby(struct tuna_stream_in *in);
-static int do_output_standby(struct tuna_stream_out *out);
+static int do_input_standby(struct sunxi_stream_in *in);
+static int do_output_standby(struct sunxi_stream_out *out);
 
 /* Returns true on devices that are toro, false otherwise */
 static int is_device_toro(void)
@@ -651,7 +651,7 @@ static int set_route_by_array(struct mixer *mixer, struct route_setting *route,
     return 0;
 }
 
-static int start_call(struct tuna_audio_device *adev)
+static int start_call(struct sunxi_audio_device *adev)
 {
     ALOGE("Opening modem PCMs");
 
@@ -689,7 +689,7 @@ err_open_dl:
     return -ENOMEM;
 }
 
-static void end_call(struct tuna_audio_device *adev)
+static void end_call(struct sunxi_audio_device *adev)
 {
     ALOGE("Closing modem PCMs");
 
@@ -701,7 +701,7 @@ static void end_call(struct tuna_audio_device *adev)
     adev->pcm_modem_ul = NULL;
 }
 
-static void set_eq_filter(struct tuna_audio_device *adev)
+static void set_eq_filter(struct sunxi_audio_device *adev)
 {
     /* DL1_EQ can't be used for bt */
     int dl1_eq_applicable = adev->devices & (AUDIO_DEVICE_OUT_WIRED_HEADSET |
@@ -717,7 +717,7 @@ static void set_eq_filter(struct tuna_audio_device *adev)
 
 void audio_set_wb_amr_callback(void *data, int enable)
 {
-    struct tuna_audio_device *adev = (struct tuna_audio_device *)data;
+    struct sunxi_audio_device *adev = (struct sunxi_audio_device *)data;
 
     pthread_mutex_lock(&adev->lock);
     if (adev->wb_amr != enable) {
@@ -733,7 +733,7 @@ void audio_set_wb_amr_callback(void *data, int enable)
     pthread_mutex_unlock(&adev->lock);
 }
 
-static void set_incall_device(struct tuna_audio_device *adev)
+static void set_incall_device(struct sunxi_audio_device *adev)
 {
     int device_type;
 
@@ -769,7 +769,7 @@ static void set_incall_device(struct tuna_audio_device *adev)
 #endif
 }
 
-static void set_input_volumes(struct tuna_audio_device *adev, int main_mic_on,
+static void set_input_volumes(struct sunxi_audio_device *adev, int main_mic_on,
                               int headset_mic_on, int sub_mic_on)
 {
     unsigned int channel;
@@ -819,7 +819,7 @@ static void set_input_volumes(struct tuna_audio_device *adev, int main_mic_on,
         mixer_ctl_set_value(adev->mixer_ctls.amic_ul_volume, channel, volume);
 }
 
-static void set_output_volumes(struct tuna_audio_device *adev, bool tty_volume)
+static void set_output_volumes(struct sunxi_audio_device *adev, bool tty_volume)
 {
     unsigned int channel;
     int speaker_volume;
@@ -890,10 +890,10 @@ static void set_output_volumes(struct tuna_audio_device *adev, bool tty_volume)
         DB_TO_EARPIECE_VOLUME(earpiece_volume));
 }
 
-static void force_all_standby(struct tuna_audio_device *adev)
+static void force_all_standby(struct sunxi_audio_device *adev)
 {
-    struct tuna_stream_in *in;
-    struct tuna_stream_out *out;
+    struct sunxi_stream_in *in;
+    struct sunxi_stream_out *out;
 
     if (adev->active_output) {
         out = adev->active_output;
@@ -910,7 +910,7 @@ static void force_all_standby(struct tuna_audio_device *adev)
     }
 }
 
-static void select_mode(struct tuna_audio_device *adev)
+static void select_mode(struct sunxi_audio_device *adev)
 {
     if (adev->mode == AUDIO_MODE_IN_CALL) {
         ALOGE("Entering IN_CALL state, in_call=%d", adev->in_call);
@@ -952,7 +952,7 @@ static void select_mode(struct tuna_audio_device *adev)
     }
 }
 
-static void select_output_device(struct tuna_audio_device *adev)
+static void select_output_device(struct sunxi_audio_device *adev)
 {
     int headset_on;
     int headphone_on;
@@ -1093,7 +1093,7 @@ static void select_output_device(struct tuna_audio_device *adev)
     mixer_ctl_set_value(adev->mixer_ctls.sidetone_capture, 0, sidetone_capture_on);
 }
 
-static void select_input_device(struct tuna_audio_device *adev)
+static void select_input_device(struct sunxi_audio_device *adev)
 {
     int headset_on = 0;
     int main_mic_on = 0;
@@ -1139,11 +1139,11 @@ static void select_input_device(struct tuna_audio_device *adev)
 }
 
 /* must be called with hw device and output stream mutexes locked */
-static int start_output_stream(struct tuna_stream_out *out)
+static int start_output_stream(struct sunxi_stream_out *out)
 {
 	F_ALOG;
-    struct tuna_audio_device *adev = out->dev;
-    unsigned int card = CARD_TUNA_DEFAULT;
+    struct sunxi_audio_device *adev = out->dev;
+    unsigned int card = CARD_sunxi_DEFAULT;
     unsigned int port = PORT_MM;
 
     adev->active_output = out;
@@ -1229,7 +1229,7 @@ static size_t get_input_buffer_size(uint32_t sample_rate, int format, int channe
     return size * channel_count * sizeof(short);
 }
 
-static void add_echo_reference(struct tuna_stream_out *out,
+static void add_echo_reference(struct sunxi_stream_out *out,
                                struct echo_reference_itfe *reference)
 {
     pthread_mutex_lock(&out->lock);
@@ -1237,7 +1237,7 @@ static void add_echo_reference(struct tuna_stream_out *out,
     pthread_mutex_unlock(&out->lock);
 }
 
-static void remove_echo_reference(struct tuna_stream_out *out,
+static void remove_echo_reference(struct sunxi_stream_out *out,
                                   struct echo_reference_itfe *reference)
 {
     pthread_mutex_lock(&out->lock);
@@ -1249,7 +1249,7 @@ static void remove_echo_reference(struct tuna_stream_out *out,
     pthread_mutex_unlock(&out->lock);
 }
 
-static void put_echo_reference(struct tuna_audio_device *adev,
+static void put_echo_reference(struct sunxi_audio_device *adev,
                           struct echo_reference_itfe *reference)
 {
     if (adev->echo_reference != NULL &&
@@ -1261,7 +1261,7 @@ static void put_echo_reference(struct tuna_audio_device *adev,
     }
 }
 
-static struct echo_reference_itfe *get_echo_reference(struct tuna_audio_device *adev,
+static struct echo_reference_itfe *get_echo_reference(struct sunxi_audio_device *adev,
                                                audio_format_t format,
                                                uint32_t channel_count,
                                                uint32_t sampling_rate)
@@ -1285,7 +1285,7 @@ static struct echo_reference_itfe *get_echo_reference(struct tuna_audio_device *
     return adev->echo_reference;
 }
 
-static int get_playback_delay(struct tuna_stream_out *out,
+static int get_playback_delay(struct sunxi_stream_out *out,
                        size_t frames,
                        struct echo_reference_buffer *buffer)
 {
@@ -1325,7 +1325,7 @@ static int out_set_sample_rate(struct audio_stream *stream, uint32_t rate)
 
 static size_t out_get_buffer_size(const struct audio_stream *stream)
 {
-    struct tuna_stream_out *out = (struct tuna_stream_out *)stream;
+    struct sunxi_stream_out *out = (struct sunxi_stream_out *)stream;
 
     /* take resampling into account and return the closest majoring
     multiple of 16 frames, as audioflinger expects audio buffers to
@@ -1351,9 +1351,9 @@ static int out_set_format(struct audio_stream *stream, audio_format_t format)
 }
 
 /* must be called with hw device and output stream mutexes locked */
-static int do_output_standby(struct tuna_stream_out *out)
+static int do_output_standby(struct sunxi_stream_out *out)
 {
-    struct tuna_audio_device *adev = out->dev;
+    struct sunxi_audio_device *adev = out->dev;
 
     if (!out->standby) {
         pcm_close(out->pcm);
@@ -1382,7 +1382,7 @@ static int do_output_standby(struct tuna_stream_out *out)
 
 static int out_standby(struct audio_stream *stream)
 {
-    struct tuna_stream_out *out = (struct tuna_stream_out *)stream;
+    struct sunxi_stream_out *out = (struct sunxi_stream_out *)stream;
     int status;
 
     pthread_mutex_lock(&out->dev->lock);
@@ -1400,9 +1400,9 @@ static int out_dump(const struct audio_stream *stream, int fd)
 
 static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
 {
-    struct tuna_stream_out *out = (struct tuna_stream_out *)stream;
-    struct tuna_audio_device *adev = out->dev;
-    struct tuna_stream_in *in;
+    struct sunxi_stream_out *out = (struct sunxi_stream_out *)stream;
+    struct sunxi_audio_device *adev = out->dev;
+    struct sunxi_stream_in *in;
     struct str_parms *parms;
     char *str;
     char value[32];
@@ -1455,7 +1455,7 @@ static char * out_get_parameters(const struct audio_stream *stream, const char *
 
 static uint32_t out_get_latency(const struct audio_stream_out *stream)
 {
-    struct tuna_stream_out *out = (struct tuna_stream_out *)stream;
+    struct sunxi_stream_out *out = (struct sunxi_stream_out *)stream;
 
     return (SHORT_PERIOD_SIZE * PLAYBACK_SHORT_PERIOD_COUNT * 1000) / out->config.rate;
 }
@@ -1470,13 +1470,13 @@ static ssize_t out_write(struct audio_stream_out *stream, const void* buffer,
                          size_t bytes)
 {
     int ret;
-    struct tuna_stream_out *out = (struct tuna_stream_out *)stream;
-    struct tuna_audio_device *adev = out->dev;
+    struct sunxi_stream_out *out = (struct sunxi_stream_out *)stream;
+    struct sunxi_audio_device *adev = out->dev;
     size_t frame_size = audio_stream_frame_size(&out->stream.common);
     size_t in_frames = bytes / frame_size;
     size_t out_frames = RESAMPLER_BUFFER_SIZE / frame_size;
     bool force_input_standby = false;
-    struct tuna_stream_in *in;
+    struct sunxi_stream_in *in;
     bool low_power;
     int kernel_frames;
     void *buf;
@@ -1596,11 +1596,11 @@ static int out_remove_audio_effect(const struct audio_stream *stream, effect_han
 /** audio_stream_in implementation **/
 
 /* must be called with hw device and input stream mutexes locked */
-static int start_input_stream(struct tuna_stream_in *in)
+static int start_input_stream(struct sunxi_stream_in *in)
 {
 	F_ALOG;
     int ret = 0;
-    struct tuna_audio_device *adev = in->dev;
+    struct sunxi_audio_device *adev = in->dev;
 
     adev->active_input = in;
 
@@ -1637,7 +1637,7 @@ static int start_input_stream(struct tuna_stream_in *in)
 
 static uint32_t in_get_sample_rate(const struct audio_stream *stream)
 {
-    struct tuna_stream_in *in = (struct tuna_stream_in *)stream;
+    struct sunxi_stream_in *in = (struct sunxi_stream_in *)stream;
 
     return in->requested_rate;
 }
@@ -1649,7 +1649,7 @@ static int in_set_sample_rate(struct audio_stream *stream, uint32_t rate)
 
 static size_t in_get_buffer_size(const struct audio_stream *stream)
 {
-    struct tuna_stream_in *in = (struct tuna_stream_in *)stream;
+    struct sunxi_stream_in *in = (struct sunxi_stream_in *)stream;
 
     return get_input_buffer_size(in->requested_rate,
                                  AUDIO_FORMAT_PCM_16_BIT,
@@ -1658,7 +1658,7 @@ static size_t in_get_buffer_size(const struct audio_stream *stream)
 
 static uint32_t in_get_channels(const struct audio_stream *stream)
 {
-    struct tuna_stream_in *in = (struct tuna_stream_in *)stream;
+    struct sunxi_stream_in *in = (struct sunxi_stream_in *)stream;
 
     if (in->config.channels == 1) {
         return AUDIO_CHANNEL_IN_MONO;
@@ -1678,9 +1678,9 @@ static int in_set_format(struct audio_stream *stream, audio_format_t format)
 }
 
 /* must be called with hw device and input stream mutexes locked */
-static int do_input_standby(struct tuna_stream_in *in)
+static int do_input_standby(struct sunxi_stream_in *in)
 {
-    struct tuna_audio_device *adev = in->dev;
+    struct sunxi_audio_device *adev = in->dev;
 
     if (!in->standby) {
         pcm_close(in->pcm);
@@ -1706,7 +1706,7 @@ static int do_input_standby(struct tuna_stream_in *in)
 
 static int in_standby(struct audio_stream *stream)
 {
-    struct tuna_stream_in *in = (struct tuna_stream_in *)stream;
+    struct sunxi_stream_in *in = (struct sunxi_stream_in *)stream;
     int status;
 
     pthread_mutex_lock(&in->dev->lock);
@@ -1724,8 +1724,8 @@ static int in_dump(const struct audio_stream *stream, int fd)
 
 static int in_set_parameters(struct audio_stream *stream, const char *kvpairs)
 {
-    struct tuna_stream_in *in = (struct tuna_stream_in *)stream;
-    struct tuna_audio_device *adev = in->dev;
+    struct sunxi_stream_in *in = (struct sunxi_stream_in *)stream;
+    struct sunxi_audio_device *adev = in->dev;
     struct str_parms *parms;
     char *str;
     char value[32];
@@ -1776,7 +1776,7 @@ static int in_set_gain(struct audio_stream_in *stream, float gain)
     return 0;
 }
 
-static void get_capture_delay(struct tuna_stream_in *in,
+static void get_capture_delay(struct sunxi_stream_in *in,
                        size_t frames,
                        struct echo_reference_buffer *buffer)
 {
@@ -1823,7 +1823,7 @@ static void get_capture_delay(struct tuna_stream_in *in,
 
 }
 
-static int32_t update_echo_reference(struct tuna_stream_in *in, size_t frames)
+static int32_t update_echo_reference(struct sunxi_stream_in *in, size_t frames)
 {
     struct echo_reference_buffer b;
     b.delay_ns = 0;
@@ -1889,7 +1889,7 @@ static int set_preprocessor_echo_delay(effect_handle_t handle,
     return set_preprocessor_param(handle, param);
 }
 
-static void push_echo_reference(struct tuna_stream_in *in, size_t frames)
+static void push_echo_reference(struct sunxi_stream_in *in, size_t frames)
 {
     /* read frames from echo reference buffer and update echo delay
      * in->ref_frames_in is updated with frames available in in->ref_buf */
@@ -1924,13 +1924,13 @@ static void push_echo_reference(struct tuna_stream_in *in, size_t frames)
 static int get_next_buffer(struct resampler_buffer_provider *buffer_provider,
                                    struct resampler_buffer* buffer)
 {
-    struct tuna_stream_in *in;
+    struct sunxi_stream_in *in;
 
     if (buffer_provider == NULL || buffer == NULL)
         return -EINVAL;
 
-    in = (struct tuna_stream_in *)((char *)buffer_provider -
-                                   offsetof(struct tuna_stream_in, buf_provider));
+    in = (struct sunxi_stream_in *)((char *)buffer_provider -
+                                   offsetof(struct sunxi_stream_in, buf_provider));
 
     if (in->pcm == NULL) {
         buffer->raw = NULL;
@@ -1967,20 +1967,20 @@ static int get_next_buffer(struct resampler_buffer_provider *buffer_provider,
 static void release_buffer(struct resampler_buffer_provider *buffer_provider,
                                   struct resampler_buffer* buffer)
 {
-    struct tuna_stream_in *in;
+    struct sunxi_stream_in *in;
 
     if (buffer_provider == NULL || buffer == NULL)
         return;
 
-    in = (struct tuna_stream_in *)((char *)buffer_provider -
-                                   offsetof(struct tuna_stream_in, buf_provider));
+    in = (struct sunxi_stream_in *)((char *)buffer_provider -
+                                   offsetof(struct sunxi_stream_in, buf_provider));
 
     in->frames_in -= buffer->frame_count;
 }
 
 /* read_frames() reads frames from kernel driver, down samples to capture rate
  * if necessary and output the number of frames requested to the buffer specified */
-static ssize_t read_frames(struct tuna_stream_in *in, void *buffer, ssize_t frames)
+static ssize_t read_frames(struct sunxi_stream_in *in, void *buffer, ssize_t frames)
 {
 	// F_ALOG;
     ssize_t frames_wr = 0;
@@ -2020,7 +2020,7 @@ static ssize_t read_frames(struct tuna_stream_in *in, void *buffer, ssize_t fram
 /* process_frames() reads frames from kernel driver (via read_frames()),
  * calls the active audio pre processings and output the number of frames requested
  * to the buffer specified */
-static ssize_t process_frames(struct tuna_stream_in *in, void* buffer, ssize_t frames)
+static ssize_t process_frames(struct sunxi_stream_in *in, void* buffer, ssize_t frames)
 {
 	F_ALOG;
     ssize_t frames_wr = 0;
@@ -2091,8 +2091,8 @@ static ssize_t in_read(struct audio_stream_in *stream, void* buffer,
 {
 	// F_ALOG;
     int ret = 0;
-    struct tuna_stream_in *in = (struct tuna_stream_in *)stream;
-    struct tuna_audio_device *adev = in->dev;
+    struct sunxi_stream_in *in = (struct sunxi_stream_in *)stream;
+    struct sunxi_audio_device *adev = in->dev;
     size_t frames_rq = bytes / audio_stream_frame_size(&stream->common);
 
     /* acquiring hw device mutex systematically is useful if a low priority thread is waiting
@@ -2141,7 +2141,7 @@ static uint32_t in_get_input_frames_lost(struct audio_stream_in *stream)
 static int in_add_audio_effect(const struct audio_stream *stream,
                                effect_handle_t effect)
 {
-    struct tuna_stream_in *in = (struct tuna_stream_in *)stream;
+    struct sunxi_stream_in *in = (struct sunxi_stream_in *)stream;
     int status;
     effect_descriptor_t desc;
 
@@ -2173,7 +2173,7 @@ exit:
 static int in_remove_audio_effect(const struct audio_stream *stream,
                                   effect_handle_t effect)
 {
-    struct tuna_stream_in *in = (struct tuna_stream_in *)stream;
+    struct sunxi_stream_in *in = (struct sunxi_stream_in *)stream;
     int i;
     int status = -EINVAL;
     bool found = false;
@@ -2226,13 +2226,13 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
                                    struct audio_config *config,
                                    struct audio_stream_out **stream_out)
 {
-    struct tuna_audio_device *ladev = (struct tuna_audio_device *)dev;
-    struct tuna_stream_out *out;
+    struct sunxi_audio_device *ladev = (struct sunxi_audio_device *)dev;
+    struct sunxi_stream_out *out;
     int ret;
 
     *stream_out = NULL;
 
-    out = (struct tuna_stream_out *)calloc(1, sizeof(struct tuna_stream_out));
+    out = (struct sunxi_stream_out *)calloc(1, sizeof(struct sunxi_stream_out));
     if (!out)
         return -ENOMEM;
 
@@ -2291,7 +2291,7 @@ err_open:
 static void adev_close_output_stream(struct audio_hw_device *dev,
                                      struct audio_stream_out *stream)
 {
-    struct tuna_stream_out *out = (struct tuna_stream_out *)stream;
+    struct sunxi_stream_out *out = (struct sunxi_stream_out *)stream;
 
     out_standby(&stream->common);
     if (out->buffer)
@@ -2303,7 +2303,7 @@ static void adev_close_output_stream(struct audio_hw_device *dev,
 
 static int adev_set_parameters(struct audio_hw_device *dev, const char *kvpairs)
 {
-    struct tuna_audio_device *adev = (struct tuna_audio_device *)dev;
+    struct sunxi_audio_device *adev = (struct sunxi_audio_device *)dev;
     struct str_parms *parms;
     char *str;
     char value[32];
@@ -2367,7 +2367,7 @@ static int adev_init_check(const struct audio_hw_device *dev)
 
 static int adev_set_voice_volume(struct audio_hw_device *dev, float volume)
 {
-    struct tuna_audio_device *adev = (struct tuna_audio_device *)dev;
+    struct sunxi_audio_device *adev = (struct sunxi_audio_device *)dev;
 
     adev->voice_volume = volume;
 #ifdef __ENABLE_RIL
@@ -2394,7 +2394,7 @@ static int adev_get_master_mute(struct audio_hw_device *dev, bool *muted)
 
 static int adev_set_mode(struct audio_hw_device *dev, int mode)
 {
-    struct tuna_audio_device *adev = (struct tuna_audio_device *)dev;
+    struct sunxi_audio_device *adev = (struct sunxi_audio_device *)dev;
 
     pthread_mutex_lock(&adev->lock);
     if (adev->mode != mode) {
@@ -2408,7 +2408,7 @@ static int adev_set_mode(struct audio_hw_device *dev, int mode)
 
 static int adev_set_mic_mute(struct audio_hw_device *dev, bool state)
 {
-    struct tuna_audio_device *adev = (struct tuna_audio_device *)dev;
+    struct sunxi_audio_device *adev = (struct sunxi_audio_device *)dev;
 
     adev->mic_mute = state;
 
@@ -2417,7 +2417,7 @@ static int adev_set_mic_mute(struct audio_hw_device *dev, bool state)
 
 static int adev_get_mic_mute(const struct audio_hw_device *dev, bool *state)
 {
-    struct tuna_audio_device *adev = (struct tuna_audio_device *)dev;
+    struct sunxi_audio_device *adev = (struct sunxi_audio_device *)dev;
 
     *state = adev->mic_mute;
 
@@ -2441,8 +2441,8 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
                                   struct audio_config *config,
                                   struct audio_stream_in **stream_in)
 {
-    struct tuna_audio_device *ladev = (struct tuna_audio_device *)dev;
-    struct tuna_stream_in *in;
+    struct sunxi_audio_device *ladev = (struct sunxi_audio_device *)dev;
+    struct sunxi_stream_in *in;
     int ret;
     int channel_count = popcount(config->channel_mask);
 
@@ -2451,7 +2451,7 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
     if (check_input_parameters(config->sample_rate, config->format, channel_count) != 0)
         return -EINVAL;
 
-    in = (struct tuna_stream_in *)calloc(1, sizeof(struct tuna_stream_in));
+    in = (struct sunxi_stream_in *)calloc(1, sizeof(struct sunxi_stream_in));
     if (!in)
         return -ENOMEM;
 
@@ -2520,7 +2520,7 @@ err:
 static void adev_close_input_stream(struct audio_hw_device *dev,
                                    struct audio_stream_in *stream)
 {
-    struct tuna_stream_in *in = (struct tuna_stream_in *)stream;
+    struct sunxi_stream_in *in = (struct sunxi_stream_in *)stream;
 
     in_standby(&stream->common);
 
@@ -2543,7 +2543,7 @@ static int adev_dump(const audio_hw_device_t *device, int fd)
 
 static int adev_close(hw_device_t *device)
 {
-    struct tuna_audio_device *adev = (struct tuna_audio_device *)device;
+    struct sunxi_audio_device *adev = (struct sunxi_audio_device *)device;
 #ifdef __ENABLE_RIL
     /* RIL */
     ril_close(&adev->ril);
@@ -2579,13 +2579,13 @@ static uint32_t adev_get_supported_devices(const struct audio_hw_device *dev)
 static int adev_open(const hw_module_t* module, const char* name,
                      hw_device_t** device)
 {
-    struct tuna_audio_device *adev;
+    struct sunxi_audio_device *adev;
     int ret;
 
     if (strcmp(name, AUDIO_HARDWARE_INTERFACE) != 0)
         return -EINVAL;
 
-    adev = calloc(1, sizeof(struct tuna_audio_device));
+    adev = calloc(1, sizeof(struct sunxi_audio_device));
     if (!adev)
         return -ENOMEM;
 
