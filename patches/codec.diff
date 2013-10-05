@@ -77,7 +77,7 @@ diff --git a/frameworks/av/include/media/stagefright/MediaExtractor.h b/framewor
 -        kIncludeExtensiveMetaData = 1
 -    };
 +        kIncludeExtensiveMetaData = 1,
-+        kIncludeExtensiveMetaDataBitrate = 256
++        kIncludeExtensiveMetaDataBitrate = 256,
 +};
      virtual sp<MetaData> getTrackMetaData(
              size_t index, uint32_t flags = 0) = 0;
