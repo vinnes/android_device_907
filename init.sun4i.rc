@@ -1,4 +1,4 @@
-import init.sun7i.usb.rc
+import init.sun4i.usb.rc
 
 on init
 	export EXTERNAL_STORAGE /storage/sdcard0
