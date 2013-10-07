@@ -1,0 +1,11 @@
+diff --git a/build/core/pathmap.mk b/build/core/pathmap.mk
+--- a/build/core/pathmap.mk
++++ b/build/core/pathmap.mk
+@@ -99,6 +99,7 @@ FRAMEWORKS_BASE_SUBDIRS := \
+       icu4j \
+       voip \
+       fmradio \
++      ethernet\
+    )
+ 
+ #
