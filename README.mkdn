@@ -31,6 +31,7 @@ and paste this lines inside new file .repo/local_manifest.xml
 	  <remove-project name="CyanogenMod/android_frameworks_native"/>
 	  <remove-project name="CyanogenMod/android_packages_apps_Settings"/>
 	  <remove-project name="CyanogenMod/android_packages_apps_Gallery2"/>
+	  <remove-project name="CyanogenMod/android_packages_apps_Trebuchet"/>
 	  <project remote="github" revision="cm-10.1" name="ugers/android_device_907" path="device/softwinner/907" />
 	  <project remote="github" revision="cm-10.1" name="ugers/android_system_vold" path="system/vold" />
 	  <project remote="github" revision="cm-10.1" name="ugers/android_hardware_libhardware_legacy" path="hardware/libhardware_legacy" />
@@ -40,6 +41,7 @@ and paste this lines inside new file .repo/local_manifest.xml
 	  <project remote="github" revision="cm-10.1" name="ugers/android_frameworks_native" path="frameworks/native" />
 	  <project remote="github" revision="cm-10.1" name="ugers/android_packages_apps_Settings" path="packages/apps/Settings" />
 	  <project remote="github" revision="cm-10.1" name="ugers/android_packages_apps_Gallery2" path="packages/apps/Gallery2" />
+	  <project remote="github" revision="cm-10.1" name="ugers/android_packages_apps_Trebuchet" path="packages/apps/Trebuchet" />
 	</manifest>
 
 5)Now type this command:
