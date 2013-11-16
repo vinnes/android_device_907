@@ -16,7 +16,6 @@
 
 PRODUCT_COPY_FILES := \
 	device/softwinner/907/kernel:kernel \
-        device/softwinner/907/modules:system/lib/modules \
         device/softwinner/907/prebuilt/lib/modules/ft5x_ts.ko:root/lib/modules/ft5x_ts.ko \
         device/softwinner/907/prebuilt/bin/reboot-recovery.sh:root/sbin/reboot-recovery.sh \
 	device/softwinner/907/init.rc:root/init.rc \
