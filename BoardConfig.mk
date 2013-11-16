@@ -99,7 +99,10 @@ TARGET_USE_CUSTOM_LUN_FILE_PATH = "/sys/class/android_usb/android0/f_mass_storag
 TARGET_USE_CUSTOM_SECOND_LUN_NUM := 1
 
 #Misc stuff
-TARGET_RECOVERY_PRE_COMMAND := "echo -n boot-recovery | busybox dd of=/dev/block/nandf count=1 conv=sync; sync"
+TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
+TARGET_RECOVERY_UI_LIB := librecovery_ui_crane_evb
+#TARGET_RECOVERY_UPDATER_LIBS :=
+#TARGET_RECOVERY_PRE_COMMAND := "echo -n boot-recovery | busybox dd of=/dev/block/nandf count=1 conv=sync; sync"
 BOARD_USE_LEGACY_TOUCHSCREEN := true
 TARGET_HARDWARE_INCLUDE := $(TOP)/device/softwinner/907/libraries/include
 TARGET_PROVIDES_INIT_RC := true
