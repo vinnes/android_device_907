@@ -71,7 +71,7 @@ CEDARX_CHIP_VERSION := F23
 CEDARX_USE_SWAUDIO := N
 
 #CWM Recovery
-#BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery_keys.c
+BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery_keys.c
 BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
 BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
 #TARGET_RECOVERY_INITRC := device/softwinner/907/init.recovery.sun4i.rc
