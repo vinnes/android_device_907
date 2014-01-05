@@ -15,7 +15,7 @@ Compilation Notes
 
 3)Init the CyanogenMod repository
 
-	repo init -u git://github.com/CyanogenMod/android.git -b cm-11
+	repo init -u git://github.com/CyanogenMod/android.git -b cm-11.0
 
 4)Paste this lines inside new file .repo/manifests/local_manifest.xml
 and paste this lines inside new file .repo/local_manifest.xml
