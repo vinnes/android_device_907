@@ -132,6 +132,7 @@ PRODUCT_PACKAGES += \
 	audio.usb.default \
 	display.sun4i \
 	gralloc.sun4i \
+	camera.exDroid \
 	power.sun4i \
 	hwcomposer.exDroid \
 	lights.exDroid \
@@ -139,7 +140,6 @@ PRODUCT_PACKAGES += \
 	chat \
 	u3gmonitor \
 	devlistener
-	#camera.exDroid
 
 PRODUCT_PACKAGES += \
 	libthirdpartstream \
