@@ -133,13 +133,13 @@ PRODUCT_PACKAGES += \
 	display.sun4i \
 	gralloc.sun4i \
 	power.sun4i \
-	camera.exDroid \
 	hwcomposer.exDroid \
 	lights.exDroid \
 	libaudioutils \
 	chat \
 	u3gmonitor \
 	devlistener
+	#camera.exDroid
 
 PRODUCT_PACKAGES += \
 	libthirdpartstream \
