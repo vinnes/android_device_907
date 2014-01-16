@@ -21,10 +21,10 @@ diff --git a/system/core/init/property_service.c b/system/core/init/property_ser
 diff --git a/system/core/init/init.c b/system/core/init/init.c
 --- a/system/core/init/init.c
 +++ b/system/core/init/init.c
-@@ -595,7 +595,8 @@ static int console_init_action(int nargs, char **args)
-         have_console = 1;
+@@ -753,7 +753,8 @@ static int console_init_action(int nargs, char **args)
      close(fd);
-
+ 
+ #ifdef INITLOGO
 -    if( load_565rle_image(INIT_IMAGE_FILE) ) {
 +    //if( load_565rle_image(INIT_IMAGE_FILE) ) {
 +    if( load_argb8888_image(INIT_IMAGE_FILE) ) {
@@ -34,13 +34,13 @@ diff --git a/system/core/init/init.c b/system/core/init/init.c
 diff --git a/system/core/init/init.h b/system/core/init/init.h
 --- a/system/core/init/init.h
 +++ b/system/core/init/init.h
-@@ -137,6 +137,7 @@ void service_for_each_flags(unsigned matchflags,
+@@ -139,6 +139,7 @@ void service_for_each_flags(unsigned matchflags,
  #define INIT_IMAGE_FILE  "/initlogo.rle"
-
+  
  int load_565rle_image( char *file_name );
 +int load_argb8888_image(char *fn);
-
- #ifdef HAVE_SELINUX
+ #endif
+  
  extern struct selabel_handle *sehandle;
 diff --git a/system/core/init/logo.c b/system/core/init/logo.c
 --- a/system/core/init/logo.c
@@ -55,7 +55,7 @@ diff --git a/system/core/init/logo.c b/system/core/init/logo.c
 
  static int fb_open(struct FB *fb)
  {
-@@ -163,3 +164,101 @@ int load_565rle_image(char *fn)
+@@ -161,3 +162,101 @@ int load_565rle_image(char *fn)
      return -1;
  }
 
