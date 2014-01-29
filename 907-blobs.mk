@@ -35,7 +35,6 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/etc/camera.cfg:system/etc/camera.cfg \
 	device/softwinner/907/prebuilt/etc/gps.conf:system/etc/gps.conf \
 	device/softwinner/907/prebuilt/etc/usb_modeswitch.sh:system/etc/usb_modeswitch.sh \
-	device/softwinner/907/prebuilt/etc/vold.fstab:system/etc/vold.fstab
 
 # Media files
 PRODUCT_COPY_FILES += \
@@ -43,8 +42,6 @@ PRODUCT_COPY_FILES += \
     device/softwinner/907/prebuilt/etc/media_profiles.xml:system/etc/media_profiles.xml \
     device/softwinner/907/prebuilt/etc/audio_effects.conf:system/etc/audio_effects.conf
 
-# NAND tends to be slow, lets preload some things
-PRODUCT_COPY_FILES += device/softwinner/907/prebuilt/etc/init.d/01preload:system/etc/init.d/01preload
 
 PRODUCT_COPY_FILES += \
 	$(call find-copy-subdir-files,*,device/softwinner/907/prebuilt/etc/init.d,system/etc/init.d)

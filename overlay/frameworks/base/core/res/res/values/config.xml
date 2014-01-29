@@ -94,7 +94,7 @@
     <bool translatable="false" name="config_wifi_background_scan_support">true</bool>
     
     <!-- Boolean indicating whether the wifi chipset has p2p support -->    
-    <bool translatable="false" name="config_wifi_p2p_support">false</bool>
+    <!--bool translatable="false" name="config_wifi_p2p_support">false</bool-->
     
     <!-- Minimum screen brightness setting allowed by the power manager.
          The user is forbidden from setting the brightness below this level. -->

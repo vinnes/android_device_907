@@ -270,4 +270,3 @@ static inline int hwc_close(hwc_composer_device_t* device) {
 /*****************************************************************************/
 
 #endif /* ANDROID_INCLUDE_HARDWARE_HWCOMPOSER_V0_H */
-

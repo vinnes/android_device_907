@@ -18,19 +18,20 @@ PRODUCT_COPY_FILES := \
 	device/softwinner/907/kernel:kernel \
         device/softwinner/907/prebuilt/lib/modules/ft5x_ts.ko:root/lib/modules/ft5x_ts.ko \
         device/softwinner/907/prebuilt/bin/reboot-recovery.sh:root/sbin/reboot-recovery.sh \
-	device/softwinner/907/init.rc:root/init.rc \
-	device/softwinner/907/initlogo.rle:root/initlogo.rle \
-	device/softwinner/907/init.recovery.sun4i.rc:root/init.recovery.sun4i.rc \
-	device/softwinner/907/init.sun4i.rc:root/init.sun4i.rc \
-        device/softwinner/907/fstab.sun4i:root/fstab.sun4i \
-	device/softwinner/907/init.sun4i.usb.rc:root/init.sun4i.usb.rc \
-	device/softwinner/907/ueventd.sun4i.rc:root/ueventd.sun4i.rc
+	device/softwinner/907/rootdir/init.rc:root/init.rc \
+	device/softwinner/907/rootdir/initlogo.rle:root/initlogo.rle \
+	device/softwinner/907/rootdir/init.recovery.sun4i.rc:root/init.recovery.sun4i.rc \
+	device/softwinner/907/rootdir/init.sun4i.rc:root/init.sun4i.rc \
+        device/softwinner/907/rootdir/fstab.sun4i:root/fstab.sun4i \
+	device/softwinner/907/rootdir/init.sun4i.usb.rc:root/init.sun4i.usb.rc \
+	device/softwinner/907/rootdir/ueventd.sun4i.rc:root/ueventd.sun4i.rc
 
 PRODUCT_CHARACTERISTICS := tablet
 
 PRODUCT_TAGS += dalvik.gc.type-precise
 
 PRODUCT_PROPERTY_OVERRIDES += \
+        ro.opengles.surface.rgb565=true \
 	ro.product.firmware=v1.2 \
 	ro.property.fontScale=1.15 \
 	audio.routing=2 \
@@ -112,16 +113,16 @@ PRODUCT_PACKAGES += \
 
 # Device specific settings
 PRODUCT_PACKAGES += \
-	AllwinnerA10Settings \
         dispctl \
-        ethernet \
+	#AllwinnerA10Settings \
+        #ethernet \
 
 PRODUCT_PACKAGES += \
 	librs_jni \
         rild_sun4i
 
 # Bluetooth
-PRODUCT_PACKAGES += \
+#PRODUCT_PACKAGES += \
 	libusb
 
 
@@ -130,6 +131,7 @@ PRODUCT_PACKAGES += \
 	audio.primary.exDroid \
 	audio.a2dp.default \
 	audio.usb.default \
+        libhealthd.default \
 	display.sun4i \
 	gralloc.sun4i \
 	power.sun4i \
@@ -137,11 +139,12 @@ PRODUCT_PACKAGES += \
 	lights.exDroid \
 	libaudioutils \
 	chat \
+        charger \
 	u3gmonitor \
 	devlistener
-	#camera.exDroid 
+	#camera.exDroid
 
-PRODUCT_PACKAGES += \
+#PRODUCT_PACKAGES += \
 	libthirdpartstream \
 	libcedarxsftstream \
 	libsrec_jni \
@@ -155,7 +158,7 @@ PRODUCT_PACKAGES += \
 	libaw_h264enc \
 	
 # CedarX libraries
-PRODUCT_PACKAGES += \
+#PRODUCT_PACKAGES += \
 	libCedarA \
 	libCedarX \
 	libcedarv \

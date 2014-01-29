@@ -34,14 +34,17 @@ TARGET_ARCH := arm
 TARGET_ARCH_VARIANT := armv7-a-neon
 TARGET_CPU_VARIANT := cortex-a8
 TARGET_ARCH_VARIANT_CPU := cortex-a8
+ARCH_ARM_HAVE_NEON := true
+ARCH_ARM_HAVE_TLS_REGISTER := true
 TARGET_GLOBAL_CFLAGS += -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 TARGET_GLOBAL_CPPFLAGS += -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
-ARCH_ARM_HAVE_TLS_REGISTER := true
+
+TARGET_ARCH_LOWMEM := true
 
 #Bluetooth and Vibro stuff
 BOARD_HAVE_BLUETOOTH := true
 BOARD_HAVE_BLUETOOTH_BCM := true
-BLUETOOTH_HCI_USE_USB := true
+#BLUETOOTH_HCI_USE_USB := true
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/softwinner/907/bluetooth
 BOARD_BLUEDROID_VENDOR_CONF := device/softwinner/907/bluetooth/vnd_generic_usb.txt
 BOARD_HAS_VIBRATOR_IMPLEMENTATION := ../../device/softwinner/907/vibrator.c
@@ -50,17 +53,21 @@ BOARD_HAS_VIBRATOR_IMPLEMENTATION := ../../device/softwinner/907/vibrator.c
 TARGET_USERIMAGES_USE_EXT4 := true
 BOARD_BOOTIMAGE_PARTITION_SIZE := 33554432
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 33554432
-BOARD_SYSTEMIMAGE_PARTITION_SIZE := 296435456
-BOARD_USERDATAIMAGE_PARTITION_SIZE := 1073741824
+BOARD_SYSTEMIMAGE_PARTITION_SIZE := 369440104
+BOARD_USERDATAIMAGE_PARTITION_SIZE := 1000737176
 BOARD_FLASH_BLOCK_SIZE := 4096
 
 #EGL stuff
 BOARD_EGL_CFG := device/softwinner/907/egl.cfg
+COMMON_GLOBAL_CFLAGS += -DDONT_USE_FENCE_SYNC -DWORKAROUND_BUG_10194508
+BOARD_EGL_WORKAROUND_BUG_10194508 := true
 USE_OPENGL_RENDERER := true
 ENABLE_WEBGL := true
 BOARD_USE_SKIA_LCDTEXT := true
 BOARD_EGL_NEEDS_LEGACY_FB := true
-#BOARD_NO_ALLOW_DEQUEUE_CURRENT_BUFFER := true
+BOARD_NO_ALLOW_DEQUEUE_CURRENT_BUFFER := true
+TARGET_RUNNING_WITHOUT_SYNC_FRAMEWORK := true
+TARGET_DOESNT_USE_FENCE_SYNC := true
 
 #Bootanimation stuff
 TARGET_BOOTANIMATION_PRELOAD := true
@@ -72,25 +79,25 @@ CEDARX_CHIP_VERSION := F23
 CEDARX_USE_SWAUDIO := N
 
 #CWM Recovery
-BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery_keys.c
-BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
-BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
+#BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery_keys.c
+#BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
+#BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
 #TARGET_RECOVERY_INITRC := device/softwinner/907/init.recovery.sun4i.rc
 
 #TWRP recovery
-#BOARD_HAS_SDCARD_INTERNAL := true
-#TARGET_RECOVERY_INITRC := device/softwinner/907/init.recovery.sun4i.rc
-#TARGET_RECOVERY_PIXEL_FORMAT := "RGB565"
-#DEVICE_RESOLUTION := 1024x768
-#TW_FLASH_FROM_STORAGE := true
-#TW_NO_REBOOT_BOOTLOADER := true
+BOARD_HAS_SDCARD_INTERNAL := true
+TARGET_RECOVERY_INITRC := device/softwinner/907/init.recovery.sun4i.rc
+TARGET_RECOVERY_PIXEL_FORMAT := "RGB565"
+DEVICE_RESOLUTION := 1024x768
+TW_FLASH_FROM_STORAGE := true
+TW_NO_REBOOT_BOOTLOADER := true
 #TWRP_EVENT_LOGGING := true
-#TW_INTERNAL_STORAGE_PATH := "/emmc"
-#TW_INTERNAL_STORAGE_MOUNT_POINT := "emmc"
-#TW_EXTERNAL_STORAGE_PATH := "/sdcard"
-#TW_EXTERNAL_STORAGE_MOUNT_POINT := "sdcard"
-#BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
-#BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
+TW_INTERNAL_STORAGE_PATH := "/emmc"
+TW_INTERNAL_STORAGE_MOUNT_POINT := "emmc"
+TW_EXTERNAL_STORAGE_PATH := "/sdcard"
+TW_EXTERNAL_STORAGE_MOUNT_POINT := "sdcard"
+BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
+BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
 
 # Vold stuff
 BOARD_VOLD_MAX_PARTITIONS := 20
@@ -98,10 +105,13 @@ BOARD_VOLD_EMMC_SHARES_DEV_MAJOR := true
 BOARD_VOLD_DISC_HAS_MULTIPLE_MAJORS := false
 TARGET_USE_CUSTOM_LUN_FILE_PATH = "/sys/class/android_usb/android0/f_mass_storage/lun%d/file"
 TARGET_USE_CUSTOM_SECOND_LUN_NUM := 1
+TARGET_RECOVERY_FSTAB := device/softwinner/907/fstab.sun4i
+RECOVERY_FSTAB_VERSION := 2
+#BOARD_RECOVERY_SWIPE := true
 
 #Misc stuff
-TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
-TARGET_RECOVERY_UI_LIB := librecovery_ui_crane_evb
+#TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
+#TARGET_RECOVERY_UI_LIB := librecovery_ui_crane_evb
 #TARGET_RECOVERY_UPDATER_LIBS :=
 TARGET_RECOVERY_PRE_COMMAND := "echo -n boot-recovery | busybox dd of=/dev/block/nandf count=1 conv=sync; sync"
 BOARD_USE_LEGACY_TOUCHSCREEN := true
@@ -130,6 +140,19 @@ WIFI_DRIVER_FW_PATH_P2P   := ""
 WIFI_DRIVER_FW_PATH_PARAM := ""
 
 #TARGET_CUSTOM_WIFI := hardware/realtek/wlan/libhardware_legacy/wifi/wifi_realtek.c
+
+# Selinux
+BOARD_SEPOLICY_DIRS += \
+    device/softwinner/907/selinux
+
+BOARD_SEPOLICY_UNION += \
+    file_contexts \
+    file.te \
+    device.te \
+    domain.te \
+    rild.te \
+    vold.te \
+    wpa_supplicant.te
 
 # Beware: set only prebuilt OR source+config
 TARGET_PREBUILT_KERNEL := device/softwinner/907/kernel
