@@ -157,7 +157,7 @@ BOARD_SEPOLICY_UNION += \
 # Beware: set only prebuilt OR source+config
 TARGET_PREBUILT_KERNEL := device/softwinner/907/kernel
 BOARD_KERNEL_BASE := 0x40000000
-BOARD_KERNEL_CMDLINE := console=ttyS0,115200 rw init=/init loglevel=8
+BOARD_KERNEL_CMDLINE := console=ttyS0,115200 rw init=/init loglevel=8 androidboot.selinux=permissive
 
 # G-Sensor Stuff
 SW_BOARD_USES_GSENSOR_TYPE := "bma250"
