@@ -82,11 +82,11 @@ CEDARX_USE_SWAUDIO := N
 BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery_keys.c
 BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
 BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
-#TARGET_RECOVERY_INITRC := device/softwinner/907/init.recovery.sun4i.rc
+#TARGET_RECOVERY_INITRC := device/softwinner/907/rootdir/init.recovery.sun4i.rc
 
 #TWRP recovery
 #BOARD_HAS_SDCARD_INTERNAL := true
-#TARGET_RECOVERY_INITRC := device/softwinner/907/init.recovery.sun4i.rc
+#TARGET_RECOVERY_INITRC := device/softwinner/907/rootdir/init.recovery.sun4i.rc
 #TARGET_RECOVERY_PIXEL_FORMAT := "RGB565"
 #DEVICE_RESOLUTION := 1024x768
 #TW_FLASH_FROM_STORAGE := true
