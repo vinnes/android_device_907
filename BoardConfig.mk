@@ -79,7 +79,7 @@ CEDARX_CHIP_VERSION := F23
 CEDARX_USE_SWAUDIO := N
 
 #CWM Recovery
-#BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery_keys.c
+BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery_keys.c
 BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
 BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
 #TARGET_RECOVERY_INITRC := device/softwinner/907/init.recovery.sun4i.rc
@@ -107,7 +107,7 @@ TARGET_USE_CUSTOM_LUN_FILE_PATH = "/sys/class/android_usb/android0/f_mass_storag
 TARGET_USE_CUSTOM_SECOND_LUN_NUM := 1
 TARGET_RECOVERY_FSTAB := device/softwinner/907/rootdir/fstab.sun4i
 RECOVERY_FSTAB_VERSION := 2
-#BOARD_RECOVERY_SWIPE := true
+BOARD_RECOVERY_SWIPE := true
 
 #Misc stuff
 #TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
