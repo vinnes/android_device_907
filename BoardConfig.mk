@@ -82,11 +82,15 @@ CEDARX_USE_SWAUDIO := N
 BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery_keys.c
 BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
 BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
-#TARGET_RECOVERY_INITRC := device/softwinner/907/rootdir/init.recovery.sun4i.rc
+RECOVERY_FSTAB_VERSION := 2
+BOARD_RECOVERY_SWIPE := true
+TARGET_RECOVERY_FSTAB := device/softwinner/907/rootdir/fstab.sun4i
+#TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
+#TARGET_RECOVERY_UI_LIB := librecovery_ui_crane_evb
+#TARGET_RECOVERY_UPDATER_LIBS :=
 
 #TWRP recovery
 #BOARD_HAS_SDCARD_INTERNAL := true
-#TARGET_RECOVERY_INITRC := device/softwinner/907/rootdir/init.recovery.sun4i.rc
 #TARGET_RECOVERY_PIXEL_FORMAT := "RGB565"
 #DEVICE_RESOLUTION := 1024x768
 #TW_FLASH_FROM_STORAGE := true
@@ -105,14 +109,8 @@ BOARD_VOLD_EMMC_SHARES_DEV_MAJOR := true
 BOARD_VOLD_DISC_HAS_MULTIPLE_MAJORS := false
 TARGET_USE_CUSTOM_LUN_FILE_PATH = "/sys/class/android_usb/android0/f_mass_storage/lun%d/file"
 TARGET_USE_CUSTOM_SECOND_LUN_NUM := 1
-TARGET_RECOVERY_FSTAB := device/softwinner/907/rootdir/fstab.sun4i
-RECOVERY_FSTAB_VERSION := 2
-BOARD_RECOVERY_SWIPE := true
 
 #Misc stuff
-#TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
-#TARGET_RECOVERY_UI_LIB := librecovery_ui_crane_evb
-#TARGET_RECOVERY_UPDATER_LIBS :=
 TARGET_RECOVERY_PRE_COMMAND := "echo -n boot-recovery | busybox dd of=/dev/block/nandf count=1 conv=sync; sync"
 BOARD_USE_LEGACY_TOUCHSCREEN := true
 TARGET_HARDWARE_INCLUDE := $(TOP)/device/softwinner/907/libraries/include
