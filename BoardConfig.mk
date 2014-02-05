@@ -102,6 +102,7 @@ TARGET_RECOVERY_FSTAB := device/softwinner/907/rootdir/fstab.sun4i
 #TW_EXTERNAL_STORAGE_MOUNT_POINT := "sdcard"
 #BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
 #BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
+#TARGET_RECOVERY_FSTAB := device/softwinner/907/rootdir/twrp.fstab
 
 # Vold stuff
 BOARD_VOLD_MAX_PARTITIONS := 20
