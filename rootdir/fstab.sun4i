@@ -8,7 +8,7 @@
 /dev/block/nandh       /cache         ext4     noatime,nosuid,nodev,barrier=0,journal_checksum,noauto_da_alloc    wait
 
 # Vold mount points
-/dev/block/nandi       auto	      vfat     defaults	 voldmanaged=sdcard0:9,nonremovable,noemulatedsd
+/dev/block/nandi       auto	      vfat     defaults	 voldmanaged=sdcard0:auto
 /dev/block/mmcblk0p1   auto	      vfat     defaults	 voldmanaged=sdcard1:auto
 /dev/block/mmcblk0     auto	      vfat     defaults	 voldmanaged=sdcard1:auto	
 /dev/block/mmcblk0p2   auto           auto     defaults	 voldmanaged=usbdisk0:auto
