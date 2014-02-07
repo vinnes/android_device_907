@@ -1,15 +1,10 @@
 #
 # system.prop for A10
 #
-# The OpenGL ES API level that is natively supported by this device.
-# This is a 16.16 fixed point number
-ro.opengles.version = 131072
-
 # default root acces
 persist.sys.root_access=3
 
 ro.sf.lcd_density=160
-hwui.render_dirty_regions=false
 
 persist.sys.timezone=Europe/London
 persist.sys.language=en
@@ -17,11 +12,6 @@ persist.sys.country=GB
 
 wifi.interface=wlan0
 wifi.supplicant_scan_interval=60
-debug.egl.hw=1
-
-# don't preload OpenGL in Zygote, the Tegra drivers do not like it
-ro.zygote.disable_gl_preload=true
-ro.bq.gpu_to_cpu_unsupported=1
 
 #Disable StrictMode
 persist.sys.strictmode.visual=0
@@ -37,9 +27,16 @@ view.touch_slop=2
 dalvik.vm.verify-bytecode=false
 dalvik.vm.dexopt-flags=v=n,o=v
 dalvik.vm.execution-mode=int:jit
+
+#Allwiner blob
+ro.sys.bootfast=true
 ro.display.switch=1
 ro.wifidisplay.switch=1
 ro.property.tabletUI=false
+ro.product.firmware=v1.2
+ro.property.fontScale=1.15
+audio.routing=2
+audio.defCurve=false
 
 #RIL config
 rild.libpath=/system/lib/liballwinner-ril.so
@@ -51,3 +48,4 @@ ro.device.gpu=ARM Mali 400
 ro.device.rear_cam=2 MP
 ro.device.front_cam=0.3 MP
 ro.device.screen_res=1024x768
+ro.chip_type=a10
