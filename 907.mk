@@ -30,14 +30,19 @@ PRODUCT_CHARACTERISTICS := tablet
 
 PRODUCT_TAGS += dalvik.gc.type-precise
 
+# Graphics
 PRODUCT_PROPERTY_OVERRIDES += \
+        ro.opengles.version = 131072 \
+	ro.zygote.disable_gl_preload=true \
+	ro.bq.gpu_to_cpu_unsupported=1 \
+	hwui.render_dirty_regions=false \
+	debug.hwui.render_dirty_regions=false \
         ro.opengles.surface.rgb565=true \
-	ro.product.firmware=v1.2 \
-	ro.property.fontScale=1.15 \
-	audio.routing=2 \
-	audio.defCurve=false \
-	ro.chip_type=a10 \
-	ro.sys.bootfast=true \
+	debug.sf.hw=1 \
+	drm.service.enabled=true \
+	debug.egl.hw=1 \
+
+PRODUCT_PROPERTY_OVERRIDES += \
 	ro.eventproc.start=0 \
         ro.debuggable=1 \
 	ro.com.google.locationfeatures=1 \
@@ -47,8 +52,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	ro.additionalmounts=/storage/sdcard1 \
 	ro.vold.switchablepair=/storage/sdcard0,/storage/sdcard1 \
 	ro.config.nocheckin=1 \
-	debug.sf.hw=1 \
-	drm.service.enabled=true
 	dalvik.vm.lockprof.threshold=500 \
 	dalvik.vm.checkjni=false \
 	dalvik.vm.dexopt-data-only=1 \
