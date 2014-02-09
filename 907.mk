@@ -49,13 +49,13 @@ PRODUCT_PROPERTY_OVERRIDES += \
   
 # Dalvik options
 PRODUCT_PROPERTY_OVERRIDES += \
-	dalvik.vm.debug.alloc=0
-	dalvik.vm.checkjni=false
-	dalvik.vm.dexopt-data-only=1
-	dalvik.vm.dexopt-flags=v=a,o=v,m=y,u=y
-	dalvik.vm.execution-mode=int:jit
-	dalvik.vm.verify-bytecode=false
-	dalvik.vm.lockprof.threshold=500
+	dalvik.vm.debug.alloc=0 \
+	dalvik.vm.checkjni=false \
+	dalvik.vm.dexopt-data-only=1 \
+	dalvik.vm.dexopt-flags=v=a,o=v,m=y,u=y \
+	dalvik.vm.execution-mode=int:jit \
+	dalvik.vm.verify-bytecode=false \
+	dalvik.vm.lockprof.threshold=500 \
 
 PRODUCT_PROPERTY_OVERRIDES += \
 	ro.eventproc.start=0 \
