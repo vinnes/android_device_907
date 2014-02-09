@@ -41,6 +41,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	debug.sf.hw=1 \
 	drm.service.enabled=true \
 	debug.egl.hw=1 \
+	sys.disable_ext_animation=1 \
 
 PRODUCT_PROPERTY_OVERRIDES += \
 	ro.eventproc.start=0 \
@@ -103,7 +104,7 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/lib/cedarx/libve.so:system/lib/libve.so \
 	
 #Cedarx-Crack
-PRODUCT_COPY_FILES += \
+#PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/lib/cedarx/libdemux_rmvb.so:system/lib/libdemux_rmvb.so \
 	device/softwinner/907/prebuilt/lib/cedarx/librm.so:system/lib/librm.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libswa1.so:system/lib/libswa1.so \
