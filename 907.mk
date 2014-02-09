@@ -33,14 +33,17 @@ PRODUCT_TAGS += dalvik.gc.type-precise
 # Graphics
 PRODUCT_PROPERTY_OVERRIDES += \
         ro.opengles.version = 131072 \
-	ro.zygote.disable_gl_preload=true \
-	ro.bq.gpu_to_cpu_unsupported=1 \
-	hwui.render_dirty_regions=false \
-	debug.hwui.render_dirty_regions=false \
-        ro.opengles.surface.rgb565=true \
 	debug.sf.hw=1 \
 	drm.service.enabled=true \
 	debug.egl.hw=1 \
+
+# cm 11 bootloop fix(from p990)
+PRODUCT_PROPERTY_OVERRIDES += \
+	ro.zygote.disable_gl_preload=true \
+	ro.zygote.disable_gl_preload=1 \
+	ro.bq.gpu_to_cpu_unsupported=1 \
+	hwui.render_dirty_regions=false \
+	debug.hwui.render_dirty_regions=false \
 	sys.disable_ext_animation=1 \
 
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -53,9 +56,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	ro.additionalmounts=/storage/sdcard1 \
 	ro.vold.switchablepair=/storage/sdcard0,/storage/sdcard1 \
 	ro.config.nocheckin=1 \
-	dalvik.vm.lockprof.threshold=500 \
-	dalvik.vm.checkjni=false \
-	dalvik.vm.dexopt-data-only=1 \
 	persist.sys.vold.switchexternal=0 \
         persist.service.adb.enable=1 \
         keyguard.no_require_sim=true \
