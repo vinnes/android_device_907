@@ -12,11 +12,12 @@ dalvik.vm.dexopt-flags=v=a,o=v,m=y,u=y
 dalvik.vm.execution-mode=int:jit
 dalvik.vm.verify-bytecode=false
 dalvik.vm.lockprof.threshold=500
+dalvik.vm.jit.codecachesize=0
 
 persist.sys.timezone=Europe/London
 persist.sys.language=en
 persist.sys.country=GB
-
+ro.config.low_ram=true
 wifi.interface=wlan0
 wifi.supplicant_scan_interval=60
 
