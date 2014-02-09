@@ -37,14 +37,25 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	drm.service.enabled=true \
 	debug.egl.hw=1 \
 
-# cm 11 bootloop fix(from p990)
+# low memory
+PRODUCT_PROPERTY_OVERRIDES += \
+	ro.config.low_ram=true \
+	dalvik.vm.jit.codecachesize=0 \
+
+# Fix Graphics Issues
 PRODUCT_PROPERTY_OVERRIDES += \
 	ro.zygote.disable_gl_preload=true \
-	ro.zygote.disable_gl_preload=1 \
-	ro.bq.gpu_to_cpu_unsupported=1 \
-	hwui.render_dirty_regions=false \
-	debug.hwui.render_dirty_regions=false \
-	sys.disable_ext_animation=1 \
+	ro.bq.gpu_to_cpu_unsupported=true \
+  
+# Dalvik options
+PRODUCT_PROPERTY_OVERRIDES += \
+	dalvik.vm.debug.alloc=0
+	dalvik.vm.checkjni=false
+	dalvik.vm.dexopt-data-only=1
+	dalvik.vm.dexopt-flags=v=a,o=v,m=y,u=y
+	dalvik.vm.execution-mode=int:jit
+	dalvik.vm.verify-bytecode=false
+	dalvik.vm.lockprof.threshold=500
 
 PRODUCT_PROPERTY_OVERRIDES += \
 	ro.eventproc.start=0 \
