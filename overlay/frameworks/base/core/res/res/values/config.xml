@@ -127,4 +127,7 @@
     
     <!-- Enable multi-user -->
     <integer name="config_multiuserMaximumUsers">5</integer>
+    
+    <!-- Translucent status & navigation bars perform poorly on this device -->
+    <bool name="config_enableTranslucentDecor">false</bool>
   </resources>
