@@ -40,11 +40,11 @@ TARGET_GLOBAL_CPPFLAGS += -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 TARGET_ARCH_LOWMEM := true
 
 #Bluetooth and Vibro stuff
-#BOARD_HAVE_BLUETOOTH := true
-#BOARD_HAVE_BLUETOOTH_BCM := true
-#BLUETOOTH_HCI_USE_USB := true
-#BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/softwinner/907/bluetooth
-#BOARD_BLUEDROID_VENDOR_CONF := device/softwinner/907/bluetooth/vnd_generic_usb.txt
+BOARD_HAVE_BLUETOOTH := true
+BOARD_HAVE_BLUETOOTH_BCM := true
+BLUETOOTH_HCI_USE_USB := true
+BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/softwinner/907/bluetooth
+BOARD_BLUEDROID_VENDOR_CONF := device/softwinner/907/bluetooth/vnd_generic_usb.txt
 BOARD_HAS_VIBRATOR_IMPLEMENTATION := ../../device/softwinner/907/vibrator.c
 
 # Partition sizes; must be in decimal
