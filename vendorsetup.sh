@@ -19,7 +19,7 @@ add_lunch_combo full_907-userdebug
 add_lunch_combo cm_907-eng
 add_lunch_combo cm_907-userdebug
 echo ""
-echo "Applying patches for AllwinnerA10"
+echo "Apply patches for Allwinner A10"
 echo ""
 for p in $(find device/softwinner/907/patches/ -name "*.diff") 
 	do 
