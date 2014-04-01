@@ -23,8 +23,8 @@ include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH) \
-					$(TARGET_KERNEL_INCLUDE) \
-					$(TARGET_HARDWARE_INCLUDE)
+                    $(TARGET_KERNEL_INCLUDE) \
+                    $(TARGET_HARDWARE_INCLUDE)
 	
 LOCAL_SRC_FILES := lights.c
 
