@@ -34,9 +34,10 @@ PRODUCT_TAGS += dalvik.gc.type-precise
 PRODUCT_PROPERTY_OVERRIDES += \
         ro.opengles.version = 131072 \
 	debug.sf.hw=1 \
-	drm.service.enabled=true \
 	debug.egl.hw=1 \
-
+	drm.service.enabled=true \
+	debug.force.software.rending=true \
+   
 # low memory
 PRODUCT_PROPERTY_OVERRIDES += \
 	ro.config.low_ram=true \
@@ -46,7 +47,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
 	ro.zygote.disable_gl_preload=true \
 	ro.bq.gpu_to_cpu_unsupported=true \
-  
+
 # Dalvik options
 PRODUCT_PROPERTY_OVERRIDES += \
 	dalvik.vm.debug.alloc=0 \
