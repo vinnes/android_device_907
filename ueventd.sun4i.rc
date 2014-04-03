@@ -32,15 +32,20 @@
 /dev/block/nandf		  0666	 system		system
 /dev/ttyS1    0660    bluetooth  bluetooth
 /dev/ttyHS2     0660    bluetooth  bluetooth
-/dev/ttyUSB0			  0777   system     system
-/dev/ttyUSB1			  0777   system     system
-/dev/ttyUSB2			  0777   system     system
-/dev/ttyUSB3			  0777   system     system
+/dev/ttyUSB0			  0666   system     radio
+/dev/ttyUSB1			  0666   system     radio
+/dev/ttyUSB2			  0666   system     radio
+/dev/ttyUSB3			  0666   system     radio
+/dev/ttyUSB4			  0666   system     radio
+/dev/ttyACM0			  0666   system     radio
+/dev/ttyACM1			  0666   system     radio
+/dev/ttyACM2			  0666   system     radio
+/dev/ttyACM3			  0666   system     radio
+/dev/ttyACM4			  0666   system     radio
+/dev/locks_dev			  0777	 system	    system
 /dev/gps                  0777   system     system
 /dev/pa_dev  		  	  0777	 system	    system
 /dev/dmard06            0777 system     system
-/dev/ttyACM0  		  0777   system     system
-/dev/ttyACM1  		  0777   system     system
 
 # sysfs properties, for mma7660 gsensor
 /sys/devices/virtual/input/input*   name        0660  root   input
