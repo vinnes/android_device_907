@@ -95,11 +95,13 @@ TARGET_RECOVERY_FSTAB := device/softwinner/907/rootdir/fstab.sun4i
 #DEVICE_RESOLUTION := 1024x768
 #TW_FLASH_FROM_STORAGE := true
 #TW_NO_REBOOT_BOOTLOADER := true
+#TW_HAS_DUAL_STORAGE := true
 #TWRP_EVENT_LOGGING := true
 #TW_INTERNAL_STORAGE_PATH := "/emmc"
 #TW_INTERNAL_STORAGE_MOUNT_POINT := "emmc"
 #TW_EXTERNAL_STORAGE_PATH := "/sdcard"
 #TW_EXTERNAL_STORAGE_MOUNT_POINT := "sdcard"
+#TWHAVE_SELINUX := true
 #BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
 #BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
 #TARGET_RECOVERY_FSTAB := device/softwinner/907/rootdir/twrp.fstab
@@ -160,9 +162,9 @@ BOARD_KERNEL_CMDLINE := console=ttyS0,115200 rw init=/init loglevel=8 androidboo
 
 # G-Sensor Stuff
 SW_BOARD_USES_GSENSOR_TYPE := "bma250"
-SW_BOARD_GSENSOR_DIRECT_X := "true"
-SW_BOARD_GSENSOR_DIRECT_Y := "true"
-SW_BOARD_GSENSOR_DIRECT_Z := "true"
+SW_BOARD_GSENSOR_DIRECT_X  := "true"
+SW_BOARD_GSENSOR_DIRECT_Y  := "true"
+SW_BOARD_GSENSOR_DIRECT_Z  := "true"
 SW_BOARD_GSENSOR_XY_REVERT := "true"
 
 COMMON_GLOBAL_CFLAGS += "-DICS_CAMERA_BLOB -DICS_AUDIO_BLOB"
