@@ -22,7 +22,7 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/bin/ntfs-3g.probe:system/bin/ntfs-3g.probe \
 	device/softwinner/907/prebuilt/bin/mkntfs:system/bin/mkntfs \
 	device/softwinner/907/prebuilt/bin/reboot-recovery.sh:system/bin/reboot-recovery.sh \
-	device/softwinner/907/prebuilt/bin/usb_modeswitch:system/bin/usb_modeswitch
+	device/softwinner/907/prebuilt/bin/usb_modeswitch:system/bin/usb_modeswitch \
 
 # /system/etc
 PRODUCT_COPY_FILES += \
@@ -40,12 +40,13 @@ PRODUCT_COPY_FILES += \
 PRODUCT_COPY_FILES += \
     device/softwinner/907/prebuilt/etc/media_codecs.xml:system/etc/media_codecs.xml \
     device/softwinner/907/prebuilt/etc/media_profiles.xml:system/etc/media_profiles.xml \
-    device/softwinner/907/prebuilt/etc/audio_effects.conf:system/etc/audio_effects.conf
+    device/softwinner/907/prebuilt/etc/audio_effects.conf:system/etc/audio_effects.conf \
 
 
 PRODUCT_COPY_FILES += \
 	$(call find-copy-subdir-files,*,device/softwinner/907/prebuilt/etc/init.d,system/etc/init.d)
 
+# 3G Data Card usb modeswitch File
 PRODUCT_COPY_FILES += \
 	$(call find-copy-subdir-files,*,device/softwinner/907/prebuilt/etc/usb_modeswitch.d,system/etc/usb_modeswitch.d)
 
@@ -59,7 +60,7 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/lib/libMali.so:system/lib/libMali.so \
 	device/softwinner/907/prebuilt/lib/libUMP.so:system/lib/libUMP.so \
 	device/softwinner/907/prebuilt/lib/libMali.so:obj/lib/libMali.so \
-	device/softwinner/907/prebuilt/lib/libUMP.so:obj/lib/libUMP.so
+	device/softwinner/907/prebuilt/lib/libUMP.so:obj/lib/libUMP.so \
 
 # /system/usr
 PRODUCT_COPY_FILES += \
@@ -76,7 +77,8 @@ PRODUCT_COPY_FILES += \
 	device/softwinner/907/prebuilt/usr/keylayout/axp20-supplyer.kl:system/usr/keylayout/axp20-supplyer.kl \
 	device/softwinner/907/prebuilt/usr/keylayout/sun4i-keyboard.kl:system/usr/keylayout/sun4i-keyboard.kl \
 	device/softwinner/907/prebuilt/usr/keylayout/hv_keypad.kl:system/usr/keylayout/hv_keypad.kl \
-	device/softwinner/907/prebuilt/usr/icu/icudt46l.dat:system/usr/icu/icudt46l.dat
+	device/softwinner/907/prebuilt/usr/icu/icudt46l.dat:system/usr/icu/icudt46l.dat \
+	device/softwinner/907/prebuilt/usr/gsensor.cfg:system/usr/gsensor.cfg \
 
 # temporary prebuilt wpa_supplicant
 PRODUCT_COPY_FILES += \
