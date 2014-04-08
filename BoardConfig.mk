@@ -18,16 +18,21 @@
 TARGET_BOARD_PLATFORM := exDroid
 TARGET_BOOTLOADER_BOARD_NAME := crane
 
+# No hardware camera
 USE_CAMERA_STUB := true
 CAMERA_USES_SURFACEFLINGER_CLIENT_STUB := true
+# Audio
 HAVE_HTC_AUDIO_DRIVER := true
 BOARD_USES_GENERIC_AUDIO := true
+# GPS
+# "simulator":target board doesn't have a gps hardware module;"haiweixun":use the gps module offer by haiweixun
 BOARD_USES_GPS_TYPE := simulator
 
+# Image related
 TARGET_NO_BOOTLOADER := true
 TARGET_NO_RADIOIMAGE := true
 
-#CPU stuff
+# CPU stuff
 TARGET_CPU_ABI := armeabi-v7a
 TARGET_CPU_ABI2 := armeabi
 TARGET_ARCH := arm
@@ -39,7 +44,7 @@ TARGET_GLOBAL_CFLAGS += -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 TARGET_GLOBAL_CPPFLAGS += -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 TARGET_ARCH_LOWMEM := true
 
-#Bluetooth and Vibro stuff
+# Bluetooth and Vibro stuff
 BOARD_HAVE_BLUETOOTH := true
 BOARD_HAVE_BLUETOOTH_BCM := true
 BLUETOOTH_HCI_USE_USB := true
@@ -55,7 +60,7 @@ BOARD_SYSTEMIMAGE_PARTITION_SIZE := 369440104
 BOARD_USERDATAIMAGE_PARTITION_SIZE := 1000737176
 BOARD_FLASH_BLOCK_SIZE := 4096
 
-#EGL stuff
+# EGL stuff
 BOARD_EGL_CFG := device/softwinner/907/egl.cfg
 COMMON_GLOBAL_CFLAGS += -DWORKAROUND_BUG_10194508
 BOARD_EGL_WORKAROUND_BUG_10194508 := true
@@ -69,16 +74,16 @@ BOARD_NO_ALLOW_DEQUEUE_CURRENT_BUFFER := true
 # Workaround for no SYNC support
 TARGET_RUNNING_WITHOUT_SYNC_FRAMEWORK := true
 
-#Bootanimation stuff
+# Bootanimation stuff
 #TARGET_BOOTANIMATION_PRELOAD := true
 #TARGET_BOOTANIMATION_TEXTURE_CACHE := true
 #TARGET_BOOTANIMATION_USE_RGB565 := true
 
-# Cedarx
+# Audio & Camera & Cedarx
 CEDARX_CHIP_VERSION := F23
 CEDARX_USE_SWAUDIO := N
 
-#CWM Recovery
+# CWM Recovery
 BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery_keys.c
 BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
 BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
@@ -89,7 +94,7 @@ TARGET_RECOVERY_FSTAB := device/softwinner/907/rootdir/fstab.sun4i
 #TARGET_RECOVERY_UI_LIB := librecovery_ui_crane_evb
 #TARGET_RECOVERY_UPDATER_LIBS :=
 
-#TWRP recovery
+# TWRP recovery
 #BOARD_HAS_SDCARD_INTERNAL := true
 #TARGET_RECOVERY_PIXEL_FORMAT := "RGB565"
 #DEVICE_RESOLUTION := 1024x768
@@ -113,12 +118,14 @@ BOARD_VOLD_DISC_HAS_MULTIPLE_MAJORS := false
 TARGET_USE_CUSTOM_LUN_FILE_PATH = "/sys/class/android_usb/android0/f_mass_storage/lun%d/file"
 TARGET_USE_CUSTOM_SECOND_LUN_NUM := 1
 
-#Misc stuff
+# Misc stuff
 TARGET_RECOVERY_PRE_COMMAND := "echo -n boot-recovery | busybox dd of=/dev/block/nandf count=1 conv=sync; sync"
 BOARD_USE_LEGACY_TOUCHSCREEN := true
-TARGET_HARDWARE_INCLUDE := $(TOP)/device/softwinner/907/libraries/include
-TARGET_PROVIDES_INIT_RC := true
 TARGET_RELEASETOOL_OTA_FROM_TARGET_SCRIPT := device/softwinner/907/releasetools/907_ota_from_target_files
+# Hardware module include file path
+TARGET_HARDWARE_INCLUDE := $(TOP)/device/softwinner/907/libraries/include
+# Use our own init.rc
+TARGET_PROVIDES_INIT_RC := true
 
 # Wifi stuff
 BOARD_WIFI_VENDOR                := realtek
@@ -147,13 +154,17 @@ BOARD_SEPOLICY_DIRS += \
     device/softwinner/907/selinux
 
 BOARD_SEPOLICY_UNION += \
-    file_contexts \
-    file.te \
+    app.te \
     device.te \
     domain.te \
+    drmserver.te \
+    file.te \
+    file_contexts \
+    surfaceflinger.te \
+    system.te \
     rild.te \
     vold.te \
-    wpa_supplicant.te
+    wpa_supplicant.te \
 
 # Beware: set only prebuilt OR source+config
 TARGET_PREBUILT_KERNEL := device/softwinner/907/kernel
