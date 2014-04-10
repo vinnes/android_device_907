@@ -106,6 +106,7 @@ int main(int argc, char **argv)
     const RIL_RadioFunctions *funcs;
     char libPath[PROPERTY_VALUE_MAX];
     unsigned char hasLibArgs = 0;
+    int ret = 0;
 
     int i;
 #if 0
@@ -133,7 +134,8 @@ int main(int argc, char **argv)
         }
     }
 #else
-	if ( 0 == property_get(LIB_PATH_PROPERTY, libPath, NULL)) {
+	ret = property_get(LIB_PATH_PROPERTY, libPath, NULL);
+	if (ret <= 0) {
 		/* nothing to do */
     } else {
         rilLibPath = libPath;
@@ -142,9 +144,9 @@ int main(int argc, char **argv)
     umask(S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);
     for (i = 1; i < argc ;) {
         if (0 == strcmp(argv[i], "-l") && (argc - i > 1)) {
-        	if(rilLibPath == NULL){
-            	rilLibPath = argv[i + 1];
-        	}
+			if(rilLibPath == NULL){
+				rilLibPath = argv[i + 1];
+			}
             i += 2;
         } else if (0 == strcmp(argv[i], "--")) {
             i++;
@@ -155,10 +157,10 @@ int main(int argc, char **argv)
         }
     }
 
-    if (rilLibPath == NULL) {
-    	ALOGD("err: get rilLibPath failed\n");
+	if (rilLibPath == NULL) {
+		ALOGD("err: get rilLibPath failed\n");
 		goto done;
-    }
+	}
 
 #endif
     ALOGD("\nrilLibPath = %s\n\n", rilLibPath);
@@ -275,7 +277,6 @@ OpenLib:
     dlHandle = dlopen(rilLibPath, RTLD_NOW);
 
     if (dlHandle == NULL) {
-        fprintf(stderr, "dlopen failed: %s\n", dlerror());
         ALOGE("dlopen failed: %s\n", dlerror());
         exit(-1);
     }
@@ -285,7 +286,7 @@ OpenLib:
     rilInit = (const RIL_RadioFunctions *(*)(const struct RIL_Env *, int, char **))dlsym(dlHandle, "RIL_Init");
 
     if (rilInit == NULL) {
-        fprintf(stderr, "RIL_Init not defined or exported in %s\n", rilLibPath);
+        ALOGE("RIL_Init not defined or exported in %s\n", rilLibPath);
         exit(-1);
     }
 
@@ -314,4 +315,3 @@ done:
         sleep(0x00ffffff);
     }
 }
-
