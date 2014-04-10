@@ -17,6 +17,6 @@
 # recovery
 /dev/block/nandc       /boot           emmc    defaults recoveryonly            
 /dev/block/nanda       /bootloader     emmc    defaults recoveryonly            
-/dev/block/nandg       /recovery       emmc    defaults recoveryonly
+/dev/block/nandg       /recovery       ext4    defaults recoveryonly
 /dev/block/nandi       /sdcard         vfat    defaults recoveryonly
 /dev/block/mmcblk0     /extsd          vfat    defaults recoveryonly 
