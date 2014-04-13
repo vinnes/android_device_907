@@ -138,7 +138,7 @@ PRODUCT_PACKAGES += \
         rild_sun4i
 
 # Bluetooth
-#PRODUCT_PACKAGES += \
+PRODUCT_PACKAGES += \
 	libusb
 
 
@@ -147,7 +147,6 @@ PRODUCT_PACKAGES += \
 	audio.primary.exDroid \
 	audio.a2dp.default \
 	audio.usb.default \
-        libhealthd.default \
 	display.sun4i \
 	gralloc.sun4i \
 	power.sun4i \
