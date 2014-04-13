@@ -131,7 +131,7 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
         dispctl \
 	#AllwinnerA10Settings \
-        #ethernet \
+        #ethernet
 
 PRODUCT_PACKAGES += \
 	librs_jni \
@@ -155,7 +155,6 @@ PRODUCT_PACKAGES += \
 	lights.exDroid \
 	libaudioutils \
 	chat \
-        charger \
 	u3gmonitor \
 	devlistener
 	#camera.exDroid
