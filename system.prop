@@ -11,7 +11,6 @@ persist.sys.country=GB
 
 wifi.interface=wlan0
 wifi.supplicant_scan_interval=60
-debug.egl.hw=1
 
 #Disable StrictMode
 persist.sys.strictmode.visual=0
@@ -26,14 +25,16 @@ persist.sys.purgeable_assets=1
 windowsmgr.max_events_per_sec=240
 view.minimum_fling_velocity=25
 view.touch_slop=2
-# Improve dalvik VM execution speed by disabling bytecode verification
-dalvik.vm.verify-bytecode=false
-dalvik.vm.dexopt-flags=v=n,o=v
-# Improve dalvik VM execution speed by forcing use of JIT compilation
-dalvik.vm.execution-mode=int:jit
+
+#Allwiner blob
+ro.sys.bootfast=true
 ro.display.switch=1
 ro.wifidisplay.switch=1
 ro.property.tabletUI=false
+ro.product.firmware=v1.2
+ro.property.fontScale=1.15
+audio.routing=2
+audio.defCurve=false
 
 #RIL config
 rild.libpath=/system/lib/liballwinner-ril.so
@@ -45,3 +46,4 @@ ro.device.gpu=ARM Mali 400
 ro.device.rear_cam=2 MP
 ro.device.front_cam=0.3 MP
 ro.device.screen_res=1024x768
+ro.chip_type=a10
