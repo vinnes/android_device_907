@@ -1,9 +1,4 @@
-# The OpenGL ES API level that is natively supported by this device.
-# This is a 16.16 fixed point number
-ro.opengles.version = 131072
-
 ro.sf.lcd_density=160
-hwui.render_dirty_regions=false
 
 persist.sys.timezone=Europe/London
 persist.sys.language=en
