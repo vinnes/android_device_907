@@ -40,6 +40,14 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	dalvik.vm.verify-bytecode=false \
 	dalvik.vm.lockprof.threshold=500 \
 
+# Graphics
+PRODUCT_PROPERTY_OVERRIDES += \
+        ro.opengles.version = 131072 \
+	debug.sf.hw=1 \
+	debug.egl.hw=1 \
+	drm.service.enabled=true \
+	hwui.render_dirty_regions=false \
+	
 PRODUCT_PROPERTY_OVERRIDES += \
 	ro.eventproc.start=0 \
         ro.debuggable=1 \
@@ -50,9 +58,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	ro.additionalmounts=/storage/sdcard1 \
 	ro.vold.switchablepair=/storage/sdcard0,/storage/sdcard1 \
 	ro.config.nocheckin=1 \
-	debug.sf.hw=1 \
-	debug.egl.hw=1 \
-	drm.service.enabled=true \
 	persist.sys.vold.switchexternal=0 \
         persist.service.adb.enable=1 \
         keyguard.no_require_sim=true \
