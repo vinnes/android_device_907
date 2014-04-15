@@ -18,13 +18,13 @@ PRODUCT_COPY_FILES := \
 	device/softwinner/907/kernel:kernel \
         device/softwinner/907/prebuilt/lib/modules/ft5x_ts.ko:root/lib/modules/ft5x_ts.ko \
         device/softwinner/907/prebuilt/bin/reboot-recovery.sh:root/sbin/reboot-recovery.sh \
-	device/softwinner/907/init.rc:root/init.rc \
+	device/softwinner/907/rootdir/init.rc:root/init.rc \
 	device/softwinner/907/initlogo.rle:root/initlogo.rle \
-	device/softwinner/907/init.recovery.sun4i.rc:root/init.recovery.sun4i.rc \
-	device/softwinner/907/init.sun4i.rc:root/init.sun4i.rc \
-        device/softwinner/907/fstab.sun4i:root/fstab.sun4i \
-	device/softwinner/907/init.sun4i.usb.rc:root/init.sun4i.usb.rc \
-	device/softwinner/907/ueventd.sun4i.rc:root/ueventd.sun4i.rc
+	device/softwinner/907/rootdir/init.recovery.sun4i.rc:root/init.recovery.sun4i.rc \
+	device/softwinner/907/rootdir/init.sun4i.rc:root/init.sun4i.rc \
+        device/softwinner/907/rootdir/fstab.sun4i:root/fstab.sun4i \
+	device/softwinner/907/rootdir/init.sun4i.usb.rc:root/init.sun4i.usb.rc \
+	device/softwinner/907/rootdir/ueventd.sun4i.rc:root/ueventd.sun4i.rc
 
 PRODUCT_CHARACTERISTICS := tablet
 
