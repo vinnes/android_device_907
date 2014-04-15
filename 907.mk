@@ -40,21 +40,29 @@ PRODUCT_PROPERTY_OVERRIDES += \
 	dalvik.vm.verify-bytecode=false \
 	dalvik.vm.lockprof.threshold=500 \
 
-# Graphics
+# Graphics/Force GPU usage for all drawing, composition & rendering
 PRODUCT_PROPERTY_OVERRIDES += \
         ro.opengles.version = 131072 \
 	debug.sf.hw=1 \
 	debug.egl.hw=1 \
+	debug.performance.tuning=1 \
+	video.accelerate.hw=1 \
 	drm.service.enabled=true \
 	hwui.render_dirty_regions=false \
-	
+
+# 1.Force 100% image quality 2.Increase image capture memory 3.Improve video quality (8Mbps)
+PRODUCT_PROPERTY_OVERRIDES += \
+        ro.media.enc.jpeg.quality=100 \
+        ro.media.dec.jpeg.memcap=8000000 \
+        ro.media.enc.hprof.vid.bps=8000000 \
+
 PRODUCT_PROPERTY_OVERRIDES += \
 	ro.eventproc.start=0 \
         ro.debuggable=1 \
 	ro.com.google.locationfeatures=1 \
 	ro.kernel.android.checkjni=0 \
-	ro.vold.umsdirtyratio=40 \
-	ro.media.dec.jpeg.memcap=20000000 \
+	ro.kernel.checkjni=0 \
+	ro.vold.umsdirtyratio=20 \
 	ro.additionalmounts=/storage/sdcard1 \
 	ro.vold.switchablepair=/storage/sdcard0,/storage/sdcard1 \
 	ro.config.nocheckin=1 \
