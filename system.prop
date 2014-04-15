@@ -10,7 +10,6 @@ ro.bq.gpu_to_cpu_unsupported=1
 sys.disable_ext_animation=1
 debug.hwui.render_dirty_regions=false
 
-persist.sys.purgeable_assets=1
 wifi.interface=wlan0
 wifi.supplicant_scan_interval=60
 
@@ -20,7 +19,10 @@ persist.sys.strictmode.disable=1
 
 #Default USB Config (Do not change this)
 persist.sys.usb.config=mass_storage,adb
+# Enable surface dithering. May improve visual quality
 persist.sys.use_dithering=0
+# Purge unused assets. May free more memory
+persist.sys.purgeable_assets=1
 windowsmgr.max_events_per_sec=240
 view.minimum_fling_velocity=25
 view.touch_slop=2
