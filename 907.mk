@@ -33,8 +33,6 @@ PRODUCT_TAGS += dalvik.gc.type-precise
 # Graphics
 PRODUCT_PROPERTY_OVERRIDES += \
         ro.opengles.version = 131072 \
-	debug.sf.hw=1 \
-	debug.egl.hw=1 \
 	drm.service.enabled=true \
 	debug.force.software.rending=true \
    
