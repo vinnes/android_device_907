@@ -4,7 +4,7 @@ persist.sys.timezone=Europe/London
 persist.sys.language=en
 persist.sys.country=GB
 
-# cm 11 bootloop fix
+# CM 11 bootloop fix
 ro.zygote.disable_gl_preload=1
 ro.bq.gpu_to_cpu_unsupported=1
 sys.disable_ext_animation=1
@@ -13,7 +13,7 @@ debug.hwui.render_dirty_regions=false
 wifi.interface=wlan0
 wifi.supplicant_scan_interval=60
 
-#Disable StrictMode
+# Disable StrictMode
 persist.sys.strictmode.visual=0
 persist.sys.strictmode.disable=1
 
@@ -23,11 +23,14 @@ persist.sys.usb.config=mass_storage,adb
 persist.sys.use_dithering=0
 # Purge unused assets. May free more memory
 persist.sys.purgeable_assets=1
+# Improve Scrolling Responsiveness
 windowsmgr.max_events_per_sec=240
+# Minimum fling velocityis measured by the number of pixels
 view.minimum_fling_velocity=25
+# Touch responsiveness
 view.touch_slop=2
 
-#Allwiner blob
+# Allwiner blob
 ro.sys.bootfast=true
 ro.display.switch=1
 ro.wifidisplay.switch=1
@@ -37,7 +40,7 @@ ro.property.fontScale=1.15
 audio.routing=2
 audio.defCurve=false
 
-#RIL config
+# RIL config
 rild.libpath=/system/lib/liballwinner-ril.so
 rild.libargs=-d /dev/ttyUSB2
 
