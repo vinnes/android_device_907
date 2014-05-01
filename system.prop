@@ -13,7 +13,7 @@ persist.sys.strictmode.disable=1
 
 #Default USB Config
 persist.sys.usb.config=mass_storage,adb
-# Enable surface dithering. May improve visual quality
+# Enable\Disable surface dithering. May improve visual quality
 persist.sys.use_dithering=0
 # Purge unused assets. May free more memory
 persist.sys.purgeable_assets=1
@@ -28,8 +28,6 @@ ro.wifidisplay.switch=1
 ro.property.tabletUI=false
 ro.product.firmware=v1.2
 ro.property.fontScale=1.15
-audio.routing=2
-audio.defCurve=false
 
 #RIL config
 rild.libpath=/system/lib/liballwinner-ril.so
