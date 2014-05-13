@@ -121,7 +121,7 @@ TARGET_USE_CUSTOM_SECOND_LUN_NUM := 1
 # Misc stuff
 TARGET_RECOVERY_PRE_COMMAND := "echo -n boot-recovery | busybox dd of=/dev/block/nandf count=1 conv=sync; sync"
 BOARD_USE_LEGACY_TOUCHSCREEN := true
-TARGET_RELEASETOOL_OTA_FROM_TARGET_SCRIPT := device/softwinner/907/releasetools/907_ota_from_target_files
+#TARGET_RELEASETOOL_OTA_FROM_TARGET_SCRIPT := device/softwinner/907/releasetools/907_ota_from_target_files
 # Hardware module include file path
 TARGET_HARDWARE_INCLUDE := $(TOP)/device/softwinner/907/libraries/include
 # Use our own init.rc
@@ -148,23 +148,6 @@ WIFI_DRIVER_FW_PATH_P2P   := ""
 WIFI_DRIVER_FW_PATH_PARAM := ""
 
 #TARGET_CUSTOM_WIFI := hardware/realtek/wlan/libhardware_legacy/wifi/wifi_realtek.c
-
-# Selinux
-BOARD_SEPOLICY_DIRS += \
-    device/softwinner/907/selinux
-
-BOARD_SEPOLICY_UNION += \
-    app.te \
-    device.te \
-    domain.te \
-    drmserver.te \
-    file.te \
-    file_contexts \
-    surfaceflinger.te \
-    system.te \
-    rild.te \
-    vold.te \
-    wpa_supplicant.te \
 
 # Beware: set only prebuilt OR source+config
 TARGET_PREBUILT_KERNEL := device/softwinner/907/kernel
