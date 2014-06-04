@@ -39,5 +39,3 @@ and paste this lines inside new file .repo/local_manifest.xml
 
 	source build/envsetup.sh
 	brunch cm_907-userdebug
-
-Patches - (if you have already modify your tree and patches can't be applied, run: repo forall -c git reset --hard)
