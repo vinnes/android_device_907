@@ -37,5 +37,6 @@ and paste this lines inside new file .repo/local_manifest.xml
 
 7)Finally you're ready to build it:
 
+	export APPLY_PATCHES_907=1
 	source build/envsetup.sh
 	brunch cm_907-userdebug
