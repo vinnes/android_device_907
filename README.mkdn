@@ -23,7 +23,7 @@ and paste this lines inside new file .repo/local_manifest.xml
 	<?xml version="1.0" encoding="UTF-8"?>
 	<manifest>
 	  <!-- remote  name="github" fetch="git://github.com/" /-->
-	  <project remote="github" revision="cm-11.0" name="dianlujitao/android_device_907" path="device/softwinner/907" />
+	  <project remote="github" revision="cm-11.0" name="ugers/android_device_907" path="device/softwinner/907" />
 	</manifest>
 
 5)Now type this command:
