@@ -1,28 +1,50 @@
-diff --git a/frameworks/base/services/java/com/android/server/WiredAccessoryManager.java b/frameworks/base/services/java/com/android/server/WiredAccessoryManager.java
---- a/frameworks/base/services/java/com/android/server/WiredAccessoryManager.java
-+++ b/frameworks/base/services/java/com/android/server/WiredAccessoryManager.java
-@@ -85,8 +85,11 @@
-     private final InputManagerService mInputManager;
+From 037bbc9c01e609a65ba2cfa86edd469bed885fde Mon Sep 17 00:00:00 2001
+From: dianlujitao <dianlujitao@gmail.com>
+Date: Wed, 4 Jun 2014 22:19:47 +0800
+Subject: [PATCH] frameworks_base
 
+Change-Id: I7f759922b5c92f45e107fefaab84b3c2207c5f73
+---
+ core/java/android/hardware/Camera.java             |    2 +
+ .../com/android/server/WiredAccessoryManager.java  |   91 ++++++++++++++++++++
+ 2 files changed, 93 insertions(+)
+
+diff --git a/core/java/android/hardware/Camera.java b/core/java/android/hardware/Camera.java
+index 0764445..12be27f 100644
+--- a/core/java/android/hardware/Camera.java
++++ b/core/java/android/hardware/Camera.java
+@@ -5165,4 +5165,6 @@ public class Camera {
+          }
+          /* ### QC ADD-ONS: END */
+     };
++    // Allwinner platform - set video screen
++    public static native int setCameraScreen(int screen);
+ }
+diff --git a/services/java/com/android/server/WiredAccessoryManager.java b/services/java/com/android/server/WiredAccessoryManager.java
+index 3c388e2..3b03194 100644
+--- a/services/java/com/android/server/WiredAccessoryManager.java
++++ b/services/java/com/android/server/WiredAccessoryManager.java
+@@ -86,7 +86,10 @@ final class WiredAccessoryManager implements WiredAccessoryCallbacks {
+ 
      private final boolean mUseDevInputEventForAudioJack;
-+
+ 
 +    private final Context mContext;
-
++
      public WiredAccessoryManager(Context context, InputManagerService inputManager) {
 +        mContext = context;
          PowerManager pm = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
          mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "WiredAccessoryManager");
          mWakeLock.setReferenceCounted(false);
-@@ -111,6 +114,8 @@ public void onReceive(Context ctx, Intent intent) {
+@@ -105,6 +108,8 @@ final class WiredAccessoryManager implements WiredAccessoryCallbacks {
                      }
                  },
                  new IntentFilter(Intent.ACTION_BOOT_COMPLETED), null, null);
 +        // Observe ALSA uevents
 +        this.UsbAudioObserver.startObserving("MAJOR=116");
      }
-
-     private final class SettingsChangedReceiver extends BroadcastReceiver {
-@@ -482,4 +487,90 @@ public int computeNewHeadsetState(int headsetState, int switchState) {
+ 
+     private void bootCompleted() {
+@@ -463,4 +468,90 @@ final class WiredAccessoryManager implements WiredAccessoryCallbacks {
              }
          }
      }
@@ -113,3 +135,6 @@ diff --git a/frameworks/base/services/java/com/android/server/WiredAccessoryMana
 +        };
 +    };
  }
+-- 
+1.7.9.5
+

@@ -23,7 +23,7 @@ and paste this lines inside new file .repo/local_manifest.xml
 	<?xml version="1.0" encoding="UTF-8"?>
 	<manifest>
 	  <!-- remote  name="github" fetch="git://github.com/" /-->
-	  <project remote="github" revision="cm-11.0" name="ugers/android_device_907" path="device/softwinner/907" />
+	  <project remote="github" revision="cm-11.0" name="dianlujitao/android_device_907" path="device/softwinner/907" />
 	</manifest>
 
 5)Now type this command:
@@ -37,7 +37,8 @@ and paste this lines inside new file .repo/local_manifest.xml
 
 7)Finally you're ready to build it:
 
+	export APPLY_PATCHES_907=1
 	source build/envsetup.sh
 	brunch cm_907-userdebug
 
-Patches - (if you have already modify your tree and patches can't be applied, run: repo forall -c git reset --hard)
+Credits to ugers,shaun2029 and christiantroy.

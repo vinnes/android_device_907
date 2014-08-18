@@ -1,7 +1,62 @@
+From 1f3ac304902eb20f34ddd9c921301893232161b8 Mon Sep 17 00:00:00 2001
+From: dianlujitao <dianlujitao@gmail.com>
+Date: Wed, 4 Jun 2014 22:21:36 +0800
+Subject: [PATCH] frameworks_native
+
+Change-Id: I26ed6e048bb5523ab76290fe9a0b7b8006e82620
+---
+ services/surfaceflinger/Android.mk         |    4 +++
+ services/surfaceflinger/DisplayDevice.cpp  |    8 +++++
+ services/surfaceflinger/SurfaceFlinger.cpp |   45 ++++++++++++++++++++++++----
+ 3 files changed, 52 insertions(+), 5 deletions(-)
+
+diff --git a/services/surfaceflinger/Android.mk b/services/surfaceflinger/Android.mk
+index 807c149..d65b9f2 100644
+--- a/services/surfaceflinger/Android.mk
++++ b/services/surfaceflinger/Android.mk
+@@ -52,6 +52,10 @@ ifeq ($(TARGET_FORCE_HWC_FOR_VIRTUAL_DISPLAYS),true)
+     LOCAL_CFLAGS += -DFORCE_HWC_COPY_FOR_VIRTUAL_DISPLAYS
+ endif
+ 
++ifeq ($(BOARD_EGL_NEEDS_FNW),true)
++    LOCAL_CFLAGS += -DEGL_NEEDS_FNW
++endif
++
+ ifneq ($(NUM_FRAMEBUFFER_SURFACE_BUFFERS),)
+   LOCAL_CFLAGS += -DNUM_FRAMEBUFFER_SURFACE_BUFFERS=$(NUM_FRAMEBUFFER_SURFACE_BUFFERS)
+ endif
+diff --git a/services/surfaceflinger/DisplayDevice.cpp b/services/surfaceflinger/DisplayDevice.cpp
+index f56a1c5..9ceb6bc 100755
+--- a/services/surfaceflinger/DisplayDevice.cpp
++++ b/services/surfaceflinger/DisplayDevice.cpp
+@@ -29,6 +29,10 @@
+ 
+ #include <gui/Surface.h>
+ 
++#ifdef EGL_NEEDS_FNW
++#include <ui/FramebufferNativeWindow.h>
++#endif
++
+ #include <hardware/gralloc.h>
+ 
+ #include "DisplayHardware/DisplaySurface.h"
+@@ -75,7 +79,11 @@ DisplayDevice::DisplayDevice(
+       mOrientation()
+ {
+     mNativeWindow = new Surface(producer, false);
++#ifndef EGL_NEEDS_FNW
+     ANativeWindow* const window = mNativeWindow.get();
++#else
++    ANativeWindow* const window = new FramebufferNativeWindow();
++#endif
+ 
+     int format;
+     window->query(window, NATIVE_WINDOW_FORMAT, &format);
 diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
---- a/frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp
-+++ b/frameworks/native/services/surfaceflinger/SurfaceFlinger.cpp
-@@ -432,12 +432,46 @@ status_t SurfaceFlinger::selectEGLConfig(EGLDisplay display, EGLint nativeVisual
+index d105282..dfc80a0 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -450,12 +450,46 @@ status_t SurfaceFlinger::selectEGLConfig(EGLDisplay display, EGLint nativeVisual
  
      err = selectConfigForAttribute(display, attribs, wantedAttribute,
          wantedAttributeValue, config);
@@ -53,7 +108,7 @@ diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinge
  }
  
  class DispSyncSource : public VSyncSource, private DispSync::Callback {
-@@ -527,6 +561,7 @@ void SurfaceFlinger::init() {
+@@ -545,6 +579,7 @@ void SurfaceFlinger::init() {
  
      if (err != NO_ERROR) {
          // If ES2 fails, try ES1
@@ -61,3 +116,6 @@ diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinge
          err = selectEGLConfig(mEGLDisplay, mHwc->getVisualID(),
                  EGL_OPENGL_ES_BIT, &mEGLConfig);
      }
+-- 
+1.7.9.5
+
