@@ -681,7 +681,7 @@ int wifi_start_supplicant(int p2p_supported)
         snprintf(supplicant_prop_name, PROPERTY_KEY_MAX, SUPP_PROP_NAME, supplicant_name);
     }
 
-    wifi_stop_supplicant();
+    wifi_stop_supplicant(int p2pSupported);
     wifi_close_supplicant_connection(NULL);
     wifi_close_supplicant_connection("sec");
 
@@ -767,7 +767,7 @@ int wifi_start_supplicant(int p2p_supported)
     return -1;
 }
 
-int wifi_stop_supplicant()
+int wifi_stop_supplicant(int p2pSupported)
 {
     char supp_status[PROPERTY_VALUE_MAX] = {'\0'};
     int count = 50; /* wait at most 5 seconds for completion */
