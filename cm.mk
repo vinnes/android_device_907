@@ -21,7 +21,7 @@ $(call inherit-product, device/softwinner/907/907-blobs.mk)
 $(call inherit-product, vendor/cm/config/common_full_tablet_wifionly.mk)
 
 # Inherit GSM common stuff
-$(call inherit-product, vendor/cm/config/gsm.mk)
+$(call inherit-product, vendor/cm/config/telephony.mk)
 
 ## Device identifier. This must come after all inclusions
 PRODUCT_NAME := cm_907
