@@ -154,17 +154,18 @@ BOARD_SEPOLICY_DIRS += \
     device/softwinner/907/selinux
 
 BOARD_SEPOLICY_UNION += \
-    app.te \
     device.te \
     domain.te \
     drmserver.te \
     file.te \
     file_contexts \
+    mount.te \
+    netd.te \
     surfaceflinger.te \
-    system.te \
-    rild.te \
+    untrusted_app.te \
     vold.te \
     wpa_supplicant.te \
+    zygote.te
 
 # Beware: set only prebuilt OR source+config
 TARGET_PREBUILT_KERNEL := device/softwinner/907/kernel
