@@ -74,6 +74,12 @@ BOARD_NO_ALLOW_DEQUEUE_CURRENT_BUFFER := true
 # Workaround for no SYNC support
 TARGET_RUNNING_WITHOUT_SYNC_FRAMEWORK := true
 
+# Lollipop removes supports for NON PIE executables
+TARGET_NEEDS_NON_PIE_SUPPORT := true
+
+# USB Mass Storage
+BOARD_USE_USB_MASS_STORAGE_SWITCH := true
+
 # Bootanimation stuff
 #TARGET_BOOTANIMATION_PRELOAD := true
 #TARGET_BOOTANIMATION_TEXTURE_CACHE := true
