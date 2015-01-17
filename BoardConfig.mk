@@ -56,8 +56,8 @@ BOARD_HAS_VIBRATOR_IMPLEMENTATION := ../../device/softwinner/907/vibrator.c
 TARGET_USERIMAGES_USE_EXT4 := true
 BOARD_BOOTIMAGE_PARTITION_SIZE := 33554432
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 33554432
-BOARD_SYSTEMIMAGE_PARTITION_SIZE := 369440104
-BOARD_USERDATAIMAGE_PARTITION_SIZE := 1000737176
+BOARD_SYSTEMIMAGE_PARTITION_SIZE := 389440104
+BOARD_USERDATAIMAGE_PARTITION_SIZE := 980737176
 BOARD_FLASH_BLOCK_SIZE := 4096
 
 # EGL stuff
@@ -155,7 +155,6 @@ BOARD_SEPOLICY_DIRS += \
 
 BOARD_SEPOLICY_UNION += \
     device.te \
-    domain.te \
     drmserver.te \
     file.te \
     file_contexts \
@@ -164,7 +163,6 @@ BOARD_SEPOLICY_UNION += \
     surfaceflinger.te \
     untrusted_app.te \
     vold.te \
-    wpa_supplicant.te \
     zygote.te
 
 # Beware: set only prebuilt OR source+config
