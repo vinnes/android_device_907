@@ -117,7 +117,7 @@
     <integer name="config_cursorWindowSize">2048</integer>
     
     <!-- Close low battery warning when battery level reaches this value -->    
-    <integer name="config_lowBatteryCloseWarningLevel">15</integer>
+    <!-- integer name="config_lowBatteryCloseWarningLevel">15</integer -->
     
     <!-- Display low battery warning when battery level dips to this value -->    
     <integer name="config_lowBatteryWarningLevel">10</integer>
