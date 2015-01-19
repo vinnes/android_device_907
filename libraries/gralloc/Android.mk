@@ -29,7 +29,7 @@ MALI_DDK_TEST_PATH := hardware/arm/
 LOCAL_MODULE := gralloc.sun4i
 LOCAL_MODULE_TAGS := optional
 
-LOCAL_SHARED_LIBRARIES := liblog libcutils libMali libGLESv1_CM libUMP
+LOCAL_SHARED_LIBRARIES := liblog libcutils libMali libGLESv1_CM libUMP libGLES_mali libion
 
 # Include the UMP header files
 LOCAL_C_INCLUDES := device/softwinner/907/libraries/include
