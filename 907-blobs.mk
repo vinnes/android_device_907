@@ -67,19 +67,12 @@ PRODUCT_COPY_FILES += \
 
 # /system/usr
 PRODUCT_COPY_FILES += \
-	$(COMMON_PATH)/prebuilt/usr/idc/ft5x_ts.idc:system/usr/idc/ft5x_ts.idc \
-	$(COMMON_PATH)/prebuilt/usr/idc/gt80x.idc:system/usr/idc/gt80x.idc \
-	$(COMMON_PATH)/prebuilt/usr/idc/gt811_ts.idc:system/usr/idc/gt811_ts.idc \
-	$(COMMON_PATH)/prebuilt/usr/idc/ssd253x.idc:system/usr/idc/ssd253x.idc \
-	$(COMMON_PATH)/prebuilt/usr/idc/Goodix-TS-board-3.idc:system/usr/idc/Goodix-TS-board-3.idc \
-	$(COMMON_PATH)/prebuilt/usr/idc/Goodix-TS.idc:system/usr/idc/Goodix-TS.idc \
-	$(COMMON_PATH)/prebuilt/usr/idc/gt82x.idc:system/usr/idc/gt82x.idc \
-	$(COMMON_PATH)/prebuilt/usr/idc/novatek-ts.idc:system/usr/idc/novatek-ts.idc \
-	$(COMMON_PATH)/prebuilt/usr/idc/pixcir_cxx.idc:system/usr/idc/pixcir_cxx.idc \
-	$(COMMON_PATH)/prebuilt/usr/idc/sun4i-ts.idc:system/usr/idc/sun4i-ts.idc \
-	$(COMMON_PATH)/prebuilt/usr/keylayout/axp20-supplyer.kl:system/usr/keylayout/axp20-supplyer.kl \
-	$(COMMON_PATH)/prebuilt/usr/keylayout/sun4i-keyboard.kl:system/usr/keylayout/sun4i-keyboard.kl \
-	$(COMMON_PATH)/prebuilt/usr/keylayout/hv_keypad.kl:system/usr/keylayout/hv_keypad.kl \
+	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/usr/idc,system/usr/idc)
+	
+PRODUCT_COPY_FILES += \	
+	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/usr/keylayout,system/usr/keylayout)
+	
+PRODUCT_COPY_FILES += \
 	$(COMMON_PATH)/prebuilt/usr/icu/icudt46l.dat:system/usr/icu/icudt46l.dat \
 	$(COMMON_PATH)/prebuilt/usr/gsensor.cfg:system/usr/gsensor.cfg \
 
