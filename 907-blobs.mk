@@ -65,10 +65,11 @@ PRODUCT_COPY_FILES += \
 	$(COMMON_PATH)/prebuilt/lib/libMali.so:obj/lib/libMali.so \
 	$(COMMON_PATH)/prebuilt/lib/libUMP.so:obj/lib/libUMP.so \
 
-# /system/usr
+# /system/usr/idc
 PRODUCT_COPY_FILES += \
 	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/usr/idc,system/usr/idc)
 	
+# /system/usr/keylayout	
 PRODUCT_COPY_FILES += \	
 	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/usr/keylayout,system/usr/keylayout)
 	
