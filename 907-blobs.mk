@@ -70,7 +70,7 @@ PRODUCT_COPY_FILES += \
 	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/usr/idc,system/usr/idc)
 	
 # /system/usr/keylayout	
-PRODUCT_COPY_FILES += \	
+PRODUCT_COPY_FILES += \
 	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/usr/keylayout,system/usr/keylayout)
 	
 PRODUCT_COPY_FILES += \
