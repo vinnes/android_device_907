@@ -29,12 +29,13 @@ MALI_DDK_TEST_PATH := hardware/arm/
 LOCAL_MODULE := gralloc.sun4i
 LOCAL_MODULE_TAGS := optional
 
-LOCAL_SHARED_LIBRARIES := liblog libcutils libMali libGLESv1_CM libUMP libGLES_mali libion
+LOCAL_SHARED_LIBRARIES := liblog libcutils libMali libGLESv1_CM libUMP libhardware libion
 
+LOCAL_C_INCLUDES := system/core/include/
 # Include the UMP header files
 LOCAL_C_INCLUDES := device/softwinner/907/libraries/include
 
-LOCAL_CFLAGS := -DLOG_TAG=\"gralloc\" -DGRALLOC_32_BITS -DSTANDARD_LINUX_SCREEN
+LOCAL_CFLAGS := -DLOG_TAG=\"gralloc\" -DGRALLOC_32_BITS -DSTANDARD_LINUX_SCREEN -DPLATFORM_SDK_VERSION=$(PLATFORM_SDK_VERSION)
 
 LOCAL_SRC_FILES := \
 	gralloc_module.cpp \
