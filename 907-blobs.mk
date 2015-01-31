@@ -15,14 +15,7 @@ COMMON_PATH := device/softwinner/907
 
 # /system/bin
 PRODUCT_COPY_FILES += \
-	$(COMMON_PATH)/prebuilt/bin/fsck.exfat:system/bin/fsck.exfat \
-	$(COMMON_PATH)/prebuilt/bin/mkfs.exfat:system/bin/mkfs.exfat \
-	$(COMMON_PATH)/prebuilt/bin/mount.exfat:system/bin/mount.exfat \
-	$(COMMON_PATH)/prebuilt/bin/ntfs-3g:system/bin/ntfs-3g \
-	$(COMMON_PATH)/prebuilt/bin/ntfs-3g.probe:system/bin/ntfs-3g.probe \
-	$(COMMON_PATH)/prebuilt/bin/mkntfs:system/bin/mkntfs \
-	$(COMMON_PATH)/prebuilt/bin/reboot-recovery.sh:system/bin/reboot-recovery.sh \
-	$(COMMON_PATH)/prebuilt/bin/usb_modeswitch:system/bin/usb_modeswitch \
+	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/bin,system/bin)
 
 # /system/etc
 PRODUCT_COPY_FILES += \
