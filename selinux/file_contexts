@@ -1,6 +1,8 @@
 # label graphics device with a new type, we need
 # to allow write operation from appdomain
-/system/bin/mount.exfat        u:object_r:mount_exec:s0
-/system/bin/ntfs-3g            u:object_r:mount_exec:s0
-/dev/mali0              u:object_r:mali_device:s0
+/system/bin/mount.exfat                 u:object_r:mount_exec:s0
+/system/bin/ntfs-3g                     u:object_r:mount_exec:s0
+/dev/mali                               u:object_r:mali_device:s0
+/dev/ump                                u:object_r:mali_device:s0
+/dev/cedarx                             u:object_r:mali_device:s0
 
