@@ -200,7 +200,7 @@ PRODUCT_PACKAGES += \
 $(call inherit-product, frameworks/native/build/tablet-dalvik-heap.mk)
 $(call inherit-product, build/target/product/full_base.mk)
 
-# Should be after the full_base include, which loads languages_full
+# Enable higher-res drawables while keeping mdpi as primary source
 PRODUCT_AAPT_CONFIG := large xlarge hdpi mdpi
 PRODUCT_AAPT_PREF_CONFIG := mdpi
 
