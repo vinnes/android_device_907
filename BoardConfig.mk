@@ -90,7 +90,7 @@ CEDARX_CHIP_VERSION := F23
 CEDARX_USE_SWAUDIO := N
 
 # CWM Recovery
-BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery_keys.c
+BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery/recovery_keys.c
 BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
 BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
 BOARD_HAS_SDCARD_INTERNAL := true
@@ -130,7 +130,7 @@ TARGET_RECOVERY_PRE_COMMAND := "echo -n boot-recovery | busybox dd of=/dev/block
 BOARD_USE_LEGACY_TOUCHSCREEN := true
 TARGET_RELEASETOOL_OTA_FROM_TARGET_SCRIPT := device/softwinner/907/releasetools/907_ota_from_target_files
 # Hardware module include file path
-TARGET_HARDWARE_INCLUDE := $(TOP)/device/softwinner/907/libraries/include
+TARGET_HARDWARE_INCLUDE := $(TOP)/device/softwinner/907/hardware/include
 # Use our own init.rc
 TARGET_PROVIDES_INIT_RC := true
 

@@ -31,7 +31,7 @@ PRODUCT_COPY_FILES += \
 
 # Media files
 PRODUCT_COPY_FILES += \
-    $(COMMON_PATH)/libraries/audio/audio_policy.conf:system/etc/audio_policy.conf \
+    $(COMMON_PATH)/hardware/audio/audio_policy.conf:system/etc/audio_policy.conf \
     $(COMMON_PATH)/prebuilt/etc/media_codecs.xml:system/etc/media_codecs.xml \
     $(COMMON_PATH)/prebuilt/etc/media_profiles.xml:system/etc/media_profiles.xml \
     $(COMMON_PATH)/prebuilt/etc/audio_effects.conf:system/etc/audio_effects.conf \
