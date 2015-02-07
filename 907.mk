@@ -13,18 +13,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+COMMON_PATH := device/softwinner/907
 
 PRODUCT_COPY_FILES := \
-	device/softwinner/907/kernel:kernel \
-        device/softwinner/907/prebuilt/lib/modules/ft5x_ts.ko:root/lib/modules/ft5x_ts.ko \
-        device/softwinner/907/prebuilt/bin/reboot-recovery.sh:root/sbin/reboot-recovery.sh \
-	device/softwinner/907/rootdir/init.rc:root/init.rc \
-	device/softwinner/907/rootdir/initlogo.rle:root/initlogo.rle \
-	device/softwinner/907/rootdir/init.recovery.sun4i.rc:root/init.recovery.sun4i.rc \
-	device/softwinner/907/rootdir/init.sun4i.rc:root/init.sun4i.rc \
-        device/softwinner/907/rootdir/fstab.sun4i:root/fstab.sun4i \
-	device/softwinner/907/rootdir/init.sun4i.usb.rc:root/init.sun4i.usb.rc \
-	device/softwinner/907/rootdir/ueventd.sun4i.rc:root/ueventd.sun4i.rc
+	$(COMMON_PATH)/kernel:kernel \
+        $(COMMON_PATH)/prebuilt/lib/modules/ft5x_ts.ko:root/lib/modules/ft5x_ts.ko \
+        $(COMMON_PATH)/prebuilt/bin/reboot-recovery.sh:root/sbin/reboot-recovery.sh \
+	$(COMMON_PATH)/rootdir/init.rc:root/init.rc \
+	$(COMMON_PATH)/rootdir/initlogo.rle:root/initlogo.rle \
+	$(COMMON_PATH)/rootdir/init.recovery.sun4i.rc:root/init.recovery.sun4i.rc \
+	$(COMMON_PATH)/rootdir/init.sun4i.rc:root/init.sun4i.rc \
+        $(COMMON_PATH)/rootdir/fstab.sun4i:root/fstab.sun4i \
+	$(COMMON_PATH)/rootdir/init.sun4i.usb.rc:root/init.sun4i.usb.rc \
+	$(COMMON_PATH)/rootdir/ueventd.sun4i.rc:root/ueventd.sun4i.rc
 
 PRODUCT_CHARACTERISTICS := tablet
 
@@ -100,27 +101,27 @@ PRODUCT_COPY_FILES += \
 
 #Cedarx prebuild lib's from 4.1
 #PRODUCT_COPY_FILES += \
-	device/softwinner/907/prebuilt/lib/cedarx/libaw_audio.so:system/lib/libaw_audio.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libaw_audioa.so:system/lib/libaw_audioa.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libCedarA.so:system/lib/libCedarA.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libcedarv.so:system/lib/libcedarv.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libcedarv_adapter.so:system/lib/libcedarv_adapter.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libcedarv_base.so:system/lib/libcedarv_base.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libCedarX.so:system/lib/libCedarX.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libcedarxbase.so:system/lib/libcedarxbase.so  \
-	device/softwinner/907/prebuilt/lib/cedarx/libcedarxosal.so:system/lib/libcedarxosal.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libfacedetection.so:system/lib/libfacedetection.so \
-	device/softwinner/907/prebuilt/lib/cedarx/librtmp.so:system/lib/librtmp.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libstagefright_soft_cedar_h264dec.so:system/lib/libstagefright_soft_cedar_h264dec.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libswdrm.so:system/lib/libswdrm.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libve.so:system/lib/libve.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libaw_audio.so:system/lib/libaw_audio.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libaw_audioa.so:system/lib/libaw_audioa.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libCedarA.so:system/lib/libCedarA.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libcedarv.so:system/lib/libcedarv.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libcedarv_adapter.so:system/lib/libcedarv_adapter.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libcedarv_base.so:system/lib/libcedarv_base.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libCedarX.so:system/lib/libCedarX.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libcedarxbase.so:system/lib/libcedarxbase.so  \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libcedarxosal.so:system/lib/libcedarxosal.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libfacedetection.so:system/lib/libfacedetection.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/librtmp.so:system/lib/librtmp.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libstagefright_soft_cedar_h264dec.so:system/lib/libstagefright_soft_cedar_h264dec.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libswdrm.so:system/lib/libswdrm.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libve.so:system/lib/libve.so \
 	
 #Cedarx-Crack
 #PRODUCT_COPY_FILES += \
-	device/softwinner/907/prebuilt/lib/cedarx/libdemux_rmvb.so:system/lib/libdemux_rmvb.so \
-	device/softwinner/907/prebuilt/lib/cedarx/librm.so:system/lib/librm.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libswa1.so:system/lib/libswa1.so \
-	device/softwinner/907/prebuilt/lib/cedarx/libswa2.so:system/lib/libswa2.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libdemux_rmvb.so:system/lib/libdemux_rmvb.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/librm.so:system/lib/librm.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libswa1.so:system/lib/libswa1.so \
+	$(COMMON_PATH)/prebuilt/lib/cedarx/libswa2.so:system/lib/libswa2.so \
 
 #Wlan
 PRODUCT_PACKAGES += \
