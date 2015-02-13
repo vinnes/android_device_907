@@ -30,15 +30,10 @@
          rotations as the default behavior. -->
     <bool name="config_allowAllRotations">true</bool>
 
-    <string-array name="config_locationProviderPackageNames" translatable="false">
-        <item>com.android.location.fused</item>
-        <item>com.google.android.location</item>
-    </string-array>
-
     <!-- Indicate whether the SD card is accessible without removing the battery. -->
     <bool name="config_batterySdCardAccessibility">true</bool>
 
-    <!-- Diable lockscreen rotation by default -->
+    <!-- Disable lockscreen rotation by default -->
     <bool name="config_enableLockScreenRotation">true</bool>
 
     <!-- Flag indicating whether we should enable the automatic brightness in Settings.
@@ -57,16 +52,6 @@
          available on *any* device with a telephony radio, even if the
          device is data-only. -->
     <bool name="config_voice_capable">false</bool>
-
-    <!-- Flag indicating whether the current device allows sms service.
-         If true, this means that the device supports both sending and
-         receiving sms via the telephony network.
-         This can be overridden to false for "data only" devices
-         which can't send and receive sms message.
-
-         Note: Disable SMS also disable voicemail waiting sms,
-               cell broadcasting sms, and MMS. -->
-    <bool name="config_sms_capable">true</bool>
 
     <!-- True will enable the electron beam screen-off animation. -->
     <!-- bool name="config_screenOffAnimation">true</bool -->
@@ -113,23 +98,18 @@
     <!-- Maximum number of database connections opened and managed by framework layer
          to handle queries on each database when using Write-Ahead Logging. -->
     <integer name="db_connection_pool_size">3</integer>
-
-    <!-- When a database query is executed, the results retuned are paginated
-         in pages of size (in KB) indicated by this value -->
-    <integer name="config_cursorWindowSize">2048</integer>
-    
-    <!-- Close low battery warning when battery level reaches this value -->    
-    <!-- integer name="config_lowBatteryCloseWarningLevel">15</integer -->
-    
-    <!-- Display low battery warning when battery level dips to this value -->    
-    <integer name="config_lowBatteryWarningLevel">10</integer>
     
     <!-- The default iface on which to monitor data use -->
     <string name="config_datause_iface">wlan0</string>
     
-    <!-- Enable multi-user -->
+    <!--  Maximum number of supported users -->
     <integer name="config_multiuserMaximumUsers">5</integer>
+    <!-- Whether UI for multi user should be shown -->
+    <bool name="config_enableMultiUserUI">true</bool>
     
-    <!-- Translucent status & navigation bars perform poorly on this device -->
+    <!-- Enable lockscreen translucent decor by default -->
+    <bool name="config_enableLockScreenTranslucentDecor">false</bool>
+
+    <!-- Enable translucent decor by default -->
     <bool name="config_enableTranslucentDecor">false</bool>
   </resources>
