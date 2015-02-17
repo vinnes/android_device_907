@@ -49,6 +49,7 @@ on boot
 	insmod /system/lib/modules/gt801_2plus1.ko
         insmod /system/lib/modules/gt811_ts.ko
 	insmod /system/lib/modules/ssd253x-ts.ko
+	insmod /system/lib/modules/ssd253x_ts.ko
 	insmod /system/lib/modules/Novatek_TouchDriver.ko
 	insmod /system/lib/modules/gt82x_ts.ko
 	# gsensor drivers
