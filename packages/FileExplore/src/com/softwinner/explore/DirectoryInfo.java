@@ -144,8 +144,8 @@ public class DirectoryInfo extends Activity {
 			
 			mNameLabel.setText(dir.getName());
 			mPathLabel.setText(dir.getAbsolutePath());
-			mDirLabel.setText(mDirCount + " folders ");
-			mFileLabel.setText(mFileCount + " files ");
+			mDirLabel.setText(mDirCount + " " + getString(R.string.folders) + " ");
+			mFileLabel.setText(mFileCount + " " + getString(R.string.files) + " ");
 			mTotalLabel.setText(mDisplaySize);
 			mTimeLabel.setText(new Date(dir.lastModified()) + " ");
 			

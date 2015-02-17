@@ -45,8 +45,7 @@
 				android:layout_toRightOf="@id/multiselect_icon"
 				android:layout_alignParentTop="true"
 				android:layout_alignParentRight="true"
-				android:textStyle="bold"
-				android:textColor="@color/white"/>
+				android:textStyle="bold"/>
 			<TextView
 				android:id="@+id/bottom_view"
 				android:layout_width="fill_parent"

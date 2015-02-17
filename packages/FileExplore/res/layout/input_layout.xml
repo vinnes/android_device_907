@@ -30,7 +30,6 @@
 		android:layout_height="wrap_content"
 		android:gravity="right"
 		android:text="@string/path_will_go_here"
-		android:textColor="@color/white"
 		android:id="@+id/input_label"/>
 	<LinearLayout
 		android:orientation="horizontal"

@@ -24,6 +24,7 @@
     <string name="Attach">"連接"</string>
     <string name="Delete">"刪除"</string>
     <string name="Copy">"復制"</string>
+    <string name="Paste">"粘貼"</string>
     <string name="Move">"剪切"</string>
     <string name="Display">"顯示"</string>
     <string name="Text_color">"文本顏色"</string>
@@ -43,8 +44,8 @@
     <string name="sdcard_in">"SD卡插入"</string>
     <string name="sdcard_out">"SD卡彈出"</string>
     <string name="Multi_select_off">"多選關閉"</string>
-    <string name="flash_in">"外部SD卡插入"</string>
-    <string name="flash_out">"外部SD卡彈出"</string>
+    <string name="flash_in">"內部盤插入"</string>
+    <string name="flash_out">"內部盤彈出"</string>
     
     <string name="open_file">"選擇文件類型"</string>
     <string name="text">"文本"</string>
@@ -65,6 +66,7 @@
     <string name="Zip_Folder">"壓縮"</string>
     <string name="Paste_into_folder">"粘貼進去"</string>
     <string name="Extract_here">"解壓到這裏"</string>
+    <string name="Copied">"複件_"</string>
     
     <string name="File_Operations">"文件操作"</string>
     <string name="Delete_File">"刪除"</string>
@@ -85,7 +87,8 @@
     <string name="not_created">"新文件夾不能創建"</string>
     <string name="Rename">"重命名"</string>
     <string name="be_renamed">" 被命名為 "</string>
-    <string name="not_renamed">" 不能被重命名 "</string>
+    <string name="not_renamed">" 重命名失敗 "</string>
+    <string name="renamed_to_exist_file">" 重命名失敗,指定文件與現有文件重名"</string>
     <string name="Search_file">"搜索文件"</string>
     
     <string name="Press_back">"再點壹次back退出"</string>
@@ -103,4 +106,20 @@
     <string name="Alphabetical">"按字母"</string>
     <string name="Type">"按類型"</string>
     
+    <string name="flash">"內部存儲"</string>
+    <string name="extsd">"外部SD卡"</string>
+    <string name="usbhost">"USB設備"</string>
+    
+    <string name="can_not_copy">"無法複製 "</string>
+    <string name="can_not_paste">"無法剪切 "</string>
+    <string name="target_equals_src">":目標文件夾與源文件夾相同"</string>
+    <string name="target_is_child">":目標文件夾是源文件夾的子文件夾"</string>
+    <string name="sure_cover_file">"確信要覆蓋該文件:"</string>
+    <string name="sure_cover_files">"確信要覆蓋其中的"</string>
+    <string name="file_num">"個文件"</string>
+    <string name="not_enough_space">"磁盤沒足夠空間"</string>
+    
+    <string name="paste_success">"黏貼成功"</string>
+    <string name="paste_fail">"黏貼失敗"</string>
+    <string name="not_deleted">" 刪除失敗"</string>
 </resources>

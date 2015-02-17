@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -32,11 +33,20 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.os.Message;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
+import android.os.StatFs;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -62,7 +72,7 @@ import android.widget.Toast;
  * 
  * @author Joe Berria
  */
-public class EventHandler implements OnClickListener{
+public class EventHandler implements OnClickListener, OnItemLongClickListener, OnTouchListener{
 	/*
 	 * Unique types to control which file operation gets
 	 * performed in the background
@@ -81,6 +91,7 @@ public class EventHandler implements OnClickListener{
 	private int	mlistmode = TREEVIEW_MODE;
 	
 	private final Context mContext;
+	private final FileOperateCallbacks mCallbacks;
 	private final FileManager mFileMang;
 	private final CatalogList mCataList;
 	private TableRow mDelegate;
@@ -96,18 +107,20 @@ public class EventHandler implements OnClickListener{
 	
 	private View preView;
 
-	private void UpdateButtons(int mode)
+	public static final int ENABLE_TOOLBTN = 1;
+	public static final int DISABLE_TOOLBTN = 2;
+	public void UpdateButtons(int mode)
 	{
 		ImageButton toolbox = (ImageButton)((Activity) mContext).findViewById(R.id.manage_button);
 		ImageButton multi = (ImageButton)((Activity) mContext).findViewById(R.id.multiselect_button);
 
 		switch(mode)
 		{
-		case TREEVIEW_MODE:
+		case ENABLE_TOOLBTN:
 			toolbox.setEnabled(true);
 			multi.setEnabled(true);
 			break;
-		case CATALOG_MODE:
+		case DISABLE_TOOLBTN:
 			toolbox.setEnabled(false);
 			multi.setEnabled(false);
 			break;
@@ -121,10 +134,11 @@ public class EventHandler implements OnClickListener{
 	 * @param context	The context of the main activity e.g  Main
 	 * @param manager	The FileManager object that was instantiated from Main
 	 */
-	public EventHandler(Context context, final FileManager manager,final CatalogList CataList) {
+	public EventHandler(Context context, FileOperateCallbacks callbacks, final FileManager manager,final CatalogList CataList) {
 		mContext = context;
 		mFileMang = manager;
 		mCataList = CataList;
+		mCallbacks = callbacks;
 		
 		mDataSource = new ArrayList<String>(mFileMang.getHomeDir(FileManager.ROOT_FLASH));
 	}
@@ -239,8 +253,61 @@ public class EventHandler implements OnClickListener{
 	 * @param newLocation	to location
 	 */
 	public void copyFile(String oldLocation, String newLocation) {
-		String[] data = {oldLocation, newLocation};
-		
+		String msg = "";
+		final String[] data = {oldLocation, newLocation};
+		File oldFile = new File(oldLocation);
+		String name = oldFile.getName();
+		File newDir = new File(newLocation);
+		// 1.当剪切至自己的父目录时,不响应操作
+		if(oldFile.getParent().equals(newLocation) && delete_after_copy){
+			return;
+		}
+		//2.文件夹不能复制/剪切到自己或子目录
+		if(newLocation.contains(oldLocation)){
+			if(delete_after_copy){
+				msg = mContext.getResources().getString(R.string.can_not_paste) + name;
+			}else{
+				msg = mContext.getResources().getString(R.string.can_not_copy) + name;
+			}
+			if(newLocation.equals(oldLocation)){
+				msg = msg + mContext.getResources().getString(R.string.target_equals_src);
+			}else{
+				msg = msg + mContext.getResources().getString(R.string.target_is_child);
+			}
+			Toast.makeText(mContext, msg, Toast.LENGTH_SHORT).show();
+			return;
+		}
+		File newFile = new File(newDir, name);
+		if(newFile.exists() && 
+			!newFile.getAbsolutePath().equals(oldLocation) &&
+			((newFile.isDirectory() && oldFile.isDirectory()) || (newFile.isFile() && oldFile.isFile()))){
+			AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+			builder.setTitle(mContext.getResources().getString(R.string.Warning));
+			builder.setIcon(R.drawable.warning);
+			builder.setMessage(mContext.getResources().getString(R.string.sure_cover_file) + name);
+			builder.setCancelable(false);
+			
+			builder.setNegativeButton(mContext.getResources().getString(R.string.Cancel), new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int which) {
+					dialog.dismiss();
+				}
+			});
+			String convice = "";
+			if(delete_after_copy){
+				convice = mContext.getResources().getString(R.string.Paste);
+			}else{
+				convice = mContext.getResources().getString(R.string.Copy);
+			}
+			builder.setPositiveButton(convice, new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int which) {
+					new BackgroundWork(COPY_TYPE).execute(data);
+				}
+			});
+			AlertDialog alert_d = builder.create();
+			alert_d.show();
+			return;
+		}
+			
 		new BackgroundWork(COPY_TYPE).execute(data);
 	}
 	
@@ -249,17 +316,73 @@ public class EventHandler implements OnClickListener{
 	 * @param newLocation
 	 */
 	public void copyFileMultiSelect(String newLocation) {
-		String[] data;
+		final String[] data;
 		int index = 1;
-		
+		int cover = 0;
 		if (mMultiSelectData.size() > 0) {
-			data = new String[mMultiSelectData.size() + 1];
-			data[0] = newLocation;
-			
-			for(String s : mMultiSelectData)
-				data[index++] = s;
-			
-			new BackgroundWork(COPY_TYPE).execute(data);
+			ArrayList<String> datas = (ArrayList<String>) mMultiSelectData.clone();
+			for(String oldLocation:datas){
+				File oldFile = new File(oldLocation);
+				if(oldFile.getParent().equals(newLocation) && delete_after_copy){
+					mMultiSelectData.remove(oldLocation);
+					continue;
+				}
+				if(newLocation.contains(oldLocation)){
+					mMultiSelectData.remove(oldLocation);
+					continue;
+				}
+				String name = oldFile.getName();
+				File newFile = new File(newLocation, name);
+				if(newFile.exists() && 
+					!newFile.getAbsolutePath().equals(oldLocation) &&
+					((newFile.isDirectory() && oldFile.isDirectory()) || (newFile.isFile() && oldFile.isFile()))){
+					cover++;
+					continue;
+				}
+			}
+			if(mMultiSelectData.size() > 0){
+				data = new String[mMultiSelectData.size() + 1];
+				data[0] = newLocation;
+				for(String s : mMultiSelectData){
+					data[index++] = s;
+				}
+				if(cover > 0){
+					AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
+					builder.setTitle(mContext.getResources().getString(R.string.Warning));
+					builder.setIcon(R.drawable.warning);
+					builder.setMessage(mContext.getResources().getString(R.string.sure_cover_files) + cover + 
+							mContext.getResources().getString(R.string.file_num));
+					builder.setCancelable(false);
+					
+					builder.setNegativeButton(mContext.getResources().getString(R.string.Cancel), new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+							dialog.dismiss();
+						}
+					});
+					String convice = "";
+					if(delete_after_copy){
+						convice = mContext.getResources().getString(R.string.Paste);
+					}else{
+						convice = mContext.getResources().getString(R.string.Copy);
+					}
+					builder.setPositiveButton(convice, new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+							new BackgroundWork(COPY_TYPE).execute(data);
+						}
+					});
+					AlertDialog alert_d = builder.create();
+					alert_d.show();
+				}
+				else{
+					new BackgroundWork(COPY_TYPE).execute(data);
+				}
+			}
+			else{
+				multi_select_flag = false;
+				mMultiSelectData.clear();
+				mInfoLabel.setText("");
+				delete_after_copy = false;
+			}
 		}
 	}
 	
@@ -312,7 +435,7 @@ public class EventHandler implements OnClickListener{
 				if (!mFileMang.isRoot()) {
 					if(multi_select_flag) {
 						mDelegate.killMultiSelect(true);
-						Toast.makeText(mContext, "Multi-select is now off", 
+						Toast.makeText(mContext, R.string.Multi_select_off, 
 									   Toast.LENGTH_SHORT).show();
 					}
 					updateDirectory(mFileMang.getPreviousDir());
@@ -331,7 +454,7 @@ public class EventHandler implements OnClickListener{
 				mlistmode = TREEVIEW_MODE;
 				if(multi_select_flag) {
 					mDelegate.killMultiSelect(true);
-					Toast.makeText(mContext, "Multi-select is now off", 
+					Toast.makeText(mContext, R.string.Multi_select_off, 
 								   Toast.LENGTH_SHORT).show();
 				}
 				updateDirectory(mFileMang.getHomeDir(FileManager.ROOT_SDCARD));
@@ -349,7 +472,7 @@ public class EventHandler implements OnClickListener{
 				mlistmode = TREEVIEW_MODE;
 				if(multi_select_flag) {
 					mDelegate.killMultiSelect(true);
-					Toast.makeText(mContext, "Multi-select is now off", 
+					Toast.makeText(mContext, R.string.Multi_select_off, 
 								   Toast.LENGTH_SHORT).show();
 				}
 				updateDirectory(mFileMang.getHomeDir(FileManager.ROOT_USBHOST));
@@ -358,7 +481,6 @@ public class EventHandler implements OnClickListener{
 				break;
 				
 			case R.id.home_flash_button:
-				Log.d("EventHandler", "------1------");
 				refreshFocus(preView,v);
 				if(mFileMang.whichRoot() == FileManager.ROOT_FLASH &&
 					mlistmode == TREEVIEW_MODE)
@@ -368,7 +490,7 @@ public class EventHandler implements OnClickListener{
 				mlistmode = TREEVIEW_MODE;
 				if(multi_select_flag) {
 					mDelegate.killMultiSelect(true);
-					Toast.makeText(mContext, "Multi-select is now off", 
+					Toast.makeText(mContext, R.string.Multi_select_off, 
 								   Toast.LENGTH_SHORT).show();
 				}
 				updateDirectory(mFileMang.getHomeDir(FileManager.ROOT_FLASH));
@@ -399,10 +521,27 @@ public class EventHandler implements OnClickListener{
 					hidden_lay.setVisibility(LinearLayout.VISIBLE);
 				}
 				break;
+				
+			case R.id.image_button:
+				mlistmode = CATALOG_MODE;
+				setFileList(mCataList.SetFileTyp(CatalogList.TYPE_PICTURE));
+				if(mPathLabel != null)
+					mPathLabel.setText(mContext.getResources().getString(R.string.image));
+				refreshFocus(preView,v);
+				break;
+				
+			case R.id.movie_button:
+				mlistmode = CATALOG_MODE;
+				setFileList(mCataList.SetFileTyp(CatalogList.TYPE_MOVIE));
+				if(mPathLabel != null)
+					mPathLabel.setText(mContext.getResources().getString(R.string.video));
+				refreshFocus(preView,v);
+				break;
 			
 			/* 
 			 * three hidden buttons for multiselect
 			 */
+			
 			case R.id.hidden_attach:
 				/* check if user selected objects before going further */
 				if(mMultiSelectData == null || mMultiSelectData.isEmpty()) {
@@ -430,22 +569,13 @@ public class EventHandler implements OnClickListener{
     			
     			mDelegate.killMultiSelect(true);
 				break;
-			case R.id.image_button:
-				mlistmode = CATALOG_MODE;
-				setFileList(mCataList.SetFileTyp(CatalogList.TYPE_PICTURE));
-				if(mPathLabel != null)
-					mPathLabel.setText("Picture");
-				refreshFocus(preView,v);
+			/* add by chenjd,chenjd@allwinnertech.com,20120313
+			 * add function:paste to current dir */
+			case R.id.hidden_paste:
+				String des = mFileMang.getCurrentDir();
+				mCallbacks.paste(des);
+				mDelegate.killMultiSelect(false);
 				break;
-				
-			case R.id.movie_button:
-				mlistmode = CATALOG_MODE;
-				setFileList(mCataList.SetFileTyp(CatalogList.TYPE_MOVIE));
-				if(mPathLabel != null)
-					mPathLabel.setText("Movie");
-				refreshFocus(preView,v);
-				break;
-				
 			case R.id.hidden_move:
 			case R.id.hidden_copy:
 				/* check if user selected objects before going further */
@@ -454,11 +584,13 @@ public class EventHandler implements OnClickListener{
 					break;
 				}
 				
-				if(v.getId() == R.id.hidden_move)
+				if(v.getId() == R.id.hidden_move){
 					delete_after_copy = true;
+				}else{
+					delete_after_copy = false;
+				}
 					
-				mInfoLabel.setText("Holding " + mMultiSelectData.size() + 
-								   " file(s)");
+				mInfoLabel.setText(mContext.getString(R.string.holding_files, mMultiSelectData.size()));
 				
 				mDelegate.killMultiSelect(false);
 				break;
@@ -477,18 +609,17 @@ public class EventHandler implements OnClickListener{
 					data[at++] = string;
 				
 				AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
-				builder.setMessage("Are you sure you want to delete " +
-								    data.length + " files? This cannot be " +
-								    "undone.");
+				builder.setMessage(mContext.getResources().getString(R.string.Deleting_warning_pre) +
+								    data.length + mContext.getResources().getString(R.string.Deleting_warning_suf));
 				builder.setCancelable(false);
-				builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+				builder.setPositiveButton(R.string.Delete, new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						new BackgroundWork(DELETE_TYPE).execute(data);
 						mDelegate.killMultiSelect(true);
 					}
 				});
-				builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+				builder.setNegativeButton(R.string.Cancel, new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						mDelegate.killMultiSelect(true);
@@ -499,7 +630,21 @@ public class EventHandler implements OnClickListener{
 				builder.create().show();
 				break;
 		}
-		UpdateButtons(mlistmode);
+		switch(getMode()){
+		case CATALOG_MODE:
+			UpdateButtons(DISABLE_TOOLBTN);
+			break;
+		case TREEVIEW_MODE:
+			if(mFileMang.isRoot()){
+				UpdateButtons(DISABLE_TOOLBTN);
+			}else{
+				UpdateButtons(ENABLE_TOOLBTN);
+			}
+			break;
+		default:
+			UpdateButtons(DISABLE_TOOLBTN);
+			break;
+		}
 	}
 	
 	public void getInitView(View v){
@@ -529,6 +674,25 @@ public class EventHandler implements OnClickListener{
 		return mDataSource.get(position);
 	}
 
+	public String getCurrentFilePath(int position){
+		final String item = getData(position);
+		if (Log.isLoggable("fileManager", Log.DEBUG))
+			Log.d("chen","item  " + item);
+    	if(getMode() == EventHandler.TREEVIEW_MODE)
+    	{
+    		String curDir = mFileMang.getCurrentDir();
+    		if(curDir.equals(mFileMang.flashList) ||
+    				curDir.equals(mFileMang.sdcardList) ||
+    				curDir.equals(mFileMang.usbhostList)){
+    			return item;
+    		}
+    		else {
+    			return (mFileMang.getCurrentDir() + "/" + item);
+    		}
+    	}
+    	return item;
+	}
+	
 	/**
 	 * called to update the file contents as the user navigates there
 	 * phones file system. 
@@ -581,10 +745,10 @@ public class EventHandler implements OnClickListener{
     		case MANAGE_DIALOG:
     			//un-comment WIFI Info here and in the manifest file 
     	    	//to display WIFI info. Also uncomment and change case number below
-    	    	CharSequence[] options = {"Process Info", /*"Wifi Info",*/ "Application backup"};
+    	    	CharSequence[] options = {mContext.getString(R.string.process_info), /*"Wifi Info",*/ mContext.getString(R.string.application_backup)};
     	    	
     	    	builder = new AlertDialog.Builder(mContext);
-    	    	builder.setTitle("Tool Box");
+    	    	builder.setTitle(mContext.getString(R.string.tool_box));
     	    	builder.setIcon(R.drawable.toolbox);
     	    	builder.setItems(options, new DialogInterface.OnClickListener() {
     	    		
@@ -640,12 +804,14 @@ public class EventHandler implements OnClickListener{
     	private ArrayList<Integer> positions;
     	private LinearLayout hidden_layout;
     	private ThumbnailCreator thumbnail;
+    	private DevicePath mDevices;
     	
     	public TableRow() {
     		super(mContext, R.layout.tablerow, mDataSource);
     		
-    		thumbnail = new ThumbnailCreator(32, 32);
-    		dir_name = new DevicePath(mContext).getInterStoragePath();
+    		thumbnail = new ThumbnailCreator(mContext, 32, 32);
+    		dir_name = mFileMang.getCurrentDir();
+    		mDevices = new DevicePath(mContext);
     	}
     	
     	public void addMultiPosition(int index, String path) {
@@ -772,21 +938,13 @@ public class EventHandler implements OnClickListener{
     			} else if (TypeFilter.getInstance().isPictureFile(sub_ext)) {
     				
     				if(thumbnail_flag && file.length() != 0) {
-	    				Bitmap thumb = thumbnail.hasBitmapCached(position);
+	    				Bitmap thumb = thumbnail.hasBitmapCached(file.getAbsolutePath());
 	    				
 	    				if(thumb == null) {
 
 	    					holder.icon.setImageResource(R.drawable.image);
-	    					final Handler mHandler = new Handler();
-	    					boolean isJPG = false;
-	    					if(sub_ext.equalsIgnoreCase("jpeg") || sub_ext.equalsIgnoreCase("jpg")){
-	    						isJPG = true;
-	    					}
-	   						thumbnail.setBitmapToImageView(file.getPath(), 
-	   													   mHandler, 
-	   													   holder.icon,
-	   													   isJPG,
-	   													   position);
+	   						thumbnail.setBitmapToImageView(file.getAbsolutePath(), 
+	   													   holder.icon);
 	   						
 	    				} else {
 	    					holder.icon.setImageBitmap(thumb);
@@ -834,12 +992,16 @@ public class EventHandler implements OnClickListener{
     		ViewHolder holder;
     		int num_items = 0;
     		String temp = mFileMang.getCurrentDir();
-    		File file = new File(temp + "/" + mDataSource.get(position));
-    		String[] list = file.list();
+    		File file = new File(getCurrentFilePath(position));
+    		String filePath = file.getAbsolutePath();
     		
-    		if(list != null)
-    			num_items = list.length;
-   
+    		num_items = mDevices.getPartitions(filePath);
+    		if(num_items <= 0 ){
+    			String[] list = file.list();
+        		
+        		if(list != null)
+        			num_items = list.length;
+    		}
     		if(convertView == null) {
     			LayoutInflater inflater = (LayoutInflater) mContext.
     						getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -890,19 +1052,11 @@ public class EventHandler implements OnClickListener{
     			} else if (TypeFilter.getInstance().isPictureFile(sub_ext)) {
     				
     				if(thumbnail_flag && file.length() != 0) {
-	    				Bitmap thumb = thumbnail.hasBitmapCached(position);
-	    				boolean isJPG = false;
-						if(sub_ext.equalsIgnoreCase("jpeg") || sub_ext.equalsIgnoreCase("jpg")){
-							isJPG = true;
-						}
+	    				Bitmap thumb = thumbnail.hasBitmapCached(file.getAbsolutePath());
 	    				if(thumb == null) {
 	    					holder.icon.setImageResource(R.drawable.image);
-	    					final Handler mHandler = new Handler();
-	   						thumbnail.setBitmapToImageView(file.getPath(), 
-	   													   mHandler, 
-	   													   holder.icon,
-	   													   isJPG,
-	   													   position);
+	   						thumbnail.setBitmapToImageView(file.getAbsolutePath(), 
+	   													   holder.icon);
 	   						
 	    				} else {
 	    					holder.icon.setImageBitmap(thumb);
@@ -1014,6 +1168,10 @@ public class EventHandler implements OnClickListener{
     	private ProgressDialog pr_dialog;
     	private int type;
     	private int copy_rtn;
+    	private int copyedCount;
+    	private int copyCount;
+    	private static final String WAKE_LOCK = "wakelock";
+    	private WakeLock wl = null;
     	
     	private BackgroundWork(int type) {
     		this.type = type;
@@ -1025,45 +1183,72 @@ public class EventHandler implements OnClickListener{
     	 */
     	@Override
     	protected void onPreExecute() {
+    		/* add by chenjd,chenjd@allwinnertech.com,20120506
+    		 * lock standby when it is in file operation*/
+    		PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+    		wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK);
+    		wl.acquire();
     		
     		switch(type) {
     			case SEARCH_TYPE:
-    				pr_dialog = ProgressDialog.show(mContext, "Searching", 
-    												"Searching current file system...",
+    				pr_dialog = ProgressDialog.show(mContext, mContext.getString(R.string.searching),
+    												mContext.getString(R.string.searching_cur_fs),
     												true, true);
     				break;
     				
     			case COPY_TYPE:
-    				pr_dialog = ProgressDialog.show(mContext, "Copying", 
+    				/*pr_dialog = ProgressDialog.show(mContext, "Copying", 
     												"Copying file...", 
-    												true, false);
+    												true, false);*/
+    				pr_dialog = new ProgressDialog(mContext);
+    				pr_dialog.setTitle(mContext.getString(R.string.copying));
+    				pr_dialog.setIndeterminate(false);
+    				pr_dialog.setCancelable(false);
+    				pr_dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+    				pr_dialog.incrementProgressBy(-pr_dialog.getProgress());
+    				pr_dialog.show();
     				break;
     				
     			case UNZIP_TYPE:
-    				pr_dialog = ProgressDialog.show(mContext, "Unzipping", 
-    												"Unpacking zip file please wait...",
-    												true, false);
-    				break;
-    				
     			case UNZIPTO_TYPE:
-    				pr_dialog = ProgressDialog.show(mContext, "Unzipping", 
-    												"Unpacking zip file please wait...",
+    				pr_dialog = ProgressDialog.show(mContext, mContext.getString(R.string.unzipping),
+    												mContext.getString(R.string.unzipping_wait),
     												true, false);
     				break;
     			
     			case ZIP_TYPE:
-    				pr_dialog = ProgressDialog.show(mContext, "Zipping", 
-    												"Zipping folder...", 
+    				pr_dialog = ProgressDialog.show(mContext, mContext.getString(R.string.zipping),
+    												mContext.getString(R.string.zipping_folder),
     												true, false);
     				break;
     				
     			case DELETE_TYPE:
-    				pr_dialog = ProgressDialog.show(mContext, "Deleting", 
-    												"Deleting files...", 
+    				pr_dialog = ProgressDialog.show(mContext, mContext.getString(R.string.deleting),
+    												mContext.getString(R.string.deleting_files),
     												true, false);
     				break;
     		}
     	}
+
+    	/*
+    	 * Our handler object that will update the GUI from 
+    	 * our background thread. 
+    	 */
+    	private Handler mHandler = new Handler() {
+    		public void handleMessage(Message msg) {
+    			if (pr_dialog != null) {
+    				if (msg.obj != null) {
+    					pr_dialog.setTitle(mContext.getString(R.string.copying) + " " + (String)msg.obj);
+    				}
+    				if (msg.arg1 > 0) {
+    					pr_dialog.incrementProgressBy(msg.arg1);
+    				}
+    				if (msg.arg2 > 0) {
+    					pr_dialog.setMax(msg.arg2);
+    				}
+    			}
+    		}
+    	};
 
     	/**
     	 * background thread here
@@ -1080,18 +1265,63 @@ public class EventHandler implements OnClickListener{
 					
 				case COPY_TYPE:
 					int len = params.length;
-					
+
+
 					if(mMultiSelectData != null && !mMultiSelectData.isEmpty()) {
+						StatFs statfs = new StatFs(params[0]);
+						long availsize	 = statfs.getBlockSize() * ((long)statfs.getAvailableBlocks());
+						long size = 0;
 						for(int i = 1; i < len; i++) {
-							copy_rtn = mFileMang.copyToDirectory(params[i], params[0]);
-							
+
+							size += mFileMang.getFileSize(new File(params[i]));
+						}
+						if(availsize < size){
+							copy_rtn = -2;
+							delete_after_copy = false;
+							return null;
+						}
+						if (mHandler != null) {
+							if (size > Integer.MAX_VALUE)
+								size = Integer.MAX_VALUE;
+							Message msg = new Message();
+							msg.arg2 = (int)size;
+							mHandler.sendMessage(msg);
+						}
+						copyedCount = 0;
+						copyCount = len -1;
+						for(int i = 1; i < len; i++) {
+							copy_rtn = mFileMang.copyToDirectory(params[i], params[0], mHandler);
+							if (copy_rtn != 0) continue;
+							copyedCount++;
 							if(delete_after_copy)
 								mFileMang.deleteTarget(params[i]);
 						}
+						if (copyedCount == copyCount) {
+							copy_rtn = 0;
+						} else {
+							copy_rtn = -1;
+						}
 					} else {
-						copy_rtn = mFileMang.copyToDirectory(params[0], params[1]);
+						StatFs statfs = new StatFs(params[1]);
+						long availsize	 = statfs.getBlockSize() * ((long)statfs.getAvailableBlocks());
+						long size = 0;
+						size = mFileMang.getFileSize(new File(params[0]));
+						if(availsize < size){
+							copy_rtn = -2;
+							delete_after_copy = false;
+							return null;
+						}
+						if (mHandler != null) {
+
+							if (size > Integer.MAX_VALUE)
+								size = Integer.MAX_VALUE;
+							Message msg = new Message();
+							msg.arg2 = (int)size;
+							mHandler.sendMessage(msg);
+						}
+						copy_rtn = mFileMang.copyToDirectory(params[0], params[1], mHandler);
 						
-						if(delete_after_copy)
+						if(copy_rtn == 0 && delete_after_copy)
 							mFileMang.deleteTarget(params[0]);
 					}
 					
@@ -1130,10 +1360,16 @@ public class EventHandler implements OnClickListener{
 			final CharSequence[] names;
 			int len = file != null ? file.size() : 0;
 			
+			/* add by chenjd,chenjd@allwinnertech.com,20120506
+			 * unlock standby
+			 */
+			if(wl != null)
+				wl.release();
+			
 			switch(type) {
 				case SEARCH_TYPE:				
 					if(len == 0) {
-						Toast.makeText(mContext, "Couldn't find " + file_name, 
+						Toast.makeText(mContext, mContext.getString(R.string.could_not_find, file_name),
 											Toast.LENGTH_SHORT).show();
 					
 					} else {
@@ -1145,20 +1381,86 @@ public class EventHandler implements OnClickListener{
 						}
 						
 						AlertDialog.Builder builder = new AlertDialog.Builder(mContext);
-						builder.setTitle("Found " + len + " file(s)");
+						builder.setTitle(mContext.getString(R.string.found_files, len));
 						builder.setItems(names, new DialogInterface.OnClickListener() {
 							
 							public void onClick(DialogInterface dialog, int position) {
 								String path = file.get(position);
-								updateDirectory(mFileMang.getNextDir(path.
-													substring(0, path.lastIndexOf("/")), true));
+//								updateDirectory(mFileMang.getNextDir(path.
+//													substring(0, path.lastIndexOf("/")), true));
+								/* add by chenjd.chenjd@allwinnertech.com,20120213
+								 * when it is a directory, open it,otherwise play it*/
+								File f = new File(path);
+						    	String item_ext = null;
+						    	
+						    	try {
+						    		item_ext = path.substring(path.lastIndexOf(".") + 1, path.length());
+						    		
+						    	} catch(IndexOutOfBoundsException e) {	
+						    		item_ext = ""; 
+						    	}
+								if(f.exists())
+								{
+									if(f.isDirectory())
+									{
+										if(f.canRead()) {
+								    		updateDirectory(mFileMang.getNextDir(path));
+								    		mPathLabel.setText(mFileMang.getCurrentDir());
+							    		} 
+									}
+									else if (TypeFilter.getInstance().isMusicFile(item_ext)) {
+						                Intent picIntent = new Intent();
+						                picIntent.setAction(android.content.Intent.ACTION_VIEW);
+						                picIntent.setDataAndType(Uri.fromFile(f), "audio/*");
+						                try{
+						                	mContext.startActivity(picIntent);
+						                }catch(ActivityNotFoundException e)
+						                {
+						                	Log.e("EventHandler", "can not find activity to open it");
+						                }
+							    	}
+							    	else if(TypeFilter.getInstance().isPictureFile(item_ext)) {  		
+								    	Intent picIntent = new Intent();
+								    	picIntent.setAction(android.content.Intent.ACTION_VIEW);
+								    	picIntent.setDataAndType(Uri.fromFile(f), "image/*");
+								    	try
+								    	{
+								    		mContext.startActivity(picIntent);
+								    	}catch(ActivityNotFoundException e)
+								    	{
+								    		Log.e("EventHandler", "can not find activity to open it");
+								    	}
+							    	}
+							    	/*video file selected--add more video formats*/
+							    	else if(TypeFilter.getInstance().isMovieFile(item_ext)) {
+									    Intent movieIntent = new Intent();
+									    movieIntent.putExtra(MediaStore.EXTRA_FINISH_ON_COMPLETION, false);
+									    movieIntent.setAction(android.content.Intent.ACTION_VIEW);
+									    movieIntent.setDataAndType(Uri.fromFile(f), "video/*");
+									    try{
+									    	mContext.startActivity(movieIntent);
+									    }catch(ActivityNotFoundException e)
+									    {
+									    	Log.e("EventHandler", "can not find activity to open it");
+									    }
+							    	}
+							    	else if(TypeFilter.getInstance().isApkFile(item_ext)){
+								    	Intent apkIntent = new Intent();
+								    	apkIntent.setAction(android.content.Intent.ACTION_VIEW);
+								    	apkIntent.setDataAndType(Uri.fromFile(f), "application/vnd.android.package-archive");
+								    	try {
+								    		mContext.startActivity(apkIntent);
+										} catch (ActivityNotFoundException e) {
+											Log.e("EventHandler", "can not find activity to open it");
+										}
+								    	
+							    	}
+								}
 							}
 						});
-						
 						AlertDialog dialog = builder.create();
 						dialog.show();
 					}
-					
 					pr_dialog.dismiss();
 					break;
 					
@@ -1168,28 +1470,34 @@ public class EventHandler implements OnClickListener{
 						mMultiSelectData.clear();
 					}
 					
-					if(copy_rtn == 0)
-						Toast.makeText(mContext, "File successfully copied and pasted", 
+					if (copy_rtn == 0) {
+						Toast.makeText(mContext, R.string.paste_success, 
 											Toast.LENGTH_SHORT).show();
-					else
-						Toast.makeText(mContext, "Copy pasted failed", Toast.LENGTH_SHORT).show();
-					
+					} else if (copy_rtn == -2) {
+						Toast.makeText(mContext, R.string.not_enough_space, Toast.LENGTH_SHORT).show();
+					} else  if (copyedCount > 0 && copyCount > 0) {
+						Toast.makeText(mContext, mContext.getText(R.string.paste_success) + " " + copyedCount + "/" + copyCount, Toast.LENGTH_SHORT).show();
+					} else {
+						Toast.makeText(mContext, R.string.paste_fail, Toast.LENGTH_SHORT).show();
+					}
+					copyedCount = copyCount = 0;
+					updateDirectory(mFileMang.getNextDir(mFileMang.getCurrentDir()));
 					pr_dialog.dismiss();
 					mInfoLabel.setText("");
 					break;
 					
 				case UNZIP_TYPE:
-					updateDirectory(mFileMang.getNextDir(mFileMang.getCurrentDir(), true));
+					updateDirectory(mFileMang.getNextDir(mFileMang.getCurrentDir()));
 					pr_dialog.dismiss();
 					break;
 					
 				case UNZIPTO_TYPE:
-					updateDirectory(mFileMang.getNextDir(mFileMang.getCurrentDir(), true));
+					updateDirectory(mFileMang.getNextDir(mFileMang.getCurrentDir()));
 					pr_dialog.dismiss();
 					break;
 					
 				case ZIP_TYPE:
-					updateDirectory(mFileMang.getNextDir(mFileMang.getCurrentDir(), true));
+					updateDirectory(mFileMang.getNextDir(mFileMang.getCurrentDir()));
 					pr_dialog.dismiss();
 					break;
 					
@@ -1199,11 +1507,33 @@ public class EventHandler implements OnClickListener{
 						multi_select_flag = false;
 					}
 					
-					updateDirectory(mFileMang.getNextDir(mFileMang.getCurrentDir(), true));
+					updateDirectory(mFileMang.getNextDir(mFileMang.getCurrentDir()));
 					pr_dialog.dismiss();
 					mInfoLabel.setText("");
 					break;
 			}
 		}
     }
+
+	@Override
+	public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+		return mFileMang.isRoot(); // do not respond when in storage list mode
+	}
+
+	private boolean mPreventClickFlag = false;
+
+	public boolean isPreventClick() {
+		if (mPreventClickFlag) {
+			mPreventClickFlag = false;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean onTouch(View v, MotionEvent event) {
+		if (event.getAction() == MotionEvent.ACTION_DOWN)
+			mPreventClickFlag = (event.getButtonState() == MotionEvent.BUTTON_SECONDARY);
+		return false;
+	}
 }

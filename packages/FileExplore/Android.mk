@@ -22,8 +22,6 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := $(call all-subdir-java-files)
 
 LOCAL_PACKAGE_NAME := FileExplore
-LOCAL_CERTIFICATE := shared
-
-LOCAL_OVERRIDES_PACKAGES := Home
+LOCAL_CERTIFICATE := platform
 
 include $(BUILD_PACKAGE)

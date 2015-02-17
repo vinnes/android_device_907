@@ -77,10 +77,10 @@ public class ProcessManager extends ListActivity {
 	protected void onListItemClick(ListView parent, View view, int position, long id) {
 		AlertDialog dialog;
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		CharSequence[] options = {"Details", "Launch"};
+		CharSequence[] options = {getString(R.string.details), getString(R.string.launch)};
 		final int index = position;
 		
-		builder.setTitle("Process options");
+		builder.setTitle(getString(R.string.process_options));
 		
 		try {
 			builder.setIcon(pk.getApplicationIcon(display_process.get(position).processName));
@@ -105,7 +105,7 @@ public class ProcessManager extends ListActivity {
 						if(i != null)
 							startActivity(i);
 						else
-							Toast.makeText(ProcessManager.this, "Could not launch", Toast.LENGTH_SHORT).show();	
+							Toast.makeText(ProcessManager.this, ProcessManager.this.getString(R.string.could_not_launch), Toast.LENGTH_SHORT).show();
 						
 						break;
 				}
@@ -127,8 +127,8 @@ public class ProcessManager extends ListActivity {
 		activity_man.getMemoryInfo(mem_info);
 		mem_size = (mem_info.availMem / (CONVERT * CONVERT));		
 		
-		availMem_label.setText(String.format("Available memory:\t %.2f Mb", mem_size));
-		numProc_label.setText("Number of processes:\t " + display_process.size());
+		availMem_label.setText(getString(R.string.available_memory) + String.format("\t %.2f Mb", mem_size));
+		numProc_label.setText(getString(R.string.number_of_processes) + "\t " + display_process.size());
 	}
 	
 	private void update_list() {

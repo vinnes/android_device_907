@@ -35,8 +35,7 @@
  		android:layout_height="wrap_content"
  		android:layout_gravity="center"
  		android:layout_weight="0"
- 		android:paddingTop="15dip"
- 		android:textColor="@color/white"/>
+ 		android:paddingTop="15dip"/>
  	<LinearLayout
  		android:orientation="horizontal"
  		android:layout_width="fill_parent"

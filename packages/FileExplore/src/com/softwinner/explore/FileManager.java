@@ -24,16 +24,19 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.Stack;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Message;
+import android.os.StatFs;
 import android.util.Log;
 
 /**
@@ -52,6 +55,7 @@ import android.util.Log;
  *
  */
 public class FileManager {
+	private static final String TAG = FileManager.class.getSimpleName();
 	public  static final int ROOT_FLASH = 0;
 	public  static final int ROOT_SDCARD = 1;
 	public  static final int ROOT_USBHOST = 2;
@@ -62,15 +66,20 @@ public class FileManager {
 	private static final int SORT_ALPHA = 	1;
 	private static final int SORT_TYPE = 	2;
 	
-	private String flashPath;
-	private String sdcardPath;
-	private String usbPath;
+	private ArrayList<String> flashPath;
+	private ArrayList<String> sdcardPath;
+	private ArrayList<String> usbPath;
+	private DevicePath mDevices;
 	
 	private boolean mShowHiddenFiles = false;
 	private int mSortType = SORT_ALPHA;
 	private long mDirSize = 0;
 	private Stack<String> mPathStack;
 	private ArrayList<String> mDirContent;
+	
+	public String flashList = "Sdcard";
+	public String sdcardList = "External Sdcard";
+	public String usbhostList = "Usb";
 	
 	private Context mContext ;
 	/**
@@ -81,15 +90,18 @@ public class FileManager {
 	public FileManager(Context context) {
 		mDirContent = new ArrayList<String>();
 		mPathStack = new Stack<String>();
-		
-		DevicePath devices = new DevicePath(context);
-		flashPath = devices.getSdStoragePath();
-		sdcardPath = devices.getInterStoragePath();
-		usbPath = devices.getUsbStoragePath();
-		mPathStack.push("/");
-		mPathStack.push(sdcardPath);
-		
 		mContext = context;
+		
+		flashList = mContext.getResources().getString(R.string.flash);
+		sdcardList = mContext.getResources().getString(R.string.extsd);
+		usbhostList = mContext.getResources().getString(R.string.usbhost);
+		
+		mDevices = new DevicePath(context);
+		flashPath = mDevices.getInterStoragePath();
+		sdcardPath = mDevices.getSdStoragePath();
+		usbPath = mDevices.getUsbStoragePath();
+		mPathStack.push("/");
+		mPathStack.push(flashList);
 	}
 	
 	/**
@@ -109,24 +121,21 @@ public class FileManager {
 		mPathStack.clear();
 		mPathStack.push("/");
 		switch(root_type)
-			{
+		{
 			case ROOT_SDCARD:
-				mPathStack.push(sdcardPath);
-				break;
+				mPathStack.push(sdcardList);
+				return mDevices.getMountedPath(sdcardPath);
 				
 			case ROOT_USBHOST:
-				mPathStack.push(usbPath);
-				break;
+				mPathStack.push(usbhostList);
+				return mDevices.getMountedPath(usbPath);
 				
 			case ROOT_FLASH:
 			default:
-				mPathStack.push(flashPath);
-				break;
+				mPathStack.push(flashList);
+				return mDevices.getMountedPath(flashPath);
 				
-			}
-		
-		
-		return populate_list();
+		}
 	}
 	
 	/**
@@ -137,9 +146,9 @@ public class FileManager {
 		//This will eventually be placed as a settings item
 		String tmp = mPathStack.peek();
 		
-		if(tmp.equals(sdcardPath) ||
-			tmp.equals(usbPath) ||
-			tmp.equals(flashPath))
+		if(tmp.equals(sdcardList) ||
+			tmp.equals(usbhostList) ||
+			tmp.equals(flashList))
 		{
 			return true;
 		}
@@ -154,20 +163,29 @@ public class FileManager {
 	public int whichRoot() {
 		//This will eventually be placed as a settings item
 		String tmp = mPathStack.peek();
-		
-		if(tmp.startsWith(sdcardPath))
-		{
-			return ROOT_SDCARD;
-		}
-		if(tmp.startsWith(usbPath))
-		{
-			return ROOT_USBHOST;
-		}
-		if(tmp.startsWith(flashPath))
-		{
+		if(tmp.equals(flashList)){
 			return ROOT_FLASH;
+		}else if(tmp.equals(sdcardList)){
+			return ROOT_SDCARD;
+		}else if(tmp.equals(usbhostList)){
+			return ROOT_USBHOST;
+		}else{
+			for(String st:sdcardPath){
+				if(tmp.startsWith(st)){
+					return ROOT_SDCARD;
+				}
+			}
+			for(String st:flashPath){
+				if(tmp.startsWith(st)){
+					return ROOT_FLASH;
+				}
+			}
+			for(String st:usbPath){
+				if(tmp.startsWith(st)){
+					return ROOT_USBHOST;
+				}
+			}
 		}
-		
 		return ROOT_UNKNOWN;
 	}
 	
@@ -199,9 +217,18 @@ public class FileManager {
 			mPathStack.pop();
 		
 		else if(size == 0)
-			mPathStack.push("/");
+			mPathStack.push(flashList);
 		
-		return populate_list();
+		String st = mPathStack.peek();
+		if(st.equals(flashList)){
+			return mDevices.getMountedPath(flashPath);
+		}else if(st.equals(sdcardList)){
+			return mDevices.getMountedPath(sdcardPath);
+		}else if(st.equals(usbhostList)){
+			return mDevices.getMountedPath(usbPath);
+		}else{
+			return populate_list();
+		}
 	}
 	
 	/**
@@ -210,78 +237,92 @@ public class FileManager {
 	 * @param isFullPath
 	 * @return
 	 */
-	public ArrayList<String> getNextDir(String path, boolean isFullPath) {
-		int size = mPathStack.size();
-		
-		if(!path.equals(mPathStack.peek()) && !isFullPath) {
-			if(size == 1)
-				mPathStack.push("/" + path);
-			else
-				mPathStack.push(mPathStack.peek() + "/" + path);
-		}
-		
-		else if(!path.equals(mPathStack.peek()) && isFullPath) {
+	public ArrayList<String> getNextDir(String path) {
+		if(!path.equals(mPathStack.peek())) {
 			mPathStack.push(path);
 		}
-		
-		return populate_list();
+		if(flashList.equals(path)){
+			return mDevices.getMountedPath(flashPath);
+		}else if(sdcardList.equals(path)){
+			return mDevices.getMountedPath(sdcardPath);
+		}else if(usbhostList.equals(path)){
+			return mDevices.getMountedPath(usbPath);
+		}else{
+			return populate_list();
+		}
 	}
 
 	/**
-	 * 
-	 * @param old		the file to be copied
-	 * @param newDir	the directory to move the file to
+	 * @param oldPath the file to be copied
+	 * @param newPath the directory to move the file to
+	 * @param handler callback handler
 	 * @return
 	 */
-	public int copyToDirectory(String old, String newDir) {
-		File old_file = new File(old);
-		File temp_dir = new File(newDir);
+	public int copyToDirectory(String oldPath, String newPath, Handler handler) {
+		if (newPath.startsWith(oldPath)) {
+			Log.e(TAG, "newPath(" + newPath + ") startsWith oldPath(" + oldPath + ")");
+			return -1;
+		}
+		if (handler != null) {
+			Message msg = new Message();
+			msg.obj = oldPath;
+			handler.sendMessage(msg);
+		}
+		File oldFile = new File(oldPath);
+		File newFile = new File(newPath);
+		if (newFile.isDirectory() && newFile.canRead() && newFile.canWrite()) {
+			return realCopyToDirectory(oldFile, newFile, handler);
+		}
+		return -1;
+	}
+
+	private int realCopyToDirectory(File oldFile, File newFile, Handler handler) {
+		String copyName = mContext.getResources().getString(R.string.Copied);
 		byte[] data = new byte[BUFFER];
 		int read = 0;
-		
-		if(old_file.isFile() && temp_dir.isDirectory() && temp_dir.canWrite()){
-			String file_name = old.substring(old.lastIndexOf("/"), old.length());
-			String new_name = newDir + file_name;
-			
-			File cp_file = new File(new_name);	
+		File distFile = null;
+		if (oldFile.getParent().equals(newFile.getAbsolutePath())) {
+			String fileName = oldFile.getName();
+			distFile = new File(newFile, copyName + fileName);
+			int n = 2;
+			while (distFile.exists()) {
+				distFile = new File(newFile, copyName + n++ + "_" + fileName);
+			}
+		} else {
+			distFile = new File(newFile, oldFile.getName());
+		}
+		if (oldFile.isFile()) {
 			try {
-				BufferedOutputStream o_stream = new BufferedOutputStream(
-												new FileOutputStream(cp_file));
-				BufferedInputStream i_stream = new BufferedInputStream(
-											   new FileInputStream(old_file));
-				
-				while((read = i_stream.read(data, 0, BUFFER)) != -1)
-					o_stream.write(data, 0, read);
-				
-				o_stream.flush();
-				i_stream.close();
-				o_stream.close();
-				
-				RefreshMedia mRefresh = new RefreshMedia(mContext);
-				mRefresh.notifyMediaAdd(new_name);
+				BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(distFile));
+				BufferedInputStream bis = new BufferedInputStream(new FileInputStream(oldFile));
+				while ((read = bis.read(data, 0, BUFFER)) != -1) {
+					bos.write(data, 0, read);
+					if (handler != null) {
+						Message msg = new Message();
+						msg.arg1 = read;
+						handler.sendMessage(msg);
+					}
+				}
+				bos.flush();
+				bos.close();
+				bis.close();
 			} catch (FileNotFoundException e) {
-				Log.e("FileNotFoundException", e.getMessage());
+				e.printStackTrace();
 				return -1;
-				
+
 			} catch (IOException e) {
-				Log.e("IOException", e.getMessage());
+				e.printStackTrace();
 				return -1;
 			}
-			
-		}else if(old_file.isDirectory() && temp_dir.isDirectory() && temp_dir.canWrite()) {
-			String files[] = old_file.list();
-			String dir = newDir + old.substring(old.lastIndexOf("/"), old.length());
-			int len = files.length;
-			
-			if(!new File(dir).mkdir())
-				return -1;
-			
-			for(int i = 0; i < len; i++)
-				copyToDirectory(old + "/" + files[i], dir);
-			
-		} else if(!temp_dir.canWrite())
-			return -1;
-		
+		} else if (oldFile.isDirectory()) {
+			if (!distFile.exists())
+				if (!distFile.mkdir())
+					return -1;
+			for (File file : oldFile.listFiles())
+				realCopyToDirectory(file, distFile, handler);
+		}
+		RefreshMedia mRefresh = new RefreshMedia(mContext);
+		mRefresh.notifyMediaAdd(distFile);
 		return 0;
 	}
 	
@@ -291,159 +332,149 @@ public class FileManager {
 	 * @param fromDir
 	 */
 	public void extractZipFilesFromDir(String zipName, String toDir, String fromDir) {
-		byte[] data = new byte[BUFFER];
-		ZipEntry entry;
-		ZipInputStream zipstream;
-		
 		/* create new directory for zip file */
-		String org_path = fromDir + "/" + zipName;
-		String dest_path = toDir + zipName.substring(0, zipName.length() - 4);
-		String zipDir = dest_path + "/";
-				
-		new File(zipDir).mkdir();
-		
-		try {
-			zipstream = new ZipInputStream(new FileInputStream(org_path));
-			
-			while((entry = zipstream.getNextEntry()) != null) {
-				if(entry.isDirectory()) {
-					String ndir = zipDir + entry.getName() + "/";
-					
-					new File(ndir).mkdir();
-					
-				} else {
-					int read = 0;
-					FileOutputStream out = new FileOutputStream(
-												zipDir + entry.getName());
-					while((read = zipstream.read(data, 0, BUFFER)) != -1)
-						out.write(data, 0, read);
-					
-					zipstream.closeEntry();
-					out.close();
-					
-					RefreshMedia mRefresh = new RefreshMedia(mContext);
-					mRefresh.notifyMediaAdd(zipDir + entry.getName());
-				}
-			}
-			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		String path = fromDir + "/" + zipName;
+		String zipDir = toDir + zipName.substring(0, zipName.lastIndexOf(".")) + "/";
+		unZipFiles(path, zipDir);
 	}
-	
+
 	/**
 	 * 
 	 * @param zip_file
 	 * @param directory
 	 */
 	public void extractZipFiles(String zip_file, String directory) {
-		byte[] data = new byte[BUFFER];
-		ZipEntry entry;
-		ZipInputStream zipstream;
-		
 		/* create new directory for zip file */
-		String path = directory + zip_file;
-		String name = path.substring(path.lastIndexOf("/") + 1, 
-									 path.length() - 4);
-		String zipDir = path.substring(0, path.lastIndexOf("/") +1) + 
-									   name + "/";
-		new File(zipDir).mkdir();
-		
-		try {
-			zipstream = new ZipInputStream(new FileInputStream(path));
-			
-			while((entry = zipstream.getNextEntry()) != null) {
-				if(entry.isDirectory()) {
-					String ndir = zipDir + entry.getName() + "/";
+		String path = zip_file;
+		String name = path.substring(path.lastIndexOf("/") + 1, path.lastIndexOf("."));
+		String zipDir = path.substring(0, path.lastIndexOf("/") + 1) + name + "/";
+		unZipFiles(path, zipDir);
+	}
 
-					new File(ndir).mkdir();
-					
+	private void unZipFiles(String zipPath, String zipDir) {
+		byte[] data = new byte[BUFFER];
+		java.util.zip.ZipEntry entry;
+		java.util.zip.ZipFile zf;
+		Enumeration<? extends java.util.zip.ZipEntry> enumeration;
+
+		File zipFile = new File(zipDir);
+		zipFile.mkdir();
+		try {
+			zf = new java.util.zip.ZipFile(zipPath);
+			enumeration = zf.entries();
+			while (enumeration.hasMoreElements()) {
+				entry = enumeration.nextElement();
+				String path = zipDir + entry.getName();
+				File pathFile = new File(path);
+				if (!pathFile.getParentFile().exists())
+					pathFile.getParentFile().mkdirs();
+				if (entry.isDirectory()) {
+					pathFile.mkdir();
 				} else {
 					int read = 0;
-					FileOutputStream out = new FileOutputStream(
-											zipDir + entry.getName());
-					while((read = zipstream.read(data, 0, BUFFER)) != -1)
+					FileOutputStream out = new FileOutputStream(pathFile);
+					InputStream zipstream = zf.getInputStream(entry);
+					while ((read = zipstream.read(data, 0, BUFFER)) != -1)
 						out.write(data, 0, read);
-					
-					zipstream.closeEntry();
+					zipstream.close();
 					out.close();
-					
-					RefreshMedia mRefresh = new RefreshMedia(mContext);
-					mRefresh.notifyMediaAdd(zipDir + entry.getName());
 				}
 			}
-			
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		RefreshMedia mRefresh = new RefreshMedia(mContext);
+		mRefresh.notifyMediaAdd(zipFile);
 	}
-	
+
 	/**
 	 * 
 	 * @param path
 	 */
 	public void createZipFile(String path) {
 		File dir = new File(path);
-		String[] list = dir.list();
-		String name = path.substring(path.lastIndexOf("/"), path.length());
-		String _path;
-		
-		if(!dir.canRead() || !dir.canWrite())
+		if (!dir.canRead() || !dir.canWrite())
 			return;
-		
-		int len = list.length;
-		
-		if(path.charAt(path.length() -1) != '/')
-			_path = path + "/";
-		else
-			_path = path;
-		
+
+		final String name = path.substring(path.lastIndexOf(File.separator) + 1, path.length()) + ".zip";
+		String pullPath = path + File.separator + name;
+		String[] dirList = dir.list(new FilenameFilter() {
+			@Override
+			public boolean accept(File dir, String filename) {
+				return !name.equals(filename);
+			}
+		});
 		try {
-			ZipOutputStream zip_out = new ZipOutputStream(
-									  new BufferedOutputStream(
-									  new FileOutputStream(_path + name + ".zip"), BUFFER));
-			
-			for (int i = 0; i < len; i++)
-				zip_folder(new File(_path + list[i]), zip_out);
-
-			zip_out.close();
-			
-		} catch (FileNotFoundException e) {
-			Log.e("File not found", e.getMessage());
-
+			java.util.zip.ZipOutputStream zout = new java.util.zip.ZipOutputStream(new BufferedOutputStream(
+					new FileOutputStream(pullPath)));
+			for (String item : dirList)
+				zipEntry(path, item, zout);
+			zout.close();
+			RefreshMedia mRefresh = new RefreshMedia(mContext);
+			mRefresh.notifyMediaAdd(pullPath);
 		} catch (IOException e) {
-			Log.e("IOException", e.getMessage());
+			e.printStackTrace();
 		}
 	}
-	
+
+	private void zipEntry(String dir, String entryName, java.util.zip.ZipOutputStream zout) {
+		byte[] data = new byte[BUFFER];
+		int read;
+		File file = new File(dir + File.separator + entryName);
+		try {
+			if (file.isFile()) {
+				java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(entryName);
+				zout.putNextEntry(entry);
+				BufferedInputStream instream;
+				instream = new BufferedInputStream(new FileInputStream(file));
+				while ((read = instream.read(data, 0, BUFFER)) != -1)
+					zout.write(data, 0, read);
+				zout.closeEntry();
+				instream.close();
+			} else if (file.isDirectory()) {
+				java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(entryName + File.separator);
+				zout.putNextEntry(entry);
+				zout.closeEntry();
+				String fileList[] = file.list();
+				for (String item : fileList)
+					zipEntry(dir, entryName + File.separator + item, zout);
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	/**
 	 * 
 	 * @param filePath
 	 * @param newName
-	 * @return
+	 * @return -1:newName file is exist; -2:rename fail; 0:rename success;
 	 */
 	public int renameTarget(String filePath, String newName) {
 		File src = new File(filePath);
 		String ext = "";
 		File dest;
-		
-		if(src.isFile())
+				
+		if(src.isFile() && filePath.lastIndexOf(".") > 0)
 			/*get file extension*/
 			ext = filePath.substring(filePath.lastIndexOf("."), filePath.length());
 		
 		if(newName.length() < 1)
-			return -1;
+			return -2;
 	
 		String temp = filePath.substring(0, filePath.lastIndexOf("/"));
 		
 		String destPath = temp + "/" + newName + ext;
 		dest = new File(destPath);
+		
+		//add to make sure destPath is not exists ! 
+		//Beacuse FS can not exists the same file name in the same diretory !
+		if(dest.exists()){
+			return -1;
+		}
+		
 		if(src.renameTo(dest))
 		{
 			RefreshMedia mRefresh = new RefreshMedia(mContext);
@@ -452,7 +483,7 @@ public class FileManager {
 			return 0;
 		}
 		else
-			return -1;
+			return -2;
 	}
 	
 	/**
@@ -462,67 +493,47 @@ public class FileManager {
 	 * @return
 	 */
 	public int createDir(String path, String name) {
-		int len = path.length();
-		
-		if(len < 1 || len < 1)
-			return -1;
-		
-		if(path.charAt(len - 1) != '/')
+		if (!path.endsWith("/"))
 			path += "/";
-		
-		if (new File(path+name).mkdir())
+		String dirPath = path + name;
+		if (new File(dirPath).mkdir()) {
+			RefreshMedia mRefresh = new RefreshMedia(mContext);
+			mRefresh.notifyMediaAdd(dirPath);
 			return 0;
-		
+		}
 		return -1;
 	}
 	
 	/**
 	 * The full path name of the file to delete.
-	 * 
-	 * @param path name
-	 * @return
+	 * @param path
 	 */
-	public int deleteTarget(String path) {
+	public void deleteTarget(String path) {
 		File target = new File(path);
-		
-		if(target.exists() && target.isFile() && target.canWrite()) {
-			target.delete();
-
-			RefreshMedia mRefresh = new RefreshMedia(mContext);
-			mRefresh.notifyMediaDelete(path);
-			
-			return 0;
+		realDeleteTarget(target);
+		RefreshMedia mRefresh = new RefreshMedia(mContext);
+		mRefresh.notifyMediaDelete(path);
+		try {
+			Thread.sleep(500);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		
-		else if(target.exists() && target.isDirectory() && target.canRead()) {
-			String[] file_list = target.list();
-			
-			if(file_list != null && file_list.length == 0) {
-				target.delete();
-				return 0;
-				
-			} else if(file_list != null && file_list.length > 0) {
-				
-				for(int i = 0; i < file_list.length; i++) {
-					String filePath = target.getAbsolutePath() + "/" + file_list[i];
-					File temp_f = new File(filePath);
+	}
 
-					if(temp_f.isDirectory())
-						deleteTarget(temp_f.getAbsolutePath());
-					else if(temp_f.isFile())
-					{
-						temp_f.delete();
-						
-						RefreshMedia mRefresh = new RefreshMedia(mContext);
-						mRefresh.notifyMediaDelete(filePath);
+	private void realDeleteTarget(File target) {
+		if (target.exists() && target.canWrite()) {
+			if (target.isFile()) {
+				target.delete();
+			} else if (target.isDirectory()) {
+				File[] fileList = target.listFiles();
+				if (fileList != null && fileList.length > 0) {
+					for (File file : fileList) {
+						realDeleteTarget(file);
 					}
 				}
+				target.delete();
 			}
-			if(target.exists())
-				if(target.delete())
-					return 0;
-		}	
-		return -1;
+		}
 	}
 	
 	/**
@@ -565,6 +576,29 @@ public class FileManager {
 		search_file(dir, pathName, names);
 
 		return names;
+	}
+
+	/**
+	 * 
+	 * @param path
+	 * @return
+	 */
+	public long getFileSize(File path) {
+		long size = 0;
+		if (!path.canRead()) {
+			size = 0;
+		} else if (path.isFile()) {
+			size += path.length();
+		} else if (path.isDirectory()) {
+			File[] list = path.listFiles();
+			if(list != null) {
+				int len = list.length;
+				for (int i = 0; i < len; i++) {
+					size += getFileSize(list[i]);
+				}
+			}
+		}
+		return size;
 	}
 	
 	/**
@@ -619,22 +653,45 @@ public class FileManager {
 			mDirContent.clear();
 		try
 		{
-			File file = new File(mPathStack.peek()); 
+			String path = mPathStack.peek();
+			File file = new File(path); 
 		
 			if(file.exists() && file.canRead() && file.isDirectory()) {
-				String[] list = file.list();
-				if(list != null)
+//				String[] list = file.list();
+				File[] fList = file.listFiles();
+				boolean isPartition = false;
+				if(mDevices.hasMultiplePartition(path)){
+					if (Log.isLoggable("fileManager", Log.DEBUG))
+						Log.d("chen",path + " has multi partition");
+					isPartition = true;
+				}
+				if(fList != null)
 				{
-					int len = list.length;
-			
+					int len = fList.length;
+					
 					/* add files/folder to arraylist depending on hidden status */
 					for (int i = 0; i < len; i++) {
+						if(isPartition){
+							try{
+								StatFs statFs = new StatFs(fList[i].getAbsolutePath());
+								int count = statFs.getBlockCount();
+								if (Log.isLoggable("fileManager", Log.DEBUG))
+									Log.d("chen",fList[i].getName() + "  " + count);
+								if(count == 0){
+									continue;
+								}
+							}catch(Exception e){
+								Log.e(TAG,fList[i].getName() + "  exception");
+								continue;
+							}
+						}
+						String name = fList[i].getName();
 						if(!mShowHiddenFiles) {
-							if(list[i].toString().charAt(0) != '.')
-								mDirContent.add(list[i]);
+							if(name.charAt(0) != '.')
+								mDirContent.add(name);
 					
 						} else {
-							mDirContent.add(list[i]);
+							mDirContent.add(name);
 						}
 					}
 			
@@ -683,37 +740,6 @@ public class FileManager {
 	}
 	
 	/*
-	 * 
-	 * @param file
-	 * @param zout
-	 * @throws IOException
-	 */
-	private void zip_folder(File file, ZipOutputStream zout) throws IOException {
-		byte[] data = new byte[BUFFER];
-		int read;
-		
-		if(file.isFile()){
-			ZipEntry entry = new ZipEntry(file.getName());
-			zout.putNextEntry(entry);
-			BufferedInputStream instream = new BufferedInputStream(
-										   new FileInputStream(file));
-			
-			while((read = instream.read(data, 0, BUFFER)) != -1)
-				zout.write(data, 0, read);
-			
-			zout.closeEntry();
-			instream.close();
-			
-		} else {
-			String[] list = file.list();
-			int len = list.length;
-			
-			for(int i = 0; i < len; i++)
-				zip_folder(new File(file.getPath() +"/"+ list[i]), zout);
-		}
-	}
-	
-	/*
 	 * This function will be rewritten as there is a problem getting
 	 * the directory size in certain folders from root. ex /sys, /proc.
 	 * The app will continue until a stack overflow. get size is fine uder the 
@@ -722,18 +748,21 @@ public class FileManager {
 	 * @param path
 	 */
 	private void get_dir_size(File path) {
-		File[] list = path.listFiles();
-		int len;
-		
-		if(list != null) {
-			len = list.length;
+		if(path.isFile()&& path.canRead()){
+			mDirSize += path.length();
+		}else{
+			File[] list = path.listFiles();
+			int len;
 			
-			for (int i = 0; i < len; i++) {
-				if(list[i].isFile() && list[i].canRead()) {
-					mDirSize += list[i].length();
-					
-				} else if(list[i].isDirectory() && list[i].canRead()) { 
-					get_dir_size(list[i]);
+			if(list != null) {
+				len = list.length;
+
+				for (int i = 0; i < len; i++) {
+					if(list[i].isFile() && list[i].canRead()) {
+						mDirSize += list[i].length();
+					} else if(list[i].isDirectory() && list[i].canRead()) { 
+						get_dir_size(list[i]);
+					}
 				}
 			}
 		}

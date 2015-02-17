@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import android.content.Context;
+import android.os.Environment;
 
 
 
@@ -46,9 +47,11 @@ public class CatalogList {
 	private int m_filetype = TYPE_UNKNOWN;
 	private FileFilter mfilter = null;
 	
-	private String flashpath;
-	private String sdcardpath;
-	private String usbhostpath;
+	private ArrayList<String> flashpath;
+	private ArrayList<String> sdcardpath;
+	private ArrayList<String> usbhostpath;
+	private ArrayList<String> totalStoragePath;
+	private DevicePath mDevices;
 	
 	private static final Comparator alph = new Comparator<String>() {
 		@Override
@@ -178,10 +181,11 @@ public class CatalogList {
 	
 	public CatalogList(Context context){
 		mlist = new ArrayList<String>();
-		DevicePath devices = new DevicePath(context);
-		flashpath = devices.getSdStoragePath();
-		sdcardpath = devices.getInterStoragePath();
-		usbhostpath = devices.getUsbStoragePath();
+		mDevices = new DevicePath(context);
+		flashpath = mDevices.getSdStoragePath();
+		sdcardpath = mDevices.getInterStoragePath();
+		usbhostpath = mDevices.getUsbStoragePath();
+		totalStoragePath = mDevices.getTotalDevicesList();
 	}
 	
 	private void attachPathToList(File file){
@@ -190,9 +194,9 @@ public class CatalogList {
 		/*
 		 * add by chenjd,chenjd@allwinnertech 2011-09-14
 		 * other application:mediaScanner will save its thumbnail data here, so 
-		 * I must not scan this area. 
+		 * I must not scan this area for 'picture'. 
 		 */
-		String pathToIgnored = sdcardpath + "/" + "DCIM";
+		String pathToIgnored = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + "DCIM" + "/" + ".thumbnails";
 		
 		int i = 0;
 		
@@ -217,6 +221,9 @@ public class CatalogList {
 				if(mlist.size() >= 500)
 				{
 					return;
+				}
+				if (mlist.contains(filelist[i].getAbsolutePath())) {
+					continue;
 				}
 				mlist.add(filelist[i].getAbsolutePath());
 			}
@@ -264,9 +271,10 @@ public class CatalogList {
 		}
 			
 		//we only need these three storage
-		attachPathToList(flashpath + "/");
-		attachPathToList(sdcardpath + "/");
-		attachPathToList(usbhostpath + "/");
+		ArrayList<String> mounted = mDevices.getMountedPath(totalStoragePath);
+		for(String st:mounted){
+			attachPathToList(st);
+		}
 		//maybe sort?
 		Object[] tt = mlist.toArray();
 		mlist.clear();
@@ -279,57 +287,18 @@ public class CatalogList {
 		return mlist;
 	}
 		
-	public ArrayList<String> AttachMediaStorage(int media_typ){
+	public ArrayList<String> AttachMediaStorage(String storagePath){
 		//maybe sort?
-		switch(media_typ){
-		case STORAGE_USBHOST:
-			attachPathToList(usbhostpath + "/");
-			break;
-		case STORAGE_SDCARD:
-			attachPathToList(sdcardpath + "/");
-			break;
-		case STORAGE_FLASH:
-			attachPathToList(flashpath + "/");
-			break;
-		default:
-			break;
-		}
+		attachPathToList(storagePath);
 		return mlist;
 	}
 	
-	public ArrayList<String> DisAttachMediaStorage(int media_typ){
+	public ArrayList<String> DisAttachMediaStorage(String storagePath){
 		int i = mlist.size() - 1;
-		
-		switch(media_typ){
-		case STORAGE_USBHOST:
-			for( ;i >= 0;i --)
-			{
-				if(mlist.get(i).startsWith(usbhostpath))
-				{
-					mlist.remove(i);
-				}
+		for(;i >= 0; i--){
+			if(mlist.get(i).startsWith(storagePath)){
+				mlist.remove(i);
 			}
-			break;
-		case STORAGE_SDCARD:
-			for( ;i >= 0;i --)
-			{
-				if(mlist.get(i).startsWith(sdcardpath))
-				{
-					mlist.remove(i);
-				}
-			}
-			break;
-		case STORAGE_FLASH:
-			for( ;i >= 0;i --)
-			{
-				if(mlist.get(i).startsWith(flashpath))
-				{
-					mlist.remove(i);
-				}
-			}
-			break;
-		default:
-			break;
 		}
 		return mlist;
 	}

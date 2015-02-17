@@ -20,17 +20,20 @@ package com.softwinner.explore;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Set;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -74,7 +77,7 @@ import android.widget.Toast;
  * @author Joe Berria
  *
  */
-public final class Main extends ListActivity {
+public final class Main extends ListActivity implements FileOperateCallbacks{
 	private static final String PREFS_NAME = "ManagerPrefsFile";	//user preference file name
 	private static final String PREFS_HIDDEN = "hidden";
 	private static final String PREFS_COLOR = "color";
@@ -96,6 +99,7 @@ public final class Main extends ListActivity {
 	private static final int D_MENU_ZIP = 	 0x0e;			//context menu id
 	private static final int D_MENU_UNZIP =  0x0f;			//context menu id
 	private static final int D_MENU_MOVE = 	 0x30;			//context menu id
+	private static final int F_MENU_BLUETOOTH = 0x11;			//context menu id
 	private static final int F_MENU_MOVE = 	 0x20;			//context menu id
 	private static final int F_MENU_DELETE = 0x0a;			//context menu id
 	private static final int F_MENU_RENAME = 0x0b;			//context menu id
@@ -113,11 +117,14 @@ public final class Main extends ListActivity {
 	private boolean mReturnIntent = false;
 	private boolean mHoldingFile = false;
 	private boolean mHoldingZip = false;
+	private boolean mHoldingMkdir = false;
+	private boolean mHoldingSearch = false;
 	private boolean mUseBackKey = true;
 	private String mCopiedTarget;
 	private String mZippedTarget;
 	private String mSelectedListItem;				//item from context menu
 	private TextView  mPathLabel, mDetailLabel;
+	private boolean mPause = false;
 		
 	private BroadcastReceiver mReceiver;
 
@@ -151,7 +158,7 @@ public final class Main extends ListActivity {
         mCataList = new CatalogList(this);
         mDevicePath = new DevicePath(this);
         
-        mHandler = new EventHandler(Main.this, mFileMag,mCataList);
+        mHandler = new EventHandler(Main.this, this, mFileMag,mCataList);
         mHandler.setTextColor(color);
         mHandler.setShowThumbnails(thumb);
         mTable = mHandler.new TableRow();
@@ -161,6 +168,8 @@ public final class Main extends ListActivity {
          */
         mHandler.setListAdapter(mTable);
         setListAdapter(mTable);
+        getListView().setOnItemLongClickListener(mHandler);
+        getListView().setOnTouchListener(mHandler);
         
         /* register context menu for our list view */
         registerForContextMenu(getListView());
@@ -180,28 +189,35 @@ public final class Main extends ListActivity {
 			Log.i(TAG, "path = "+path);
 			if (path != null)
         	{
-        		if(path.equals( mDevicePath.getUsbStoragePath() ) ) {
-        			mPathLabel.setText(path);
-        			mHandler.updateDirectory(mFileMag.getHomeDir(mFileMag.ROOT_USBHOST));
+        		if(mDevicePath.getUsbStoragePath().contains(path)) {
+        			mPathLabel.setText(mFileMag.getCurrentDir());
+        			mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_USBHOST));
         			getFocusForButton(R.id.home_usbhost_button);
         		}
-        		else if (path.equals(mDevicePath.getInterStoragePath())) {
-        			mPathLabel.setText(path);
-        			mHandler.updateDirectory(mFileMag.getHomeDir(mFileMag.ROOT_SDCARD));
+        		else if (mDevicePath.getInterStoragePath().contains(path)) {
+        			mPathLabel.setText(mFileMag.getCurrentDir());
+        			mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_SDCARD));
         			getFocusForButton(R.id.home_sdcard_button);
         		}
-        		else if (path.equals(mDevicePath.getSdStoragePath()) ) {
-        			mPathLabel.setText(path);
-        			mHandler.updateDirectory(mFileMag.getHomeDir(mFileMag.ROOT_FLASH));
+        		else if (mDevicePath.getSdStoragePath().contains(path) ) {
+        			mPathLabel.setText(mFileMag.getCurrentDir());
+        			mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_FLASH));
         			getFocusForButton(R.id.home_flash_button);
         		}
         	}
+			else
+			{
+				//default path        	
+	        	mPathLabel.setText(mFileMag.getCurrentDir());
+	        	mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_FLASH));
+	        	getFocusForButton(R.id.home_flash_button);
+			}
         }
         else { 
         	//default path        	
-        	mPathLabel.setText(mDevicePath.getInterStoragePath());
-        	mHandler.updateDirectory(mFileMag.getHomeDir(mFileMag.ROOT_SDCARD));
-        	getFocusForButton(R.id.home_sdcard_button);
+        	mPathLabel.setText(mFileMag.getCurrentDir());
+        	mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_FLASH));
+        	getFocusForButton(R.id.home_flash_button);
         }
 
 		/* setup buttons */
@@ -211,7 +227,7 @@ public final class Main extends ListActivity {
         					   R.id.manage_button, R.id.multiselect_button,
         					   R.id.image_button,R.id.movie_button};
         
-        int[] button_id = {R.id.hidden_copy, R.id.hidden_attach,
+        int[] button_id = {R.id.hidden_paste, R.id.hidden_copy, R.id.hidden_attach,
         				   R.id.hidden_delete, R.id.hidden_move};
         
         ImageButton[] bimg = new ImageButton[img_button_id.length];
@@ -221,7 +237,7 @@ public final class Main extends ListActivity {
         	bimg[i] = (ImageButton)findViewById(img_button_id[i]);
         	bimg[i].setOnClickListener(mHandler);
 
-        	if(i < 4) {
+        	if(i < 5) {
         		bt[i] = (Button)findViewById(button_id[i]);
         		bt[i].setOnClickListener(mHandler);
         	}
@@ -240,52 +256,53 @@ public final class Main extends ListActivity {
         mReceiver = new BroadcastReceiver() {   
         	@Override  
         	public void onReceive(Context context, Intent intent) {   
-        		String tmpstring = intent.getData().toString();
+        		String tmpstring = intent.getData().getPath();
         		
-        		String dataOfUsb = mDevicePath.getUsbStoragePath();
-        		String dataOfSd = mDevicePath.getInterStoragePath();
-        		String dataOfFlash = mDevicePath.getSdStoragePath();
+        		ArrayList<String> dataOfUsb = mDevicePath.getUsbStoragePath();
+        		ArrayList<String> dataOfSd = mDevicePath.getSdStoragePath();
+        		ArrayList<String> dataOfFlash = mDevicePath.getInterStoragePath();
         		
-        		if(intent.getAction().equals(intent.ACTION_MEDIA_UNMOUNTED) ||
-        				intent.getAction().equals(intent.ACTION_MEDIA_REMOVED) ||
-        				intent.getAction().equals(intent.ACTION_MEDIA_BAD_REMOVAL))
+        		if(intent.getAction().equals(Intent.ACTION_MEDIA_REMOVED) ||
+        				intent.getAction().equals(Intent.ACTION_MEDIA_BAD_REMOVAL))
         		{
         			Log.d(TAG, tmpstring);
         			/*
         			 * add by chenjd,chenjd@allwinnertech.com 2011-09-15
         			 * waiting for unmounted really 
         			 */
-        			try
-					{
-						Thread.currentThread().sleep(1000);
-					}
-					catch(Exception e) {};
+				try {
+					Thread.sleep(1000);
+				} catch(Exception e) {
+					e.printStackTrace();
+				};
         			switch(mHandler.getMode())
         			{
         			case EventHandler.TREEVIEW_MODE:
         				
-        				if(tmpstring.contains(dataOfSd))
+        				if(dataOfSd.contains(tmpstring))
         				{
         					DisplayToast(getResources().getString(R.string.sdcard_out));
-        					if(mFileMag.getCurrentDir().startsWith(dataOfSd))
-        					{
-        						mHandler.updateDirectory(mFileMag.getHomeDir(mFileMag.ROOT_SDCARD));
+        					if(mFileMag.getCurrentDir().equals(mFileMag.sdcardList)){
+        						mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_SDCARD));
+        					}else if(mFileMag.getCurrentDir().startsWith(tmpstring)){
+        						mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_SDCARD));
         					}
         				}
-        				else if(tmpstring.contains(dataOfUsb))
+        				else if(dataOfUsb.contains(tmpstring))
         				{ 
         					DisplayToast(getResources().getString(R.string.usb_out));	
-        					if(mFileMag.getCurrentDir().startsWith(dataOfUsb))
-        					{
-        						mHandler.updateDirectory(mFileMag.getHomeDir(mFileMag.ROOT_USBHOST));
+        					if(mFileMag.getCurrentDir().equals(mFileMag.usbhostList)){
+        						mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_USBHOST));
+        					}else if(mFileMag.getCurrentDir().startsWith(tmpstring)){
+        						mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_USBHOST));
         					}
         				}
-        				else if(tmpstring.contains(dataOfFlash))
-        				{
-        					DisplayToast(getResources().getString(R.string.flash_out));
-        					if(mFileMag.getCurrentDir().startsWith(dataOfFlash))
-        					{
-        						mHandler.updateDirectory(mFileMag.getHomeDir(mFileMag.ROOT_FLASH));
+        				else if(dataOfFlash.contains(tmpstring)){
+        					DisplayToast(getResources().getString(R.string.flash_out));	
+        					if(mFileMag.getCurrentDir().equals(mFileMag.flashList)){
+        						mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_FLASH));
+        					}else if(mFileMag.getCurrentDir().startsWith(tmpstring)){
+        						mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_FLASH));
         					}
         				}
         				else
@@ -303,20 +320,20 @@ public final class Main extends ListActivity {
         				//anyway,remove the list in media storage
         			case EventHandler.CATALOG_MODE:
         				ArrayList<String> content = null;
-        				if(tmpstring.contains(dataOfSd))
+        				if(dataOfSd.contains(tmpstring))
         				{
         					DisplayToast(getResources().getString(R.string.sdcard_out));
-        					content = mCataList.DisAttachMediaStorage(CatalogList.STORAGE_SDCARD);
+        					content = mCataList.DisAttachMediaStorage(tmpstring);
         				}
-        				else if(tmpstring.contains(dataOfUsb))
+        				else if(dataOfUsb.contains(tmpstring))
         				{ 
         					DisplayToast(getResources().getString(R.string.usb_out));
-        					content = mCataList.DisAttachMediaStorage(CatalogList.STORAGE_USBHOST);			
+        					content = mCataList.DisAttachMediaStorage(tmpstring);			
         				}
-        				else if(tmpstring.contains(dataOfFlash))
+        				else if(dataOfFlash.contains(tmpstring))
         				{
         					DisplayToast(getResources().getString(R.string.flash_out));
-        					content = mCataList.DisAttachMediaStorage(CatalogList.STORAGE_FLASH);
+        					content = mCataList.DisAttachMediaStorage(tmpstring);
         				}
         				else
         				{
@@ -329,33 +346,36 @@ public final class Main extends ListActivity {
         				break;
         			}
         		}
-        		else if (intent.getAction().equals(intent.ACTION_MEDIA_MOUNTED))
+        		else if (intent.getAction().equals(Intent.ACTION_MEDIA_MOUNTED))
         		{
         			switch(mHandler.getMode())
         			{
         			case EventHandler.TREEVIEW_MODE:
-        				if(tmpstring.contains(dataOfSd))
+        				if(dataOfSd.contains(tmpstring))
         				{
         					DisplayToast(getResources().getString(R.string.sdcard_in));
-        					if(mFileMag.getCurrentDir().startsWith(dataOfSd))
-        					{
-        						mHandler.updateDirectory(mFileMag.getHomeDir(mFileMag.ROOT_SDCARD));
+        					if(mFileMag.getCurrentDir().equals(mFileMag.sdcardList)){
+        						mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_SDCARD));
+        					}else if(mFileMag.getCurrentDir().startsWith(tmpstring)){
+        						mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_SDCARD));
         					}
         				}
-        				else if(tmpstring.contains(dataOfUsb))
+        				else if(dataOfUsb.contains(tmpstring))
         				{
         					DisplayToast(getResources().getString(R.string.usb_in));	
-        					if(mFileMag.getCurrentDir().startsWith(dataOfUsb))
-        					{
-        						mHandler.updateDirectory(mFileMag.getHomeDir(mFileMag.ROOT_USBHOST));
+        					if(mFileMag.getCurrentDir().equals(mFileMag.usbhostList)){
+        						mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_USBHOST));
+        					}else if(mFileMag.getCurrentDir().startsWith(tmpstring)){
+        						mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_USBHOST));
         					}
         				}
-        				else if(tmpstring.contains(dataOfFlash))
+        				else if(dataOfFlash.contains(tmpstring))
         				{
         					DisplayToast(getResources().getString(R.string.flash_in));
-        					if(mFileMag.getCurrentDir().startsWith(dataOfFlash))
-        					{
-        						mHandler.updateDirectory(mFileMag.getHomeDir(mFileMag.ROOT_FLASH));
+        					if(mFileMag.getCurrentDir().equals(mFileMag.flashList)){
+        						mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_FLASH));
+        					}else if(mFileMag.getCurrentDir().startsWith(tmpstring)){
+        						mHandler.updateDirectory(mFileMag.getHomeDir(FileManager.ROOT_FLASH));
         					}
         				}
         				else 
@@ -364,20 +384,20 @@ public final class Main extends ListActivity {
         				}
         				break;
         			case EventHandler.CATALOG_MODE:
-        				if(tmpstring.contains(dataOfSd))
+        				if(dataOfSd.contains(tmpstring))
         				{
         					DisplayToast(getResources().getString(R.string.sdcard_in));
-        					mCataList.AttachMediaStorage(CatalogList.STORAGE_SDCARD);
+        					mCataList.AttachMediaStorage(tmpstring);
         				}
-        				else if(tmpstring.contains(dataOfUsb))
+        				else if(dataOfUsb.contains(tmpstring))
         				{ 
         					DisplayToast(getResources().getString(R.string.usb_in));
-        					mCataList.AttachMediaStorage(CatalogList.STORAGE_USBHOST);
+        					mCataList.AttachMediaStorage(tmpstring);
         				}
-        				else if(tmpstring.contains(dataOfFlash))
+        				else if(dataOfFlash.contains(tmpstring))
         				{
         					DisplayToast(getResources().getString(R.string.flash_in));
-        					mCataList.AttachMediaStorage(CatalogList.STORAGE_FLASH);
+        					mCataList.AttachMediaStorage(tmpstring);
         				}
         				else
         				{
@@ -389,12 +409,15 @@ public final class Main extends ListActivity {
         				break;
         			}
         		}
-        	}   
+        		if(mFileMag.isRoot()){
+        			mHandler.UpdateButtons(EventHandler.DISABLE_TOOLBTN);
+        			closeOptionsMenu();
+        		}
+        	}
         };
 		
         IntentFilter filter = new IntentFilter();   
-        filter.addAction(Intent.ACTION_MEDIA_MOUNTED);   
-        filter.addAction(Intent.ACTION_MEDIA_UNMOUNTED);  
+        filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
         filter.addAction(Intent.ACTION_MEDIA_REMOVED);
         filter.addAction(Intent.ACTION_MEDIA_BAD_REMOVAL);
         filter.addDataScheme("file"); 
@@ -406,41 +429,65 @@ public final class Main extends ListActivity {
 		View v = findViewById(id);
 		mHandler.getInitView(v);
 		v.setSelected(true);
+		mHandler.UpdateButtons(EventHandler.DISABLE_TOOLBTN);
 	}
 	
 	private void DisplayToast(String str){
+		if (mPause) return;
 		Toast.makeText(getBaseContext(), str, Toast.LENGTH_SHORT).show();
 	}
-	
-	@Override  
-    protected void onDestroy() {   
-        // TODO Auto-generated method stub   
-        super.onDestroy();   
-        unregisterReceiver(mReceiver);   
-    }   
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		if(mHandler.getMode() == EventHandler.TREEVIEW_MODE){
+			mHandler.updateDirectory(mFileMag.getNextDir(mFileMag.getCurrentDir()));
+		}
+		mPause = false;
+	}
+
+	@Override
+	protected void onPause() {
+		mPause = true;
+		super.onPause();
+	}
+
+	@Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(mReceiver);
+    }
 	/*(non Java-Doc)
 	 * Returns the file that was selected to the intent that
 	 * called this activity. usually from the caller is another application.
 	 */
-	private void returnIntentResults(File data) {
+	private boolean returnIntentResults(File data) {
 		mReturnIntent = false;
-		
-		Intent ret = new Intent();
-		ret.setData(Uri.fromFile(data));
-		setResult(RESULT_OK, ret);
-		
-		finish();
+		String action = getIntent().getAction();
+		String type = getIntent().getType();
+		Intent ret;
+		Set<String> categories = getIntent().getCategories();
+		if(action.equals(Intent.ACTION_GET_CONTENT)){
+			if(categories != null && categories.contains(Intent.CATEGORY_OPENABLE)){
+				ret = new Intent();
+				Log.d("MessageCompose","file uri: " + Uri.fromFile(data).toString());
+				ret.setData(Uri.fromFile(data));
+				setResult(RESULT_OK, ret);
+			}else{
+				if(type != null && type.equals("image/*")){
+					CropImage crop = new CropImage(this, getIntent(), data.getAbsolutePath());
+					ret = crop.saveResourceToIntent();
+					setResult(RESULT_OK, ret);
+				}
+			}
+			finish();
+			return true;
+		}
+		return false;
 	}
 		
 	private String getCurrentFileName(int position){
-		final String item = mHandler.getData(position);
-		
-    	if(mHandler.getMode() == EventHandler.TREEVIEW_MODE)
-    	{
-    		return (mFileMag.getCurrentDir() + "/" + item);
-    	}
-    	
-    	return item;
+		return mHandler.getCurrentFilePath(position);
 	}
 	/**
 	 *  To add more functionality and let the user interact with more
@@ -450,6 +497,8 @@ public final class Main extends ListActivity {
 	 */
     @Override
     public void onListItemClick(ListView parent, View view, int position, long id) {
+		if (mHandler.isPreventClick())
+			return;
     	final String item = getCurrentFileName(position);
     	File file = new File(item);
     	boolean multiSelect = mHandler.isMultiSelected();
@@ -473,7 +522,7 @@ public final class Main extends ListActivity {
     	} else {
 	    	if (file.isDirectory()) {
 				if(file.canRead()) {
-		    		mHandler.updateDirectory(mFileMag.getNextDir(item, true));
+		    		mHandler.updateDirectory(mFileMag.getNextDir(item));
 		    		mPathLabel.setText(mFileMag.getCurrentDir());
 		    		
 		    		/*set back button switch to true 
@@ -483,9 +532,14 @@ public final class Main extends ListActivity {
 		    			mUseBackKey = true;
 		    		
 	    		} else {
-	    			Toast.makeText(this, "Can't read folder due to permissions", 
+	    			Toast.makeText(this, getString(R.string.cannnot_read_permissions),
 	    							Toast.LENGTH_SHORT).show();
 	    		}
+				if(mFileMag.isRoot()){
+					mHandler.UpdateButtons(EventHandler.DISABLE_TOOLBTN);
+				}else{
+					mHandler.UpdateButtons(EventHandler.ENABLE_TOOLBTN);
+				}
 	    	}
 	    	
 	    	/*music file selected--add more audio formats*/
@@ -526,6 +580,10 @@ public final class Main extends ListActivity {
 	    				
 	    			} else {
 			    		Intent movieIntent = new Intent();
+			    		
+			    		//add by Bevis, for VideoPlayer to create playlist
+			    		movieIntent.putExtra(MediaStore.PLAYLIST_TYPE, MediaStore.PLAYLIST_TYPE_CUR_FOLDER);
+			    		
 			    		movieIntent.putExtra(MediaStore.EXTRA_FINISH_ON_COMPLETION, false);
 			    		movieIntent.setAction(android.content.Intent.ACTION_VIEW);
 			    		movieIntent.setDataAndType(Uri.fromFile(file), "video/*");
@@ -543,10 +601,10 @@ public final class Main extends ListActivity {
 	    		} else {
 		    		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		    		AlertDialog alert;
-		    		mZippedTarget = mFileMag.getCurrentDir() + "/" + item;
-		    		CharSequence[] option = {"Extract here", "Extract to..."};
+		    		mZippedTarget = item;
+		    		CharSequence[] option = {getString(R.string.Extract_here), getString(R.string.extract_to)};
 		    		
-		    		builder.setTitle("Extract");
+		    		builder.setTitle(getString(R.string.extract));
 		    		builder.setItems(option, new DialogInterface.OnClickListener() {
 		
 						public void onClick(DialogInterface dialog, int which) {
@@ -557,8 +615,7 @@ public final class Main extends ListActivity {
 									break;
 									
 								case 1:
-									mDetailLabel.setText("Holding " + item + 
-														 " to extract");
+									mDetailLabel.setText(getString(R.string.holding_to_extract, item));
 									mHoldingZip = true;
 									break;
 							}
@@ -597,7 +654,7 @@ public final class Main extends ListActivity {
 			    		try {
 			    			startActivity(pdfIntent);
 			    		} catch (ActivityNotFoundException e) {
-			    			Toast.makeText(this, "Sorry, couldn't find a pdf viewer", 
+			    			Toast.makeText(this, getString(R.string.could_not_find_pdf),
 									Toast.LENGTH_SHORT).show();
 			    		}
 		    		}
@@ -635,7 +692,7 @@ public final class Main extends ListActivity {
 		    			try {
 		    				startActivity(htmlIntent);
 		    			} catch(ActivityNotFoundException e) {
-		    				Toast.makeText(this, "Sorry, couldn't find a HTML viewer", 
+		    				Toast.makeText(this, getString(R.string.could_not_find_html),
 		    									Toast.LENGTH_SHORT).show();
 		    			}
 	    			}
@@ -716,8 +773,7 @@ public final class Main extends ListActivity {
 				try {
 	    			startActivity(mIntent);
 	    		} catch(ActivityNotFoundException e) {
-	    			Toast.makeText(Main.this, "Sorry, couldn't find anything " +
-	    						   "to open " + openFile.getName(), 
+	    			Toast.makeText(Main.this, getString(R.string.could_not_find_open, openFile.getName()),
 	    						   Toast.LENGTH_SHORT).show();
 	    		}
 			}
@@ -758,7 +814,9 @@ public final class Main extends ListActivity {
     		mFileMag.setSortType(sort);
     		mHandler.setTextColor(color);
     		mHandler.setShowThumbnails(thumbnail);
-    		mHandler.updateDirectory(mFileMag.getNextDir(mFileMag.getCurrentDir(), true));
+    		if(mHandler.getMode() == EventHandler.TREEVIEW_MODE){
+    			mHandler.updateDirectory(mFileMag.getNextDir(mFileMag.getCurrentDir()));
+    		}
     	}
     }
     
@@ -777,6 +835,27 @@ public final class Main extends ListActivity {
     }
     
     @Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+    	int mode = mHandler.getMode();
+    	switch(mode){
+    	case EventHandler.TREEVIEW_MODE:
+    		if(mFileMag.isRoot()){
+        		menu.findItem(MENU_MKDIR).setEnabled(mHoldingMkdir);
+        		menu.findItem(MENU_SEARCH).setEnabled(mHoldingSearch);
+        	}else{
+        		menu.findItem(MENU_MKDIR).setEnabled(!mHoldingMkdir);
+        		menu.findItem(MENU_SEARCH).setEnabled(!mHoldingSearch);
+        	}
+    		break;
+    	case EventHandler.CATALOG_MODE:
+    		menu.findItem(MENU_MKDIR).setEnabled(mHoldingMkdir);
+    		menu.findItem(MENU_SEARCH).setEnabled(!mHoldingSearch);
+    		break;
+    	}
+    	return super.onPrepareOptionsMenu(menu);
+	}
+
+	@Override
     public boolean onOptionsItemSelected(MenuItem item) {
     	switch(item.getItemId()) {
     		case MENU_MKDIR:
@@ -810,10 +889,15 @@ public final class Main extends ListActivity {
     
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo info) {
+		if (mFileMag.isRoot()) return;
     	super.onCreateContextMenu(menu, v, info);
     	
     	boolean multi_data = mHandler.hasMultiSelectData();
     	AdapterContextMenuInfo _info = (AdapterContextMenuInfo)info;
+    	if(info == null)
+    	{
+    		return;
+    	}
     	mSelectedListItem = mHandler.getData(_info.position);
     	
     	if(mHandler.getMode() != EventHandler.TREEVIEW_MODE)
@@ -840,6 +924,9 @@ public final class Main extends ListActivity {
     		menu.add(0, F_MENU_COPY, 0, getResources().getString(R.string.Copy_File));
     		menu.add(0, F_MENU_MOVE, 0, getResources().getString(R.string.Move_File));
     		menu.add(0, F_MENU_ATTACH, 0, getResources().getString(R.string.Email_File));
+    		if(getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH)){
+    			menu.add(0, F_MENU_BLUETOOTH, 0, getResources().getString(R.string.Bluetooth_File));
+    		}
     	}	
     }
     
@@ -863,7 +950,13 @@ public final class Main extends ListActivity {
     			});
     			builder.setPositiveButton(getResources().getString(R.string.Delete), new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int which) {
-						mHandler.deleteFile(mFileMag.getCurrentDir() + "/" + mSelectedListItem);
+                        final String mPath = mFileMag.getCurrentDir() + "/" + mSelectedListItem;
+                        File target = new File(mPath);
+                        if(target.exists() && target.canWrite()) {
+						    mHandler.deleteFile(mPath);
+                        } else {// can't write
+                            Toast.makeText(Main.this, mSelectedListItem + getResources().getString(R.string.not_deleted), Toast.LENGTH_SHORT).show();
+                        }
 					}
     			});
     			AlertDialog alert_d = builder.create();
@@ -881,20 +974,46 @@ public final class Main extends ListActivity {
     		case F_MENU_ATTACH:
     			File file = new File(mFileMag.getCurrentDir() +"/"+ mSelectedListItem);
     			Intent mail_int = new Intent();
-    			
     			mail_int.setAction(android.content.Intent.ACTION_SEND);
     			mail_int.setType("application/mail");
     			mail_int.putExtra(Intent.EXTRA_BCC, "");
     			mail_int.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(file));
-    			startActivity(mail_int);
+    			try{
+    				startActivity(mail_int);
+    			}
+    			catch(ActivityNotFoundException e)
+    			{
+    				DisplayToast(getResources().getString(R.string.Activity_No_Found));
+    				Log.e(TAG,"activity no found");
+    			}
     			return true;
     		
+    		case F_MENU_BLUETOOTH:
+    			File shareFile = new File(mFileMag.getCurrentDir() + "/" + mSelectedListItem);
+    			Intent bluetooth = new Intent();
+    			bluetooth.setAction(Intent.ACTION_SEND);
+    			bluetooth.setType("*/*");
+    			ComponentName component = new ComponentName("com.android.bluetooth", "com.android.bluetooth.opp.BluetoothOppLauncherActivity");
+    			bluetooth.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(shareFile));
+    			bluetooth.setComponent(component);
+    			try{
+    				startActivity(bluetooth);
+    			}
+    			catch(ActivityNotFoundException e)
+    			{
+    				DisplayToast(getResources().getString(R.string.Activity_No_Found));
+    				Log.e(TAG,"activity no found");
+    			}
+    			return true;
     		case F_MENU_MOVE:
     		case D_MENU_MOVE:
     		case F_MENU_COPY:
     		case D_MENU_COPY:
-    			if(item.getItemId() == F_MENU_MOVE || item.getItemId() == D_MENU_MOVE)
+    			if(item.getItemId() == F_MENU_MOVE || item.getItemId() == D_MENU_MOVE){
     				mHandler.setDeleteAfterCopy(true);
+    			}else{
+    				mHandler.setDeleteAfterCopy(false);
+    			}
     			
     			mHoldingFile = true;
     			
@@ -929,7 +1048,6 @@ public final class Main extends ListActivity {
     				String current_dir = mFileMag.getCurrentDir() + "/" + mSelectedListItem + "/";
     				String old_dir = mZippedTarget.substring(0, mZippedTarget.lastIndexOf("/"));
     				String name = mZippedTarget.substring(mZippedTarget.lastIndexOf("/") + 1, mZippedTarget.length());
-    				
     				if(new File(mZippedTarget).canRead() && new File(current_dir).canWrite()) {
 	    				mHandler.unZipFileToDir(name, current_dir, old_dir);				
 	    				mPathLabel.setText(current_dir);
@@ -956,7 +1074,15 @@ public final class Main extends ListActivity {
     	case MENU_MKDIR:
 			TextView label = (TextView)dialog.findViewById(R.id.input_label);
 			label.setText(mFileMag.getCurrentDir());
-		break; 
+			break;
+		case D_MENU_RENAME:
+		case F_MENU_RENAME:
+			dialog.setTitle(getResources().getString(R.string.Rename) + " " + mSelectedListItem);
+			TextView rename_label = (TextView) dialog.findViewById(R.id.input_label);
+			rename_label.setText(mFileMag.getCurrentDir());
+			EditText rename_input = (EditText) dialog.findViewById(R.id.input_inputText);
+			rename_input.setText(null);
+			break;
     	}
     }
     @Override
@@ -981,35 +1107,46 @@ public final class Main extends ListActivity {
     			
     			create.setOnClickListener(new OnClickListener() {
     				public void onClick (View v) {
+    					String path = mFileMag.getCurrentDir() + "/";
+    					String name = input.getText().toString();
     					if (input.getText().length() >= 1) {
-    						if (mFileMag.createDir(mFileMag.getCurrentDir() + "/", input.getText().toString()) == 0)
+    						if (new File(path, name).exists()) {
+    							Toast.makeText(Main.this, getResources().getString(R.string.folder_exists), Toast.LENGTH_SHORT).show();
+    						} else if (mFileMag.createDir(path, name) == 0){
     							Toast.makeText(Main.this, 
-    										   "Folder " + input.getText().toString() + " created", 
+    										   Main.this.getString(R.string.folder_created, input.getText().toString()),
     										   Toast.LENGTH_LONG).show();
-    						else
+
+                                input.setText("");
+                            } else{
     							Toast.makeText(Main.this, getResources().getString(R.string.not_created), Toast.LENGTH_SHORT).show();
-    					}
-    					
+    				        }
+                        } else {
+                        	Toast.makeText(Main.this, getResources().getString(R.string.folder_name_null), Toast.LENGTH_SHORT).show();
+                        }
+    				
+                        input.setText("");
     					dialog.dismiss();
     					String temp = mFileMag.getCurrentDir();
-    					mHandler.updateDirectory(mFileMag.getNextDir(temp, true));
+    					mHandler.updateDirectory(mFileMag.getNextDir(temp));
     				}
     			});
     			cancel.setOnClickListener(new OnClickListener() {
-    				public void onClick (View v) {	dialog.dismiss(); }
+    				public void onClick (View v) {
+                        input.setText("");
+                        dialog.dismiss(); 
+                    }
     			});
     		break; 
     		case D_MENU_RENAME:
     		case F_MENU_RENAME:
     			dialog.setContentView(R.layout.input_layout);
-    			dialog.setTitle(getResources().getString(R.string.Rename) + mSelectedListItem);
+    			dialog.setTitle(getResources().getString(R.string.Rename));
     			dialog.setCancelable(false);
     			
     			ImageView rename_icon = (ImageView)dialog.findViewById(R.id.input_icon);
     			rename_icon.setImageResource(R.drawable.rename);
     			
-    			TextView rename_label = (TextView)dialog.findViewById(R.id.input_label);
-    			rename_label.setText(mFileMag.getCurrentDir());
     			final EditText rename_input = (EditText)dialog.findViewById(R.id.input_inputText);
     			
     			Button rename_cancel = (Button)dialog.findViewById(R.id.input_cancel_b);
@@ -1020,16 +1157,23 @@ public final class Main extends ListActivity {
     				public void onClick (View v) {
     					if(rename_input.getText().length() < 1)
     						dialog.dismiss();
-    					
-    					if(mFileMag.renameTarget(mFileMag.getCurrentDir() +"/"+ mSelectedListItem, rename_input.getText().toString()) == 0) {
+    					int ret = mFileMag.renameTarget(mFileMag.getCurrentDir() +"/"+ mSelectedListItem, rename_input.getText().toString());
+    					switch(ret){
+    					case -1:
+    						Toast.makeText(Main.this, mSelectedListItem + getResources().getString(R.string.renamed_to_exist_file), Toast.LENGTH_SHORT).show();
+    						break;
+    					case 0:
     						Toast.makeText(Main.this, mSelectedListItem + getResources().getString(R.string.be_renamed) +rename_input.getText().toString(),
-    								Toast.LENGTH_LONG).show();
-    					}else
-    						Toast.makeText(Main.this, mSelectedListItem + getResources().getString(R.string.not_renamed), Toast.LENGTH_LONG).show();
-    						
+    								Toast.LENGTH_SHORT).show();
+    						break;
+    					case -2:
+    					default:
+    						Toast.makeText(Main.this, mSelectedListItem + getResources().getString(R.string.not_renamed), Toast.LENGTH_SHORT).show();
+    						break;
+    					}
     					dialog.dismiss();
     					String temp = mFileMag.getCurrentDir();
-    					mHandler.updateDirectory(mFileMag.getNextDir(temp, true));
+    					mHandler.updateDirectory(mFileMag.getNextDir(temp));
     				}
     			});
     			rename_cancel.setOnClickListener(new OnClickListener() {
@@ -1102,7 +1246,11 @@ public final class Main extends ListActivity {
     		
     		mHandler.updateDirectory(mFileMag.getPreviousDir());
     		mPathLabel.setText(mFileMag.getCurrentDir());
-    		
+    		if(mFileMag.isRoot()){
+    			mHandler.UpdateButtons(EventHandler.DISABLE_TOOLBTN);
+    		}else{
+    			mHandler.UpdateButtons(EventHandler.ENABLE_TOOLBTN);
+    		}
     		return true;
     		
     	} else if(keycode == KeyEvent.KEYCODE_BACK && mUseBackKey && 
@@ -1123,4 +1271,19 @@ public final class Main extends ListActivity {
     	}
     	return false;
     }
+
+	@Override
+	public void paste(String destination) {
+		boolean multi_select = mHandler.hasMultiSelectData();
+		
+		if(multi_select) {
+			mHandler.copyFileMultiSelect(destination);
+			
+		} else if(mHoldingFile && mCopiedTarget.length() > 1) {
+			mHandler.copyFile(mCopiedTarget, destination);
+			mDetailLabel.setText("");
+		}
+		    			   			
+		mHoldingFile = false;
+	}
 }
