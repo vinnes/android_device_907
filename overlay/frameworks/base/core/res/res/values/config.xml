@@ -31,8 +31,8 @@
     <bool name="config_allowAllRotations">true</bool>
 
     <string-array name="config_locationProviderPackageNames" translatable="false">
+        <!-- The standard AOSP fused location provider -->
         <item>com.android.location.fused</item>
-        <item>com.google.android.location</item>
     </string-array>
 
     <!-- Indicate whether the SD card is accessible without removing the battery. -->
@@ -58,15 +58,6 @@
          device is data-only. -->
     <bool name="config_voice_capable">false</bool>
 
-    <!-- Flag indicating whether the current device allows sms service.
-         If true, this means that the device supports both sending and
-         receiving sms via the telephony network.
-         This can be overridden to false for "data only" devices
-         which can't send and receive sms message.
-
-         Note: Disable SMS also disable voicemail waiting sms,
-               cell broadcasting sms, and MMS. -->
-    <bool name="config_sms_capable">true</bool>
 
     <!-- True will enable the electron beam screen-off animation. -->
     <!-- bool name="config_screenOffAnimation">true</bool -->
@@ -85,11 +76,8 @@
   
     <!-- Separate software navigation bar required on this device. -->
     <bool name="config_showNavigationBar">true</bool>
-    
-     <!-- Boolean indicating whether the wifi chipset has dual frequency band support -->   
-    <bool translatable="false" name="config_wifi_dual_band_support">false</bool>
  
-     <!-- Boolean indicating whether the wifi chipset supports background scanning mechanism.
+    <!-- Boolean indicating whether the wifi chipset supports background scanning mechanism.
          This mechanism allows the host to remain in suspend state and the dongle to actively
          scan and wake the host when a configured SSID is detected by the dongle. This chipset
          capability can provide power savings when wifi needs to be always kept on. -->
@@ -106,17 +94,10 @@
          timeout expires.  May be less than the minimum allowed brightness setting
          that can be set by the user. -->
     <integer name="config_screenBrightnessDim">32</integer>
-    
-    <!-- If this is true, the screen will fade off. -->
-    <bool name="config_animateScreenLights">false</bool>
 
     <!-- Maximum number of database connections opened and managed by framework layer
          to handle queries on each database when using Write-Ahead Logging. -->
     <integer name="db_connection_pool_size">3</integer>
-
-    <!-- When a database query is executed, the results retuned are paginated
-         in pages of size (in KB) indicated by this value -->
-    <integer name="config_cursorWindowSize">2048</integer>
     
     <!-- Close low battery warning when battery level reaches this value -->    
     <integer name="config_lowBatteryCloseWarningLevel">15</integer>
@@ -127,9 +108,7 @@
     <!-- The default iface on which to monitor data use -->
     <string name="config_datause_iface">wlan0</string>
     
-    <!-- Enable multi-user -->
+    <!--  Maximum number of supported users -->
     <integer name="config_multiuserMaximumUsers">5</integer>
     
-    <!-- Translucent status & navigation bars perform poorly on this device -->
-    <bool name="config_enableTranslucentDecor">false</bool>
   </resources>
