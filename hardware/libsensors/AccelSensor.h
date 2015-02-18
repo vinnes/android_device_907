@@ -15,67 +15,70 @@
  * limitations under the License.
  */
 
-#ifndef ANDROID_ACCEL_SENSOR_H
-#define ANDROID_ACCEL_SENSOR_H
+#ifndef ANDROID_FSL_ACCEL_SENSOR_H
+#define ANDROID_FSL_ACCEL_SENSOR_H
 
 #include <stdint.h>
 #include <errno.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
+
 #include "sensors.h"
 #include "SensorBase.h"
 #include "InputEventReader.h"
 
 /*****************************************************************************/
-
+#define TRUE "true"
+#define FALSE "false"
+#define GSENSOR_NAME "gsensor_name"
+#define GSENSOR_DIRECTX "gsensor_direct_x"
+#define GSENSOR_DIRECTY "gsensor_direct_y"
+#define GSENSOR_DIRECTZ "gsensor_direct_z"
+#define GSENSOR_XY "gsensor_xy_revert"
+#define GSENSOR_CONFIG_PATH    "/system/usr/gsensor.cfg"
+#define LINE_LENGTH  (128)
 struct input_event;
 
 class AccelSensor : public SensorBase {
 public:
-            AccelSensor();
+    AccelSensor();
     virtual ~AccelSensor();
-
-    enum {
-        Accelerometer   = 0,
-        numSensors
-    };
-
     virtual int setDelay(int32_t handle, int64_t ns);
-    virtual int enable(int32_t handle, int enabled);
+    virtual int setEnable(int32_t handle, int enabled);
+    virtual int getEnable(int32_t handle);
     virtual int readEvents(sensors_event_t* data, int count);
     void processEvent(int code, int value);
+    void getAccData(sensors_event_t* data) { 
+                *data = mAccData; 
+        }
 
 private:
-    uint32_t mEnabled;
-    uint32_t mPendingMask;
-    InputEventCircularReader mInputReader;
-    sensors_event_t mPendingEvents[numSensors];
-    int mMinPollDelay;
-    int mMaxPollDelay;
-    char poll_sysfs_file[PATH_MAX];
-	char sensor_delay_file[PATH_MAX];
-    int poll_sysfs_file_len;
-    int getPollFile(const char* inputName);
-    static inline int accel_is_sensor_enabled(uint32_t sensor_type)
-    {
-        //dummy now......
-        return 1;
-    }
-    static inline int accel_enable_sensor(uint32_t sensor_type)
-    {
-        //dummy now......
-        return 0;
-    }
-    static inline int accel_disable_sensor(uint32_t sensor_type)
-    {
-       //dummy now......
-       return 0;
-    }
+	int is_sensor_enabled();
+	int enable_sensor();
+	int disable_sensor();
+	int set_delay(int64_t ns);
+	int update_delay();
+	int readDisable();
+	int writeEnable(int isEnable);
+	int writeDelay(int64_t ns);
+	int mUser;
+	int mEnabled;
+	int mPendingMask;
+	float convert;
+        float direct_x;
+        float direct_y;
+        float direct_z;
+        int direct_xy;
+	InputEventCircularReader mInputReader;
+	sensors_event_t mPendingEvent;
+	sensors_event_t mAccData;
+	int64_t mDelay;
+	char* get_cfg_value(char *buf);
+        int gsensor_cfg();
+        
 };
 
 /*****************************************************************************/
 
-#endif  // ANDROID_ACCEL_SENSOR_H
-
-
+#endif  // ANDROID_FSL_ACCEL_SENSOR_H

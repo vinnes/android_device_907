@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Freescale Semiconductor Inc.
+ * Copyright (C) 2012 Freescale Semiconductor Inc.
  * Copyright (C) 2008 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#define LOG_TAG "AccelSensors"
 #include <fcntl.h>
 #include <errno.h>
 #include <math.h>
@@ -25,286 +25,356 @@
 #include <sys/select.h>
 #include <dlfcn.h>
 #include <cutils/log.h>
-
+#include <cutils/properties.h>
 #include "AccelSensor.h"
 
-/*****************************************************************************/
+#define ACC_DATA_NAME    gsensorInfo.sensorName
+#define ACC_SYSFS_PATH   "/sys/class/input"
+#define ACC_SYSFS_DELAY  "delay"
+#define ACC_SYSFS_ENABLE "enable"
+#define ACC_EVENT_X ABS_X
+#define ACC_EVENT_Y ABS_Y
+#define ACC_EVENT_Z ABS_Z
+
 AccelSensor::AccelSensor()
-: SensorBase(NULL, NULL),
-      mEnabled(0),
-      mPendingMask(0),
-      mInputReader(32),
-      mMinPollDelay(0),
-      mMaxPollDelay(0)
+        : SensorBase(NULL, ACC_DATA_NAME),
+        mEnabled(0),
+        mPendingMask(0),
+        convert(0.0),
+        direct_x(0),
+        direct_y(0), 
+        direct_z(0), 
+        direct_xy(-1),
+        mInputReader(16),
+        mDelay(0)
 {
-#if defined(ACCELEROMETER_SENSOR_MMA7660)
-    data_name = "mma7660";
-#elif defined(ACCELEROMETER_SENSOR_MMA8451)
-    data_name = "mma8451";
-#elif defined(ACCELEROMETER_SENSOR_MMA8450)
-    data_name = "mma8450";
-#else
-#error you must define accelerometer properly
-    data_name = NULL;
-    data_fd = -1;
+#ifdef DEBUG_SENSOR
+        ALOGD("sensorName:%s,classPath:%s,lsg:%f\n",
+                gsensorInfo.sensorName, gsensorInfo.classPath, gsensorInfo.priData);
+#endif
+        if (strlen(gsensorInfo.sensorName)) {
+                if(! gsensor_cfg())
+                        ALOGE("gsensor config error!\n"); 
+        }
+        
+        memset(&mPendingEvent, 0, sizeof(mPendingEvent));
+        memset(&mAccData, 0, sizeof(mAccData));
+	
+        mPendingEvent.version = sizeof(sensors_event_t);
+        mPendingEvent.sensor = ID_A;
+        mPendingEvent.type = SENSOR_TYPE_ACCELEROMETER;
+        mPendingEvent.acceleration.status = SENSOR_STATUS_ACCURACY_HIGH;
+        
+	mUser = 0;
+	
+#ifdef DEBUG_SENSOR	
+	ALOGD("%s:data_fd:%d\n", __func__, data_fd);
+#endif	
+	
+	if(!strcmp(ACC_DATA_NAME, "lsm303d_acc")) {
+	        sprintf(gsensorInfo.classPath, "%s/%s/%s", gsensorInfo.classPath, 
+	                "device", "accelerometer");
+	        ALOGD("gsensorInfo.classPath:%s", gsensorInfo.classPath);
+	}
+}
+
+AccelSensor::~AccelSensor() {
+        
+}
+
+char* AccelSensor::get_cfg_value(char *buf) {
+        int j = 0;
+        int k = 0; 
+        char* val;
+        
+        val = strtok(buf, "=");
+        if (val != NULL){
+                val = strtok(NULL, " \n\r\t");
+        }
+        buf = val;
+        
+        return buf;
+}
+
+int AccelSensor::gsensor_cfg()
+{
+        FILE *fp;
+        int name_match = 0;
+        char buf[128] = {0};
+        char * val;
+        
+        if((fp = fopen(GSENSOR_CONFIG_PATH, "rb")) == NULL) {
+                ALOGD("can't not open file!\n");
+                return 0;
+        }
+        
+        while(fgets(buf, LINE_LENGTH, fp))
+        {
+                if (!strncmp(buf, GSENSOR_NAME, strlen(GSENSOR_NAME))) {
+                        val = get_cfg_value(buf);
+                        #ifdef DEBUG_SENSOR
+                                ALOGD("val:%s\n",val);
+                        #endif
+                        name_match = (strncmp(val, gsensorInfo.sensorName, strlen(gsensorInfo.sensorName))) ? 0 : 1;
+                                
+                        if (name_match)  {
+                                convert = (GRAVITY_EARTH/gsensorInfo.priData);
+                                #ifdef DEBUG_SENSOR
+                                        ALOGD("lsg: %f,convert:%f", gsensorInfo.priData, convert);
+                                #endif
+                                memset(&buf, 0, sizeof(buf));
+                                continue;
+                        } 
+                        
+                }  
+                
+                if(name_match ==0){
+                        memset(&buf, 0, sizeof(buf));
+                        continue;
+                }else if(name_match < 5){
+                        name_match++;
+                        val = get_cfg_value(buf); 
+                        #ifdef DEBUG_SENSOR
+                                ALOGD("val:%s\n", val);
+                        #endif
+                        
+                       if (!strncmp(buf,GSENSOR_DIRECTX, strlen(GSENSOR_DIRECTX))){                                
+                                  direct_x = (strncmp(val, TRUE,strlen(val))) ? convert * (-1) : convert;      
+                       }
+                       
+                       if (!strncmp(buf, GSENSOR_DIRECTY, strlen(GSENSOR_DIRECTY))){                                         
+                                  direct_y =(strncmp(val, TRUE,strlen(val))) ? convert * (-1) : convert;      
+                       }
+                       
+                      if (!strncmp(buf, GSENSOR_DIRECTZ, strlen(GSENSOR_DIRECTZ))){
+                                 direct_z =(strncmp(val, TRUE,strlen(val))) ? convert * (-1) : convert; 
+                       }
+                       
+                       if (!strncmp(buf,GSENSOR_XY, strlen(GSENSOR_XY))){
+                                 direct_xy = (strncmp(val, TRUE,strlen(val))) ? 0 : 1; 
+                       }
+                       
+                
+                }else{
+                        name_match = 0;
+                        break;
+                }
+                memset(&buf, 0, sizeof(buf));
+        }
+        
+        #ifdef DEBUG_SENSOR
+                ALOGD("direct_x: %f,direct_y: %f,direct_z: %f,direct_xy:%d,sensor_name:%s \n",
+                        direct_x, direct_y, direct_z, direct_xy, gsensorInfo.sensorName);
+        #endif
+        
+        if((direct_x == 0) || (direct_y == 0) || (direct_z == 0) || (direct_xy == (-1)) || (convert == 0.0)) {
+                return 0;
+        }
+        
+        fclose(fp);
+        return 1;
+    
+}
+
+int AccelSensor::setEnable(int32_t handle, int en) {
+	int err = 0;
+        
+	//ALOGD("enable:  handle:  %ld, en: %d", handle, en);
+	if(handle != ID_A && handle != ID_O && handle != ID_M)
+		return -1;
+		
+	if(en)
+		mUser++;
+	else{
+		mUser--;
+		if(mUser < 0)
+			mUser = 0;
+	}
+
+	if(mUser > 0){
+		usleep(50000);
+		err = enable_sensor();
+	}else
+		err = disable_sensor();
+		
+	if(handle == ID_A ) {
+		if(en)
+         	        mEnabled++;
+		else
+			mEnabled--;
+		if(mEnabled < 0)
+			mEnabled = 0;
+        }
+        
+	//update_delay();
+#ifdef DEBUG_SENSOR
+	ALOGD("AccelSensor enable %d ,usercount %d, handle %d ,mEnabled %d, err %d", 
+	        en, mUser, handle, mEnabled, err);
 #endif
 
-    if (data_name) {
-        data_fd = openInput(data_name);
-        getPollFile(data_name);
-    }
-    memset(mPendingEvents, 0, sizeof(mPendingEvents));
-
-    mPendingEvents[Accelerometer].version = sizeof(sensors_event_t);
-    mPendingEvents[Accelerometer].sensor = ID_A;
-    mPendingEvents[Accelerometer].type = SENSOR_TYPE_ACCELEROMETER;
-    mPendingEvents[Accelerometer].acceleration.status = SENSOR_STATUS_ACCURACY_HIGH;
-
-    // read the actual value of all sensors if they're enabled already
-    struct input_absinfo absinfo;
-    short flags = 0;
-
-    if (accel_is_sensor_enabled(SENSOR_TYPE_ACCELEROMETER))  {
-        mEnabled |= 1<<Accelerometer;
-        #ifdef GSENSOR_XY_REVERT
-        if (!ioctl(data_fd, EVIOCGABS(EVENT_TYPE_ACCEL_Y), &absinfo)) {
-            mPendingEvents[Accelerometer].acceleration.x = absinfo.value * CONVERT_A_X;
-        }
-        if (!ioctl(data_fd, EVIOCGABS(EVENT_TYPE_ACCEL_X), &absinfo)) {
-            mPendingEvents[Accelerometer].acceleration.y = absinfo.value * CONVERT_A_Y;
-        }        
-        #else
-        if (!ioctl(data_fd, EVIOCGABS(EVENT_TYPE_ACCEL_X), &absinfo)) {
-            mPendingEvents[Accelerometer].acceleration.x = absinfo.value * CONVERT_A_X;
-        }
-        if (!ioctl(data_fd, EVIOCGABS(EVENT_TYPE_ACCEL_Y), &absinfo)) {
-            mPendingEvents[Accelerometer].acceleration.y = absinfo.value * CONVERT_A_Y;
-        }
-        #endif
-        if (!ioctl(data_fd, EVIOCGABS(EVENT_TYPE_ACCEL_Z), &absinfo)) {
-            mPendingEvents[Accelerometer].acceleration.z = absinfo.value * CONVERT_A_Z;
-        }
-    }
+        return 0;
 }
 
-AccelSensor::~AccelSensor()
-{
+int AccelSensor::setDelay(int32_t handle, int64_t ns) {
+      // ALOGD("delay:  handle:  %ld, ns: %lld", handle, ns);
+        if (ns < 0)
+                return -EINVAL;
+                
+#ifdef DEBUG_SENSOR                
+        ALOGD("%s: ns = %lld", __func__, ns);
+#endif
+        mDelay = ns;
+        
+        return update_delay();
 }
 
-int AccelSensor::enable(int32_t handle, int en)
-{
-    int what = -1;
-
-    switch (handle) {
-        case ID_A: what = Accelerometer; break;
-    }
-
-    if (uint32_t(what) >= numSensors)
-        return -EINVAL;
-
-    int newState  = en ? 1 : 0;
-    int err = 0;
-
-    if ((uint32_t(newState)<<what) != (mEnabled & (1<<what))) {
-        uint32_t sensor_type;
-       switch (what) {
-            case Accelerometer: sensor_type = SENSOR_TYPE_ACCELEROMETER;  break;
-        }
-        short flags = newState;
-        if (en)
-            err = accel_enable_sensor(sensor_type);
-        else
-            err = accel_disable_sensor(sensor_type);
-
-      //  LOGE_IF(err, "Could not change sensor state (%s)", strerror(-err));
-        if (!err) {
-            mEnabled &= ~(1<<what);
-            mEnabled |= (uint32_t(flags)<<what);
-        }
-    }
-    return err;
+int AccelSensor::update_delay() {
+        return set_delay(mDelay);
 }
 
-int AccelSensor::getPollFile(const char* inputName)
-{
-    FILE *fd = NULL;
-    const char *dirname = "/sys/class/input/";
-    char sysfs_name[PATH_MAX], *endptr;
-    char *filename = NULL, buf[32];
-    DIR *dir;
-    struct dirent *de;
-    int n, path_len;
+int AccelSensor::readEvents(sensors_event_t* data, int count) {
+        if (count < 1)
+                return -EINVAL;
 
-    poll_sysfs_file_len = 0;
-    dir = opendir(dirname);
-    if(dir == NULL)
-        return -1;
+        ssize_t n = mInputReader.fill(data_fd);
+        if (n < 0)
+                return n;
 
-    strcpy(sysfs_name, dirname);
-    filename = sysfs_name + strlen(sysfs_name);
-    while ((de = readdir(dir))) {
-        if ((strlen(de->d_name) < 6) ||
-            strncmp(de->d_name, "input", 5))
-            continue;
-		ALOGD("FILE NAME =%s ",filename);
-        strcpy(filename, de->d_name);
-        strcat(filename, "/");
-        path_len = strlen(sysfs_name);
-        strcat(filename, "name");
-        fd = fopen(sysfs_name, "r");
-        if (fd) {
-            memset(buf, 0, 32);
-            n = fread(buf, 1, 32, fd);
-            fclose(fd);
-            if ((strlen(buf) >= strlen(inputName)) &&
-                !strncmp(buf, inputName, strlen(inputName))) {
-                /* Try to open /sys/class/input/input?/poll */
-                filename = sysfs_name + path_len;
-                strcpy(filename, "poll");
-                fd = fopen(sysfs_name, "r");
-                if (fd) {
-                    poll_sysfs_file_len = strlen(poll_sysfs_file);
-                    fclose(fd);
-                    ALOGD("Found %s\n", poll_sysfs_file);
-
-                    /* Get max poll delay time */
-                    filename = sysfs_name + path_len;
-                    strcpy(filename, "max");
-                    fd = fopen(sysfs_name, "r");
-                    if (fd) {
-                        memset(buf, 0, 32);
-                        n = fread(buf, 1, 6, fd);
-                        if (n > 0)
-                            mMaxPollDelay = strtol(buf, &endptr, 10);
-                        fclose(fd);
-                    }
-
-                    /* Get min poll delay time */
-                    filename = sysfs_name + path_len;
-                    strcpy(filename, "min");
-                    fd = fopen(sysfs_name, "r");
-                    if (fd) {
-                        memset(buf, 0, 32);
-                        n = fread(buf, 1, 6, fd);
-                        if (n > 0)
-                            mMinPollDelay = strtol(buf, &endptr, 10);
-                        fclose(fd);
-                    }
-                    filename = sysfs_name + path_len;
-                    strcpy(filename, "delay");
-                    fd = fopen(sysfs_name, "r +");
-                    if (fd) {
-						strcpy(sensor_delay_file, sysfs_name);
-                        fclose(fd);
-                    }					
-
-                    return 0;
+        int numEventReceived = 0;
+        input_event const* event;
+        
+        while (count && mInputReader.readEvent(&event)) {
+                int type = event->type;
+                
+                if ((type == EV_ABS) || (type == EV_REL) || (type == EV_KEY)) {
+                        processEvent(event->code, event->value);
+                        mInputReader.next();
+                } else if (type == EV_SYN) {
+                        int64_t time = timevalToNano(event->time);
+                        
+			if (mPendingMask) {
+				mPendingMask = 0;
+				mPendingEvent.timestamp = time;
+				
+				if (mEnabled) {
+					*data++ = mPendingEvent;
+					mAccData = mPendingEvent;
+					count--;
+					numEventReceived++;
+				}				
+			}
+			
+                        if (!mPendingMask) {
+                                mInputReader.next();
+                        }
+                        
+                } else {
+                        ALOGE("AccelSensor: unknown event (type=%d, code=%d)",
+                                type, event->code);
+                        mInputReader.next();
                 }
-            }
         }
-   }
 
-   return -1;
+        return numEventReceived;
 }
 
-int AccelSensor::setDelay(int32_t handle, int64_t ns)
-{
-    FILE *fd = NULL;
-    int n, len, ms, ret = -1;
-    char buf[6];
+void AccelSensor::processEvent(int code, int value) {
 
-    ms = ns / 1000 / 1000;
+        switch (code) {
+                case ACC_EVENT_X :
+                        mPendingMask = 1;
+                        
+                        if(direct_xy) {
+                                mPendingEvent.acceleration.y= value * direct_y;
+                        }else {
+                                mPendingEvent.acceleration.x = value * direct_x;
+                        }
+                        
+                        break;
 
-    if (poll_sysfs_file_len &&
-        (ms >= mMinPollDelay) &&
-        (ms <= mMaxPollDelay)) {
-       fd = fopen(sensor_delay_file, "r+");
-       if (fd) {
-           len = 6;
-           memset(buf, 0, len);
-           snprintf(buf, len, "%d", ms);
-           n = fwrite(buf, 1, len, fd);
-           fclose(fd);
-           ret = 0;
-       }else
-           ALOGE("file %s open failure\n", poll_sysfs_file);
-    }else
-        ALOGE("Error in setDelay %d ms\n", ms);
+                case ACC_EVENT_Y :
+                        mPendingMask = 1;
+                        
+                        if(direct_xy) {
+                                mPendingEvent.acceleration.x = value * direct_x;
+                        }else {
+                                mPendingEvent.acceleration.y = value * direct_y;
+                        }
+                        		
+                        break;
 
-    return ret;
+                case ACC_EVENT_Z :
+                        mPendingMask = 1;
+                        mPendingEvent.acceleration.z = value * direct_z ;
+                        break;
+        }
+        
+#ifdef DEBUG_SENSOR
+        ALOGD("Sensor data:  x,y,z:  %f, %f, %f\n", mPendingEvent.acceleration.x,
+						    mPendingEvent.acceleration.y,
+						    mPendingEvent.acceleration.z); 
+#endif	
+
 }
 
-int AccelSensor::readEvents(sensors_event_t* data, int count)
-{
+int AccelSensor::writeEnable(int isEnable) {
 
-    if (count < 1)
-        return -EINVAL;
+        char buf[2];  
+        int err = -1 ;     
+        
+	if(gsensorInfo.classPath[0] == ICHAR)
+		return -1;
+	
+	int bytes = sprintf(buf, "%d", isEnable);
+		
+        if(!strcmp(ACC_DATA_NAME, "lsm303d_acc")) {                
+                err = set_sysfs_input_attr(gsensorInfo.classPath,"enable_device",buf,bytes);        
+        }else {			
+	        err = set_sysfs_input_attr(gsensorInfo.classPath,"enable",buf,bytes);
+        }
+        
+	return err;
+}
 
-    ssize_t n = mInputReader.fill(data_fd);
-    if (n < 0)
-        return n;
+int AccelSensor::writeDelay(int64_t ns) {
+	if(gsensorInfo.classPath[0] == ICHAR)
+		return -1;
 
-    int numEventReceived = 0;
-    input_event const* event;
+	if (ns > 10240000000LL) {
+		ns = 10240000000LL; /* maximum delay in nano second. */
+	}
+	if (ns < 312500LL) {
+		ns = 312500LL; /* minimum delay in nano second. */
+	}
 
-    while (count && mInputReader.readEvent(&event)) {
-        int type = event->type;
-        if (type == EV_ABS) {
-            processEvent(event->code, event->value);
-            mInputReader.next();
-        } else if (type == EV_SYN) {
-            int64_t time = timevalToNano(event->time);
-            for (int j=0 ; count && mPendingMask && j<numSensors ; j++) {
-                if (mPendingMask & (1<<j)) {
-                    mPendingMask &= ~(1<<j);
-                    mPendingEvents[j].timestamp = time;
-                    if (mEnabled & (1<<j)) {
-                        *data++ = mPendingEvents[j];
-                        count--;
-                        numEventReceived++;
-                    }
-                }
-            }
-            if (!mPendingMask) {
-                mInputReader.next();
-            }
+        char buf[80];
+        int bytes = sprintf(buf, "%lld", ns/1000 / 1000);
+        
+        if(!strcmp(ACC_DATA_NAME, "lsm303d_acc")) {             
+                int err = set_sysfs_input_attr(gsensorInfo.classPath,"pollrate_us",buf,bytes);        
         } else {
-            ALOGE("AccelSensor: unknown event (type=%d, code=%d)",
-                    type, event->code);
-            mInputReader.next();
+                int err = set_sysfs_input_attr(gsensorInfo.classPath,"delay",buf,bytes);
         }
-    }
 
-    return numEventReceived;
+        return 0;
+
 }
 
-void AccelSensor::processEvent(int code, int value)
-{
-    switch (code) {
-    	#ifdef GSENSOR_XY_REVERT
-        case EVENT_TYPE_ACCEL_Y:
-            mPendingMask |= 1<<Accelerometer;
-            mPendingEvents[Accelerometer].acceleration.x = value * CONVERT_A_X;
-            break;
-        case EVENT_TYPE_ACCEL_X:
-            mPendingMask |= 1<<Accelerometer;
-            mPendingEvents[Accelerometer].acceleration.y = value * CONVERT_A_Y;
-            break;    	
-    	#else
-        case EVENT_TYPE_ACCEL_X:
-            mPendingMask |= 1<<Accelerometer;
-            mPendingEvents[Accelerometer].acceleration.x = value * CONVERT_A_X;
-            break;
-        case EVENT_TYPE_ACCEL_Y:
-            mPendingMask |= 1<<Accelerometer;
-            mPendingEvents[Accelerometer].acceleration.y = value * CONVERT_A_Y;
-            break;
-      #endif
-        case EVENT_TYPE_ACCEL_Z:
-            mPendingMask |= 1<<Accelerometer;
-            mPendingEvents[Accelerometer].acceleration.z = value * CONVERT_A_Z;
-            break;
-    }
+int AccelSensor::enable_sensor() {
+	return writeEnable(1);
 }
 
+int AccelSensor::disable_sensor() {
+	return writeEnable(0);
+}
+
+int AccelSensor::set_delay(int64_t ns) {
+	return writeDelay(ns);
+}
+
+int AccelSensor::getEnable(int32_t handle) {
+	return (handle == ID_A) ? mEnabled : 0;
+}
+
+/*****************************************************************************/
 

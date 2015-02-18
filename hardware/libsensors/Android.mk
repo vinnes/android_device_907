@@ -11,57 +11,50 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-ifneq ($(findstring $(SW_BOARD_USES_GSENSOR_TYPE),mma7660 mma8451), )
-
-
 LOCAL_PATH := $(call my-dir)
-
 # HAL module implemenation, not prelinked, and stored in
 # hw/<SENSORS_HARDWARE_MODULE_ID>.<ro.product.board>.so
-
 include $(CLEAR_VARS)
-
-ifeq ($(SW_BOARD_USES_GSENSOR_TYPE), mma7660)
-LOCAL_CPPFLAGS += -DACCELEROMETER_SENSOR_MMA7660
-endif
-
-ifeq ($(SW_BOARD_USES_GSENSOR_TYPE), mma8451)
-LOCAL_CPPFLAGS += -DACCELEROMETER_SENSOR_MMA8451
-endif
-
-
-ifeq ($(SW_BOARD_GSENSOR_DIRECT_X), true)
-LOCAL_CPPFLAGS += -DGSENSOR_DIRECT_X
-endif
-
-ifeq ($(SW_BOARD_GSENSOR_DIRECT_Y), true)
-LOCAL_CPPFLAGS += -DGSENSOR_DIRECT_Y
-endif
-
-ifeq ($(SW_BOARD_GSENSOR_DIRECT_Z), true)
-LOCAL_CPPFLAGS += -DGSENSOR_DIRECT_Z
-endif
-
-ifeq ($(SW_BOARD_GSENSOR_XY_REVERT), true)
-LOCAL_CPPFLAGS += -DGSENSOR_XY_REVERT
-endif
-
 LOCAL_PRELINK_MODULE := false
 LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
 LOCAL_MODULE := sensors.$(TARGET_BOARD_PLATFORM)
-LOCAL_MODULE_TAGS := eng
-LOCAL_CFLAGS := -DLOG_TAG=\"Sensors\"
+LOCAL_MODULE_TAGS := eng optional
 
+ifeq ($(SW_BOARD_USES_MAGSENSOR_TYPE), fxos8700 )
+LOCAL_CPPFLAGS += -DMAG_SENSOR_FXOS8700
 LOCAL_SRC_FILES := 						\
 				sensors.cpp 			\
+				sensorDetect.cpp                \
+				insmodDevice.cpp                \
 				SensorBase.cpp			\
-				LightSensor.cpp			\
-				AccelSensor.cpp               \
-                        InputEventReader.cpp
+				AccelSensor.cpp			\
+				MagSensor.cpp                   \
+				GyroSensor.cpp                  \
+				LightSensor.cpp                 \
+				ProximitySensor.cpp             \
+				TempSensor.cpp                  \
+				PressSensor.cpp			\
+                                InputEventReader.cpp            
+    
+else
+LOCAL_SRC_FILES := 						\
+				sensors.cpp 			\
+				sensorDetect.cpp                \
+				insmodDevice.cpp                \
+				SensorBase.cpp			\
+				AccelSensor.cpp			\
+				MagnetoSensor.cpp               \
+				GyroSensor.cpp                  \
+				LightSensor.cpp                 \
+                                ProximitySensor.cpp             \
+                                TempSensor.cpp                  \
+				PressSensor.cpp			\
+                                InputEventReader.cpp 
+   
+endif      
 
 LOCAL_SHARED_LIBRARIES := liblog libcutils libdl
 
-include $(BUILD_SHARED_LIBRARY)
+LOCAL_LDFLAGS = $(LOCAL_PATH)/LibFusion_ARM_cpp.a
 
-endif
+include $(BUILD_SHARED_LIBRARY)
