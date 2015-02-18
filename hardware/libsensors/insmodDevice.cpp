@@ -159,6 +159,7 @@ static int get_cfg(void)
                         
                         if(!insmod_modules(buf)){
                                 ALOGD("insmod fail !");
+				fclose(fp);
                                 return 0;
                         }
                 } 

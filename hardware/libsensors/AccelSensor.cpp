@@ -162,13 +162,30 @@ int AccelSensor::gsensor_cfg()
                 memset(&buf, 0, sizeof(buf));
         }
         
+    char property[PROPERTY_VALUE_MAX];
+    property_get("ro.sf.rotation", property, 0);
+    switch (atoi(property)) {
+        case 90:
+            direct_y = (-1) * direct_y;
+            direct_xy = (direct_xy == 1) ? 0 : 1;
+            break;
+        case 180:
+            direct_x = (-1) * direct_x;
+            direct_y = (-1) * direct_y;
+            break;
+        case 270:
+            direct_x = (-1) * direct_x;
+            direct_xy = (direct_xy == 1) ? 0 : 1;
+            break;
+    }
         #ifdef DEBUG_SENSOR
                 ALOGD("direct_x: %f,direct_y: %f,direct_z: %f,direct_xy:%d,sensor_name:%s \n",
                         direct_x, direct_y, direct_z, direct_xy, gsensorInfo.sensorName);
         #endif
         
         if((direct_x == 0) || (direct_y == 0) || (direct_z == 0) || (direct_xy == (-1)) || (convert == 0.0)) {
-                return 0;
+                fclose(fp);
+		return 0;
         }
         
         fclose(fp);
@@ -190,11 +207,11 @@ int AccelSensor::setEnable(int32_t handle, int en) {
 		if(mUser < 0)
 			mUser = 0;
 	}
+	
 
-	if(mUser > 0){
-		usleep(50000);
+	if(mUser > 0)
 		err = enable_sensor();
-	}else
+	else
 		err = disable_sensor();
 		
 	if(handle == ID_A ) {
@@ -329,7 +346,7 @@ int AccelSensor::writeEnable(int isEnable) {
 		
         if(!strcmp(ACC_DATA_NAME, "lsm303d_acc")) {                
                 err = set_sysfs_input_attr(gsensorInfo.classPath,"enable_device",buf,bytes);        
-        }else {			
+        }else {	
 	        err = set_sysfs_input_attr(gsensorInfo.classPath,"enable",buf,bytes);
         }
         

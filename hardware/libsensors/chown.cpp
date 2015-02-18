@@ -19,6 +19,7 @@ int chown_main(const char *groupname, const char *filename)
         char user[32];
         char *group = NULL;
         strncpy(user, groupname, sizeof(user));
+	user[sizeof(user)-1]= '\0';	
         
         if ((group = strchr(user, ':')) != NULL) {
                 *group++ = '\0';

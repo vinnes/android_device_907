@@ -154,13 +154,16 @@ sensors_poll_context_t::sensors_poll_context_t()
         mPollFds[first].events = POLLIN;
         mPollFds[first].revents = 0;
 #else
+/*
         mSensors[first] = new MagnetoSensor((AccelSensor*)mSensors[accel]);
         mPollFds[first].fd = mSensors[mag]->getFd();
         mPollFds[first].events = POLLIN;
         mPollFds[first].revents = 0;
+*/
 #endif
     }
 
+/*
     if((seStatus[ID_GY].isUsed == true) && (seStatus[ID_GY].isFound == true)) {
         first = first + 1;
         gyro = first;
@@ -169,7 +172,7 @@ sensors_poll_context_t::sensors_poll_context_t()
         mPollFds[first].events = POLLIN;
         mPollFds[first].revents = 0;
     }
-
+*/
     if((seStatus[ID_L].isUsed == true) && (seStatus[ID_L].isFound == true)) {
         first = first + 1;
         light = first;
@@ -222,7 +225,7 @@ int sensors_poll_context_t::activate(int handle, int enabled) {
     int index = handleToDriver(handle);
     if (index < 0) return index;
     int err = 0 ;
-
+    
     if(handle == ID_O || handle ==  ID_M){
         err =  mSensors[accel]->setEnable(handle, enabled);// if handle == orientaion or magnetic ,please enable ACCELERATE Sensor
         if(err)

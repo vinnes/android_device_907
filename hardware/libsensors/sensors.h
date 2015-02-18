@@ -118,6 +118,7 @@ __BEGIN_DECLS
 #define LSG_LIS35DE                     (15.0f)
 #define LSG_MMA7660                     (21.0f)
 #define LSG_MXC622X                     (64.0f)
+#define LSG_MC32X0                      (64.0f)
 #define LSG_LIS3DE_ACC                  (65.0f)
 #define LSG_BMA250                      (256.0f)
 #define LSG_STK831X                     (21.0f)

@@ -65,9 +65,10 @@ struct sensor_extend_t tempSensorList[] = {
             "AW.",
             1, SENSORS_TEMPERATURE_HANDLE,
             SENSOR_TYPE_AMBIENT_TEMPERATURE,
-            85.0f, 0.5f,
+            125.0f, 1.0f,
             0.35f, 0,
-            { }
+            0, 0,
+            { },
         },
     },
 };
@@ -83,7 +84,9 @@ struct sensor_extend_t oriSensorList[] = {
             SENSORS_ORIENTATION_HANDLE,
             SENSOR_TYPE_ORIENTATION,
             360.0f,  CONVERT_O,
-            0.50f,  100000, { },
+            0.50f,  100000,
+            0, 0,
+            { },
         },
     },
 };
@@ -99,9 +102,25 @@ struct sensor_extend_t proSensorList[] = {
             SENSORS_PROXIMITY_HANDLE,
             SENSOR_TYPE_PROXIMITY,
             5.0f, 5.0f,
-            0.2f, 0, { }
+            0.2f, 0,
+            0, 0,
+            { },
         },
-    },
+    },{
+        {
+            "stk3x1x_ps", 0,
+        }, {
+            "stk3x1x Proximity Sensor",
+            "sensortek",
+            1,
+            SENSORS_PROXIMITY_HANDLE,
+            SENSOR_TYPE_PROXIMITY,
+            1.0f, 0.1f,
+            0.873f, 0,
+            0, 0,
+            { },
+        },
+    }
 
 };
 
@@ -116,8 +135,24 @@ struct sensor_extend_t ligSensorList[] = {
             SENSORS_LIGHT_HANDLE,
             SENSOR_TYPE_LIGHT,
             20000.0f, 20.0f,
-            0.2f, 0, { }
-        }
+            0.2f, 0, 
+            0, 0,
+            { },
+        },
+    }, {
+        {
+            "stk3x1x_ls", 0,
+        }, {
+            "stk3x1x Ambient Light Sensor",
+            "sensortek ",
+            1,
+            SENSORS_LIGHT_HANDLE,
+            SENSOR_TYPE_LIGHT,
+            4096.0f, 1.0f,
+            0.09f, 0, 
+            0, 0,
+            { },
+        },
     },
 
 };
@@ -134,7 +169,9 @@ struct sensor_extend_t gyrSensorList[] = {
             SENSOR_TYPE_GYROSCOPE,
             (2000.0f*(float)M_PI/180.0f),
             (70.0f / 1000.0f) * ((float)M_PI / 180.0f),
-            6.1f, 1190, { },
+            6.1f, 1190,
+            0, 0,
+            { },
         },
     },
 };
@@ -150,7 +187,9 @@ struct sensor_extend_t magSensorList[] = {
             SENSORS_MAGNETIC_FIELD_HANDLE,
             SENSOR_TYPE_MAGNETIC_FIELD,
             2000.0f, CONVERT_M,
-            6.8f, 16667, { },
+            6.8f, 16667,
+            0, 0,
+            { },
         },
     }, {
         {
@@ -162,7 +201,9 @@ struct sensor_extend_t magSensorList[] = {
             SENSORS_MAGNETIC_FIELD_HANDLE,
             SENSOR_TYPE_MAGNETIC_FIELD,
             1500.0f, 1.0f/20.0f,
-            0.50f, 100000, { },
+            0.50f, 100000,
+            0, 0,
+            { },
         },
     },
 };
@@ -178,7 +219,9 @@ struct sensor_extend_t gsensorList[] = {
             SENSOR_TYPE_ACCELEROMETER,
             RANGE_A,
             GRAVITY_EARTH/21.0f,
-            0.30f, 20000, { },
+            0.30f, 20000,
+            0, 0,
+            { },
         },
     }, {
         {
@@ -190,7 +233,9 @@ struct sensor_extend_t gsensorList[] = {
             SENSOR_TYPE_ACCELEROMETER,
             4.0f*9.81f,
             (4.0f*9.81f)/1024.0f,
-            0.2f, 0, { },
+            0.2f, 0,
+			0, 0,
+			{ },
         },
     },{
         {
@@ -202,7 +247,9 @@ struct sensor_extend_t gsensorList[] = {
             SENSOR_TYPE_ACCELEROMETER,
             RANGE_A,
             GRAVITY_EARTH/1024.0f,
-            0.30f, 20000, { },
+            0.30f, 20000,
+			0, 0,
+			{ },
         },
     }, {
         {
@@ -214,7 +261,9 @@ struct sensor_extend_t gsensorList[] = {
                 SENSOR_TYPE_ACCELEROMETER,
                 RANGE_A,
                 GRAVITY_EARTH/21.0f,
-                0.30f, 20000, { },
+                0.30f, 20000,
+                0, 0,
+                { },
         },
     }, {
         {
@@ -226,7 +275,9 @@ struct sensor_extend_t gsensorList[] = {
                 SENSOR_TYPE_ACCELEROMETER,
                 RANGE_A,
                 GRAVITY_EARTH/1024.0f,
-                0.30f, 20000, { },
+                0.30f, 20000,
+                0, 0,
+                { },
         },
     },  {
         {
@@ -238,7 +289,9 @@ struct sensor_extend_t gsensorList[] = {
                 SENSOR_TYPE_ACCELEROMETER,
                 4.0f*9.81f,
                 GRAVITY_EARTH/4096.0f,
-                0.8f, 0, { } ,
+                0.8f, 0,
+                0, 0,
+                { },
         },
     },  {
         {
@@ -250,7 +303,9 @@ struct sensor_extend_t gsensorList[] = {
                 SENSOR_TYPE_ACCELEROMETER,
                 4.0f*9.81f,
                 (4.0f*9.81f)/1024.0f,
-                0.2f, 0, { },
+                0.2f, 0,
+                0, 0,
+                { },
         },
     }, {
         {
@@ -262,7 +317,9 @@ struct sensor_extend_t gsensorList[] = {
                 SENSOR_TYPE_ACCELEROMETER,
                 4.0f*9.81f,
                 (4.0f*9.81f)/256.0f,
-                0.2f, 0, { } ,
+                0.2f, 0,
+                0, 0,
+                { },
         },
     }, {
         {
@@ -274,7 +331,9 @@ struct sensor_extend_t gsensorList[] = {
                 SENSOR_TYPE_ACCELEROMETER,
                 4.0f*9.81f,
                 (4.0f*9.81f)/256.0f,
-                0.2f, 0, { },
+                0.2f, 0,
+                0, 0,
+                { },
         },
     }, {
         {
@@ -287,7 +346,9 @@ struct sensor_extend_t gsensorList[] = {
                 SENSOR_TYPE_ACCELEROMETER,
                 2.0f*9.81f,
                 9.81f/16384.0f,
-                0.30f,  20000,  { },
+                0.30f,  20000,
+                0, 0,
+                { },
         },
     }, {
         {
@@ -299,7 +360,9 @@ struct sensor_extend_t gsensorList[] = {
                 SENSOR_TYPE_ACCELEROMETER,
                 RANGE_A,
                 RESOLUTION_A,
-                0.23f, 20000, { },
+                0.23f, 20000,
+                0, 0,
+                { },
         },
     }, {
         {
@@ -311,7 +374,9 @@ struct sensor_extend_t gsensorList[] = {
                 SENSOR_TYPE_ACCELEROMETER,
                 (GRAVITY_EARTH * 2.0f),
                 GRAVITY_EARTH / 1024,
-                0.145f, 0, { },
+                0.145f, 0,
+                0, 0,
+                { },
         },
     }, {
         {
@@ -323,9 +388,11 @@ struct sensor_extend_t gsensorList[] = {
                 SENSOR_TYPE_ACCELEROMETER,
                 (GRAVITY_EARTH * 3.0f),
                 GRAVITY_EARTH/256.0f,
-                0.5f, 0, { },
+                0.5f, 0,
+                0, 0,
+                { },
         },
-    }, {
+    },{
         {
             "mxc622x", LSG_MXC622X,
         }, {
@@ -335,21 +402,37 @@ struct sensor_extend_t gsensorList[] = {
                 SENSOR_TYPE_ACCELEROMETER,
                 2.0,
                 GRAVITY_EARTH/64.0f,
-                0.005, 0, { },
+                0.005, 0,
+                0, 0,
+                { },
+        },
+    },{
+        {
+            "mc32x0", LSG_MC32X0,
+        }, {
+            "mc32x0 3-axis Accelerometer",
+                "MCXX",
+                1, 0,
+                SENSOR_TYPE_ACCELEROMETER,
+                2.0,
+                GRAVITY_EARTH/64.0f,
+                0.005, 0,
+                0, 0,
+               { },
         },
     }, {
         {
             "lis35de", LSG_LIS35DE,
-        },
-
-            {
+        },  {
                 "lis3dh detect Accelerometer",
                 "ST",
                 1, 0,
                 SENSOR_TYPE_ACCELEROMETER,
                 4.0f*9.81f,
                 (4.0f*9.81f)/15.0f,
-                0.2f, 0, { } ,
+                0.2f, 0,
+                0, 0,
+                { },
             },
     },
 

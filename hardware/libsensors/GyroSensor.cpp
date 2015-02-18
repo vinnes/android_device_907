@@ -183,6 +183,9 @@ void GyroSensor::processEvent(int code, int value)
         nineInput.gx =  gyrox;
         nineInput.gy =  gyroy;
         nineInput.gz =  gyroz;
+	nineInput.Azimuth =  0;
+	nineInput.pitch =  0;
+	nineInput.roll =  0;
         
         nineInput.time = getTimestamp()/1000000;
         
