@@ -117,7 +117,7 @@ PRODUCT_COPY_FILES += \
 	$(COMMON_PATH)/prebuilt/lib/cedarx/libve.so:system/lib/libve.so \
 	
 #Cedarx-Crack
-#PRODUCT_COPY_FILES += \
+PRODUCT_COPY_FILES += \
 	$(COMMON_PATH)/prebuilt/lib/cedarx/libdemux_rmvb.so:system/lib/libdemux_rmvb.so \
 	$(COMMON_PATH)/prebuilt/lib/cedarx/librm.so:system/lib/librm.so \
 	$(COMMON_PATH)/prebuilt/lib/cedarx/libswa1.so:system/lib/libswa1.so \
@@ -197,7 +197,22 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
 	make_ext4fs \
 	e2fsck \
-	cpueater
+	
+# extra - present in stock images
+PRODUCT_PACKAGES += \
+	cpueater \
+	btool \
+	call-pppd \
+	daemonize \
+	dbus-monitor \
+	dbus-send \
+	directiotest \
+	kfmapp \
+	nc \
+	netperf \
+	netserver \
+	tcpdump \
+	timeinfo \
 
 $(call inherit-product, frameworks/native/build/tablet-dalvik-heap.mk)
 $(call inherit-product, build/target/product/full_base.mk)
