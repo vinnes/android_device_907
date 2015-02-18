@@ -99,22 +99,9 @@ PRODUCT_COPY_FILES += \
         frameworks/native/data/etc/android.hardware.telephony.gsm.xml:system/etc/permissions/android.hardware.telephony.gsm.xml \
 	packages/wallpapers/LivePicker/android.software.live_wallpaper.xml:/system/etc/permissions/android.software.live_wallpaper.xml
 
-#Cedarx prebuild lib's from 4.1
+#Cedarx prebuild lib's from 4.2
 #PRODUCT_COPY_FILES += \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/libaw_audio.so:system/lib/libaw_audio.so \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/libaw_audioa.so:system/lib/libaw_audioa.so \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/libCedarA.so:system/lib/libCedarA.so \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/libcedarv.so:system/lib/libcedarv.so \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/libcedarv_adapter.so:system/lib/libcedarv_adapter.so \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/libcedarv_base.so:system/lib/libcedarv_base.so \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/libCedarX.so:system/lib/libCedarX.so \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/libcedarxbase.so:system/lib/libcedarxbase.so  \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/libcedarxosal.so:system/lib/libcedarxosal.so \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/libfacedetection.so:system/lib/libfacedetection.so \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/librtmp.so:system/lib/librtmp.so \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/libstagefright_soft_cedar_h264dec.so:system/lib/libstagefright_soft_cedar_h264dec.so \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/libswdrm.so:system/lib/libswdrm.so \
-	$(COMMON_PATH)/prebuilt/lib/cedarx/libve.so:system/lib/libve.so \
+	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/lib/cedarx,system/lib)
 	
 #Cedarx-Crack
 PRODUCT_COPY_FILES += \
