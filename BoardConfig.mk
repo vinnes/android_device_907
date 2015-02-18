@@ -56,8 +56,8 @@ BOARD_HAS_VIBRATOR_IMPLEMENTATION := ../../device/softwinner/907/vibrator.c
 TARGET_USERIMAGES_USE_EXT4 := true
 BOARD_BOOTIMAGE_PARTITION_SIZE := 33554432
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 33554432
-BOARD_SYSTEMIMAGE_PARTITION_SIZE := 369440104
-BOARD_USERDATAIMAGE_PARTITION_SIZE := 1000737176
+BOARD_SYSTEMIMAGE_PARTITION_SIZE := 402653184
+BOARD_USERDATAIMAGE_PARTITION_SIZE := 1073741824
 BOARD_FLASH_BLOCK_SIZE := 4096
 
 # EGL stuff
@@ -67,7 +67,6 @@ BOARD_EGL_WORKAROUND_BUG_10194508 := true
 USE_OPENGL_RENDERER := true
 ENABLE_WEBGL := true
 BOARD_USE_SKIA_LCDTEXT := true
-BOARD_EGL_NEEDS_FNW := true
 BOARD_EGL_NEEDS_LEGACY_FB := true
 BOARD_NO_ALLOW_DEQUEUE_CURRENT_BUFFER := true
 
@@ -160,11 +159,15 @@ BOARD_SEPOLICY_UNION += \
     drmserver.te \
     file.te \
     file_contexts \
+    mount.te \
+    netd.te \
+    rild.te \
     surfaceflinger.te \
     system.te \
-    rild.te \
+    untrusted_app.te \
     vold.te \
     wpa_supplicant.te \
+    zygote.te \
 
 # Beware: set only prebuilt OR source+config
 TARGET_PREBUILT_KERNEL := device/softwinner/907/kernel
