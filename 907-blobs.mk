@@ -48,7 +48,7 @@ PRODUCT_COPY_FILES += \
 	$(COMMON_PATH)/prebuilt/lib/egl/libEGL_mali.so:system/lib/egl/libEGL_mali.so \
 	$(COMMON_PATH)/prebuilt/lib/egl/libGLESv1_CM_mali.so:system/lib/egl/libGLESv1_CM_mali.so \
 	$(COMMON_PATH)/prebuilt/lib/egl/libGLESv2_mali.so:system/lib/egl/libGLESv2_mali.so \
-	$(COMMON_PATH)/prebuilt/lib/liballwinner-ril.so:system/lib/liballwinner-ril.so \
+	$(COMMON_PATH)/prebuilt/lib/libsoftwinner-ril.so:system/lib/libsoftwinner-ril.so \
 	$(COMMON_PATH)/prebuilt/lib/hw/sensors.exDroid.so:system/lib/hw/sensors.exDroid.so \
 	$(COMMON_PATH)/prebuilt/lib/libMali.so:system/lib/libMali.so \
 	$(COMMON_PATH)/prebuilt/lib/libUMP.so:system/lib/libUMP.so \

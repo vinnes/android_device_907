@@ -39,7 +39,7 @@ ro.product.firmware=v1.2
 ro.property.fontScale=1.15
 
 # RIL config
-rild.libpath=/system/lib/liballwinner-ril.so
+rild.libpath=/system/lib/libsoftwinner-ril.so
 rild.libargs=-d /dev/ttyUSB2
 
 # Hardware info
