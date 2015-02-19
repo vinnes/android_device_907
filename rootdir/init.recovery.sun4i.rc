@@ -2,6 +2,7 @@ on early-init
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor fantasy
 
 on init
+    mount vfat /dev/block/nandi /storage/sdcard0
     write /sys/devices/virtual/bdi/179:0/read_ahead_kb 2048
     write /sys/devices/virtual/bdi/7:0/read_ahead_kb 2048
     write /sys/devices/virtual/bdi/93:0/read_ahead_kb 2048
