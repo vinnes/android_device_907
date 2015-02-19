@@ -19,13 +19,7 @@ PRODUCT_COPY_FILES := \
 	$(COMMON_PATH)/kernel:kernel \
         $(COMMON_PATH)/prebuilt/lib/modules/ft5x_ts.ko:root/lib/modules/ft5x_ts.ko \
         $(COMMON_PATH)/prebuilt/bin/reboot-recovery.sh:root/sbin/reboot-recovery.sh \
-	$(COMMON_PATH)/rootdir/init.rc:root/init.rc \
-	$(COMMON_PATH)/rootdir/initlogo.rle:root/initlogo.rle \
-	$(COMMON_PATH)/rootdir/init.recovery.sun4i.rc:root/init.recovery.sun4i.rc \
-	$(COMMON_PATH)/rootdir/init.sun4i.rc:root/init.sun4i.rc \
-        $(COMMON_PATH)/rootdir/fstab.sun4i:root/fstab.sun4i \
-	$(COMMON_PATH)/rootdir/init.sun4i.usb.rc:root/init.sun4i.usb.rc \
-	$(COMMON_PATH)/rootdir/ueventd.sun4i.rc:root/ueventd.sun4i.rc
+	$(call find-copy-subdir-files,*,$(COMMON_PATH)/rootdir,root)
 
 PRODUCT_CHARACTERISTICS := tablet
 
@@ -35,12 +29,10 @@ PRODUCT_TAGS += dalvik.gc.type-precise
 PRODUCT_PROPERTY_OVERRIDES += \
         ro.opengles.version = 131072 \
 	drm.service.enabled=true \
-	debug.force.software.rending=true \
    
 # low memory
 PRODUCT_PROPERTY_OVERRIDES += \
 	ro.config.low_ram=true \
-	dalvik.vm.jit.codecachesize=0 \
 
 # Fix Graphics Issues
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -100,11 +92,11 @@ PRODUCT_COPY_FILES += \
 	packages/wallpapers/LivePicker/android.software.live_wallpaper.xml:/system/etc/permissions/android.software.live_wallpaper.xml
 
 #Cedarx prebuild lib's from 4.2
-#PRODUCT_COPY_FILES += \
+PRODUCT_COPY_FILES += \
 	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/lib/cedarx,system/lib)
 	
-#Cedarx-Crack
-PRODUCT_COPY_FILES += \
+#Cedarx-Crack only
+#PRODUCT_COPY_FILES += \
 	$(COMMON_PATH)/prebuilt/lib/cedarx/libdemux_rmvb.so:system/lib/libdemux_rmvb.so \
 	$(COMMON_PATH)/prebuilt/lib/cedarx/librm.so:system/lib/librm.so \
 	$(COMMON_PATH)/prebuilt/lib/cedarx/libswa1.so:system/lib/libswa1.so \
@@ -118,7 +110,6 @@ PRODUCT_PACKAGES += \
 # Device specific settings
 PRODUCT_PACKAGES += \
         dispctl \
-	#AllwinnerA10Settings \
         #ethernet
 
 PRODUCT_PACKAGES += \
@@ -128,7 +119,6 @@ PRODUCT_PACKAGES += \
 # Bluetooth
 PRODUCT_PACKAGES += \
 	libusb
-
 
 # Hardware libs
 PRODUCT_PACKAGES += \
@@ -180,10 +170,16 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
 	com.android.future.usb.accessory
 
-# EXT4 Support
+# ext4 filesystem utils
 PRODUCT_PACKAGES += \
-	make_ext4fs \
 	e2fsck \
+	libext2fs \
+	libext2_blkid \
+	libext2_uuid \
+	libext2_profile \
+	libext2_com_err \
+	libext2_e2p \
+	make_ext4fs \
 	
 # extra - present in stock images
 PRODUCT_PACKAGES += \
@@ -191,6 +187,7 @@ PRODUCT_PACKAGES += \
 	btool \
 	call-pppd \
 	daemonize \
+	dbus-daemon \
 	dbus-monitor \
 	dbus-send \
 	directiotest \
