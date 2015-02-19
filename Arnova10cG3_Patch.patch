@@ -1,0 +1,36 @@
+commit 65af1d332c5f427d1ed8ae501a489d57d324e107
+Author: fire855 <thefire855@gmail.com>
+Date:   Thu Feb 19 18:17:16 2015 +0100
+
+    Arnova 10c G3 Patches
+    
+    Change-Id: Ic710a683f8b9c9d7da7f48e25f98918f94d87e98
+
+diff --git a/prebuilt/usr/keylayout/sun4i-keyboard.kl b/prebuilt/usr/keylayout/sun4i-keyboard.kl
+old mode 100644
+new mode 100755
+index c9a0838..596cdb1
+--- a/prebuilt/usr/keylayout/sun4i-keyboard.kl
++++ b/prebuilt/usr/keylayout/sun4i-keyboard.kl
+@@ -1,4 +1,5 @@
+ key 217   HOME              WAKE
+-key 115	  VOLUME_UP
+-key 114	  VOLUME_DOWN
+-
++key 1     BACK              WAKE
++key 115	  MENU         	    WAKE_DROPPED
++key 102   VOLUME_UP
++key 28	  VOLUME_DOWN
+diff --git a/rootdir/fstab.sun4i b/rootdir/fstab.sun4i
+index 63b7db7..7df6f4b 100644
+--- a/rootdir/fstab.sun4i
++++ b/rootdir/fstab.sun4i
+@@ -7,7 +7,7 @@
+ /dev/block/nande       /data          ext4     rw,noatime,nosuid,nodev,barrier=0,journal_checksum,noauto_da_alloc    wait
+ /dev/block/nandh       /cache         ext4     rw,noatime,nosuid,nodev,barrier=0,journal_checksum,noauto_da_alloc    wait
+ 
+-/devices/virtual/block/nand             /storage/sdcard0        vfat    rw,relatime,fmask=0000,dmask=0000    wait,check,noemulatedsd,voldmanaged=sdcard0:9
++/devices/virtual/block/nand             /storage/sdcard0        vfat    rw,relatime,fmask=0000,dmask=0000    wait,check,noemulatedsd,voldmanaged=sdcard0:10
+ /devices/platform/sunxi-mmc.0/mmc_host  /storage/sdcard1        vfat    rw,relatime,fmask=0000,dmask=0000    wait,check,voldmanaged=sdcard1:auto
+ /devices/platform/sunxi-mmc.1/mmc_host  /storage/sdcard1        vfat    rw,relatime,fmask=0000,dmask=0000    wait,check,voldmanaged=sdcard1:auto
+ /devices/platform/sw-ehci.1             /storage/usbdisk0       vfat    rw,relatime,fmask=0000,dmask=0000    wait,check,voldmanaged=usbdisk0:auto
