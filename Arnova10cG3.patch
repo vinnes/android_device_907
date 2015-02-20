@@ -1,11 +1,24 @@
-commit 65af1d332c5f427d1ed8ae501a489d57d324e107
+commit 91c51d72928816b5f0fdfcd0bf051bbfcf420f77
 Author: fire855 <thefire855@gmail.com>
-Date:   Thu Feb 19 18:17:16 2015 +0100
+Date:   Fri Feb 20 23:38:43 2015 +0100
 
     Arnova 10c G3 Patches
     
-    Change-Id: Ic710a683f8b9c9d7da7f48e25f98918f94d87e98
+    Change-Id: I2e47cfe8a76a0caf6bde85187dfb7692fa489699
 
+diff --git a/BoardConfig.mk b/BoardConfig.mk
+index 8278652..afb6f49 100644
+--- a/BoardConfig.mk
++++ b/BoardConfig.mk
+@@ -87,7 +87,7 @@ BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/softwinner/907/recovery/recover
+ BOARD_UMS_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun/file"
+ BOARD_UMS_2ND_LUNFILE := "/sys/class/android_usb/android0/f_mass_storage/lun1/file"
+ RECOVERY_FSTAB_VERSION := 2
+-BOARD_RECOVERY_SWIPE := true
++BOARD_HAS_NO_SELECT_BUTTON := true
+ TARGET_RECOVERY_FSTAB := device/softwinner/907/rootdir/fstab.sun4i
+ #TARGET_RECOVERY_PIXEL_FORMAT := "BGRA_8888"
+ #TARGET_RECOVERY_UI_LIB := librecovery_ui_crane_evb
 diff --git a/prebuilt/usr/keylayout/sun4i-keyboard.kl b/prebuilt/usr/keylayout/sun4i-keyboard.kl
 old mode 100644
 new mode 100755
@@ -22,7 +35,7 @@ index c9a0838..596cdb1
 +key 102   VOLUME_UP
 +key 28	  VOLUME_DOWN
 diff --git a/rootdir/fstab.sun4i b/rootdir/fstab.sun4i
-index 63b7db7..7df6f4b 100644
+index a0a1873..e68e40c 100644
 --- a/rootdir/fstab.sun4i
 +++ b/rootdir/fstab.sun4i
 @@ -7,7 +7,7 @@
