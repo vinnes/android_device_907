@@ -3,7 +3,7 @@
 # The filesystem that contains the filesystem checker binary (typically /system) cannot
 # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
 
-/dev/block/nandd       /system        ext4     ro                                                                 wait
+/dev/block/nandd       /system        ext4     ro                                                                    wait
 /dev/block/nande       /data          ext4     rw,noatime,nosuid,nodev,barrier=0,journal_checksum,noauto_da_alloc    wait
 /dev/block/nandh       /cache         ext4     rw,noatime,nosuid,nodev,barrier=0,journal_checksum,noauto_da_alloc    wait
 
@@ -18,5 +18,3 @@
 /dev/block/nandc       /boot           emmc    defaults recoveryonly            
 /dev/block/nanda       /bootloader     emmc    defaults recoveryonly            
 /dev/block/nandg       /recovery       ext4    defaults recoveryonly
-/dev/block/nandi       /sdcard         vfat    defaults recoveryonly
-/dev/block/mmcblk0     /extsd          vfat    defaults recoveryonly 
