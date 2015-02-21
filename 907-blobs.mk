@@ -46,7 +46,6 @@ PRODUCT_COPY_FILES += \
 
 # /system/lib
 PRODUCT_COPY_FILES += \
-	$(COMMON_PATH)/prebuilt/lib/hw/camera.exDroid.so:system/lib/hw/camera.exDroid.so \
 	$(COMMON_PATH)/prebuilt/lib/egl/libEGL_mali.so:system/lib/egl/libEGL_mali.so \
 	$(COMMON_PATH)/prebuilt/lib/egl/libGLESv1_CM_mali.so:system/lib/egl/libGLESv1_CM_mali.so \
 	$(COMMON_PATH)/prebuilt/lib/egl/libGLESv2_mali.so:system/lib/egl/libGLESv2_mali.so \
