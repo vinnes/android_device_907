@@ -23,7 +23,7 @@ extern  "C" int delete_module(const char *, unsigned int);
 
 //#define DEBUG 1
 
-#define INSMOD_PATH                     ("system/vendor/modules/")
+#define INSMOD_PATH                     ("system/lib/modules/")
 #define I2C_DEVICE_CONFIG_PATH          ("data/device.info")
 #define LINE_LENGTH  (128)
 
