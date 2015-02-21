@@ -187,3 +187,12 @@ service u3gmonitor /system/bin/u3gmonitor
 service memsicd /system/bin/logwrapper /system/bin/memsicd
    class troy
    oneshot
+
+service  sensors  /system/bin/busybox  sh  /system/bin/sensors.sh
+    user root
+    group root
+    disabled
+    oneshot
+
+on property:sys.sensors=1
+    start sensors
