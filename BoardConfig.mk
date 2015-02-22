@@ -159,7 +159,6 @@ BOARD_SEPOLICY_UNION += \
     drmserver.te \
     file.te \
     file_contexts \
-    genfs_contexts \
     healthd.te \
     mount.te \
     netd.te \
