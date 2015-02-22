@@ -39,7 +39,7 @@
 /dev/gps                  0777   system     system
 /dev/pixcir_i2c_ts0       0777   system     system
 /dev/pa_dev               0777	 system	    system
-/dev/dmard06              0777 system     system
+/dev/dmard06              0777   system     system
 /dev/ttyACM0              0777   system     system
 /dev/ttyACM1              0777   system     system
 
@@ -50,14 +50,14 @@
 /sys/devices/virtual/input/input*   poll        0666  root   input
 
 #mxc622x
-/dev/mxc622x			  0777   system     system
+/dev/mxc622x			      0777   system     system
 /dev/ecompass_ctrl		  0777   system     system
 
 # dvb-usb
-/dev/dvb*   0666  system    system
-/dev/dvb    0777  system    system
-/dev/dvb/adapter0   0777  system  system
-/dev/dvb/adapter0/* 0666  system  system
+/dev/dvb*           0666  system    system
+/dev/dvb            0777  system    system
+/dev/dvb/adapter0   0777  system    system
+/dev/dvb/adapter0/* 0666  system    system
 
 #ChristianTroy
 #/sys/devices/platform/sw-ehci.1/usb2/2-1/2-1.1/2-1.1:1.0/bluetooth/hci0/rfkill* state  0777 system system
