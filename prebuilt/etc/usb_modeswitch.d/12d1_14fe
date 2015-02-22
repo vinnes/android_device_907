@@ -1,5 +1,4 @@
-######################################################## 
-# T-Mobile NL (Huawei E352)
+# Huawei E303 (3.se)
 
 DefaultVendor= 0x12d1
 DefaultProduct=0x14fe
@@ -7,7 +6,9 @@ DefaultProduct=0x14fe
 TargetVendor=  0x12d1
 TargetProduct= 0x1506
 
-MessageContent="55534243123456780000000000000011062000000100000000000000000000"
+MessageContent="55534243000000000000000000000011060000000100000000000000000000"
+NoDriverLoading=1
 
-CheckSuccess=20
+
+
 
