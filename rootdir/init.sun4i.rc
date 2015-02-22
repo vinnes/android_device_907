@@ -120,22 +120,32 @@ service fuse_usbdisk0 /system/bin/sdcard -u 1023 -g 1023 -d /mnt/media_rw/usbdis
     class late_start
     disabled
 
-# wifi related service
-service wpa_supplicant /system/bin/wpa_supplicant -D wext -i wlan0 \
-	-c /data/misc/wifi/wpa_supplicant.conf -O/data/misc/wifi/sockets -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
+# 1. realtek wifi service
+# 1.1 realtek wifi sta service
+service wpa_supplicant /system/bin/logwrapper /system/bin/wpa_supplicant \
+    -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
+    -O/data/misc/wifi/sockets \
+    -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
+    #   we will start as root and wpa_supplicant will switch to user wifi
+    #   after setting up the capabilities required for WEXT
+    #   user wifi
+    #   group wifi inet keystore
     class main
-    socket wpa_wlan0 dgram 0660 wifi wifi
-    group system wifi inet
+    socket wpa_wlan0 dgram 660 wifi wifi
     disabled
     oneshot
 
-service p2p_supplicant /system/bin/wpa_supplicant -D wext -i wlan0 \
-        -c /data/misc/wifi/wpa_supplicant.conf -O/data/misc/wifi/sockets -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
-    class main
-    socket wpa_wlan0 dgram 0660 wifi wifi
-    group system wifi inet
-    disabled
-    oneshot
+# 1.2 realtek wifi sta p2p concurrent service
+service p2p_supplicant /system/bin/logwrapper /system/bin/wpa_supplicant \
+	-ip2p0 -Dnl80211 -c/data/misc/wifi/p2p_supplicant.conf \
+	-e/data/misc/wifi/entropy.bin -N \
+	-iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf \
+	-O/data/misc/wifi/sockets \
+	-g@android:wpa_wlan0
+	class main
+	socket wpa_wlan0 dgram 660 wifi wifi
+	disabled
+	oneshot
 
 # dhcpcd daemons
 service dhcpcd_wlan0 /system/bin/dhcpcd -aABDKL
@@ -180,8 +190,6 @@ service iprenew_eth /system/bin/dhcpcd -n
     
 service u3gmonitor /system/bin/u3gmonitor
     class main
-    user root
-    group root
     oneshot
 
 service memsicd /system/bin/logwrapper /system/bin/memsicd
