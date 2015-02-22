@@ -29,7 +29,7 @@
 #include <utils/Log.h>
 #include <cutils/properties.h>
 #include <cutils/sockets.h>
-#include <linux/capability.h>
+#include <sys/capability.h>
 #include <linux/prctl.h>
 
 #include <private/android_filesystem_config.h>
@@ -158,12 +158,12 @@ int main(int argc, char **argv)
     }
 
 	if (rilLibPath == NULL) {
-		ALOGD("err: get rilLibPath failed\n");
+		RLOGD("err: get rilLibPath failed\n");
 		goto done;
 	}
 
 #endif
-    ALOGD("\nrilLibPath = %s\n\n", rilLibPath);
+    RLOGD("\nrilLibPath = %s\n\n", rilLibPath);
 
     /* special override when in the emulator */
 #if 0 //ignore this by SW
@@ -180,7 +180,7 @@ int main(int argc, char **argv)
         int           fd = open("/proc/cmdline",O_RDONLY);
 
         if (fd < 0) {
-            ALOGD("could not open /proc/cmdline:%s", strerror(errno));
+            RLOGD("could not open /proc/cmdline:%s", strerror(errno));
             goto OpenLib;
         }
 
@@ -189,7 +189,7 @@ int main(int argc, char **argv)
         while (len == -1 && errno == EINTR);
 
         if (len < 0) {
-            ALOGD("could not read /proc/cmdline:%s", strerror(errno));
+            RLOGD("could not read /proc/cmdline:%s", strerror(errno));
             close(fd);
             goto OpenLib;
         }
@@ -225,13 +225,13 @@ int main(int argc, char **argv)
                     done = 1;
                     break;
                 }
-                ALOGD("could not connect to %s socket: %s",
+                RLOGD("could not connect to %s socket: %s",
                     QEMUD_SOCKET_NAME, strerror(errno));
                 if (--tries == 0)
                     break;
             }
             if (!done) {
-                ALOGE("could not connect to %s socket (giving up): %s",
+                RLOGE("could not connect to %s socket (giving up): %s",
                     QEMUD_SOCKET_NAME, strerror(errno));
                 while(1)
                     sleep(0x00ffffff);
@@ -267,7 +267,7 @@ int main(int argc, char **argv)
             hasLibArgs = 1;
             rilLibPath = REFERENCE_RIL_PATH;
 
-            ALOGD("overriding with %s %s", arg_overrides[1], arg_overrides[2]);
+            RLOGD("overriding with %s %s", arg_overrides[1], arg_overrides[2]);
         }
     }
 OpenLib:
@@ -277,7 +277,7 @@ OpenLib:
     dlHandle = dlopen(rilLibPath, RTLD_NOW);
 
     if (dlHandle == NULL) {
-        ALOGE("dlopen failed: %s\n", dlerror());
+        RLOGE("dlopen failed: %s", dlerror());
         exit(-1);
     }
 
@@ -286,7 +286,7 @@ OpenLib:
     rilInit = (const RIL_RadioFunctions *(*)(const struct RIL_Env *, int, char **))dlsym(dlHandle, "RIL_Init");
 
     if (rilInit == NULL) {
-        ALOGE("RIL_Init not defined or exported in %s\n", rilLibPath);
+        RLOGE("RIL_Init not defined or exported in %s\n", rilLibPath);
         exit(-1);
     }
 
@@ -315,3 +315,4 @@ done:
         sleep(0x00ffffff);
     }
 }
+
