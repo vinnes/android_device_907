@@ -3,12 +3,12 @@ import init.sun4i.usb.rc
 on init
 	export EXTERNAL_STORAGE /storage/sdcard0
 	export SECONDARY_STORAGE /storage/sdcard1
-	mkdir /storage/sdcard0 0700 root root
-	mkdir /storage/sdcard1 0700 root root
-	mkdir /storage/usbdisk0 0700 root root
 	mkdir /mnt/media_rw/sdcard0 0700 media_rw media_rw
 	mkdir /mnt/media_rw/sdcard1 0700 media_rw media_rw
 	mkdir /mnt/media_rw/usbdisk0 0700 media_rw media_rw
+	mkdir /storage/sdcard0 0700 root root
+	mkdir /storage/sdcard1 0700 root root
+	mkdir /storage/usbdisk0 0700 root root
 	symlink /storage/sdcard0 /sdcard
 	symlink /storage/sdcard0 /mnt/sdcard
 	symlink /storage/sdcard1 /mnt/extsd
@@ -42,16 +42,19 @@ on boot
 	# display ioctl wrapper
 	insmod /system/lib/modules/disp_ump.ko
 	# touchscreen drivers
-	insmod /system/lib/modules/goodix_hack.ko
 	insmod /system/lib/modules/ft5x_ts.ko
+	insmod /system/lib/modules/goodix_hack.ko
 	insmod /system/lib/modules/goodix_touch_3F.ko
 	insmod /system/lib/modules/goodix_touch.ko
 	insmod /system/lib/modules/gt801_2plus1.ko
+        insmod /system/lib/modules/gt80x.ko
         insmod /system/lib/modules/gt811_ts.ko
+	insmod /system/lib/modules/gt82x_ts.ko
 	insmod /system/lib/modules/ssd253x-ts.ko
 	insmod /system/lib/modules/ssd253x_ts.ko
 	insmod /system/lib/modules/Novatek_TouchDriver.ko
-	insmod /system/lib/modules/gt82x_ts.ko
+	insmod /system/lib/modules/pixcir_cxx.ko
+	insmod /system/lib/modules/elan_ts.ko
 	# gsensor drivers
 	insmod /system/lib/modules/bma250.ko
 	insmod /system/lib/modules/mecs.ko
