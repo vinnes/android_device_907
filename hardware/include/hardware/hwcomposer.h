@@ -780,13 +780,9 @@ typedef struct hwc_composer_device_1 {
     int (*getDisplayAttributes)(struct hwc_composer_device_1* dev, int disp,
             uint32_t config, const uint32_t* attributes, int32_t* values);
 
-    int (*setParameter)(struct hwc_composer_device_1* dev, int cmd, int disp,
-            int para0, int para1);
-
-    int (*getParameter)(struct hwc_composer_device_1* dev, int cmd, int disp,
-            int para0, int para1);
-    int (*setlayerorder)(struct hwc_composer_device_1 *dev, size_t numDisplays,
-            hwc_display_contents_1_t** displays, uint32_t cmd);
+	int         (*setparameter)(struct hwc_composer_device_1* dev,uint32_t cmd,uint32_t value);
+    uint32_t    (*getparameter)(struct hwc_composer_device_1* dev,uint32_t cmd);
+	int			(*setlayerorder)(struct hwc_composer_device_1 *dev, size_t numDisplays,  hwc_display_contents_1_t** displays, uint32_t cmd);
 
     /*
      * Reserved for future use. Must be NULL.
