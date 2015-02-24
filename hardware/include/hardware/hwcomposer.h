@@ -293,7 +293,6 @@ typedef struct hwc_layer_1 {
     uint32_t flags;
 
 	uint32_t format;
-	uint32_t alpha;
     union {
         /* color of the background.  hwc_color_t.a is ignored */
         hwc_color_t backgroundColor;
@@ -516,7 +515,6 @@ typedef struct hwc_display_contents_1 {
             int outbufAcquireFenceFd;
         };
     };
-    hwc_rect_t frame;
 
     /* List of layers that will be composed on the display. The buffer handles
      * in the list will be unique. If numHwLayers is 0, all composition will be
@@ -787,7 +785,7 @@ typedef struct hwc_composer_device_1 {
     /*
      * Reserved for future use. Must be NULL.
      */
-    void* reserved_proc[2];
+    void* reserved_proc[4];
 
 } hwc_composer_device_1_t;
 
@@ -804,24 +802,11 @@ static inline int hwc_close_1(hwc_composer_device_1_t* device) {
 }
 
 /*****************************************************************************/
-/* cmd parameter for setParameter() */
-typedef enum{
-	DISPLAY_CMD_SET3DMODE = 0x01,
-	DISPLAY_CMD_SETBACKLIGHTMODE = 0x02,
-	DISPLAY_CMD_SETBACKLIGHTDEMOMODE = 0x03,
-	DISPLAY_CMD_SETDISPLAYENHANCEMODE = 0x04,
-	DISPLAY_CMD_SETDISPLAYENHANCEDEMOMODE = 0x05,
-	DISPLAY_CMD_SETPROTECTED = 0x06
-}__display_cmd_t;
 
-typedef enum
-{
-    DISPLAY_2D_ORIGINAL = 0,
-    DISPLAY_2D_LEFT = 1,
-    DISPLAY_2D_TOP = 2,
-    DISPLAY_3D_LEFT_RIGHT_HDMI = 3,
-    DISPLAY_3D_TOP_BOTTOM_HDMI = 4,
-}__display_3d_mode;
+-#if !HWC_REMOVE_DEPRECATED_VERSIONS
+-#include <hardware/hwcomposer_v0.h>
+-#endif
+
 __END_DECLS
 
 #endif /* ANDROID_INCLUDE_HARDWARE_HWCOMPOSER_H */
