@@ -129,6 +129,7 @@ PRODUCT_PACKAGES += \
 	gralloc.sun4i \
 	power.sun4i \
 	hwcomposer.exDroid \
+	sensors.exDroid \
 	lights.exDroid \
 	libaudioutils \
 	chat \
