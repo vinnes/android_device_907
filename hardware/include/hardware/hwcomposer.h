@@ -803,9 +803,9 @@ static inline int hwc_close_1(hwc_composer_device_1_t* device) {
 
 /*****************************************************************************/
 
--#if !HWC_REMOVE_DEPRECATED_VERSIONS
--#include <hardware/hwcomposer_v0.h>
--#endif
+#if !HWC_REMOVE_DEPRECATED_VERSIONS
+#include <hardware/hwcomposer_v0.h>
+#endif
 
 __END_DECLS
 
