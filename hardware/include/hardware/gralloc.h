@@ -248,6 +248,9 @@ typedef struct gralloc_module_t {
     int (*perform)(struct gralloc_module_t const* module,
             int operation, ... );
 
+    int (*getPhyAddress)(struct gralloc_module_t const* module, buffer_handle_t handle,
+					   void** auiPhyAddr);
+
     /*
      * The (*lock_ycbcr)() method is like the (*lock)() method, with the
      * difference that it fills a struct ycbcr with a description of the buffer

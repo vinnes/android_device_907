@@ -67,7 +67,7 @@ int wpa_driver_nl80211_driver_cmd(void *priv, char *cmd, char *buf,
 		priv_cmd.buf = buf;
 		priv_cmd.used_len = buf_len;
 		priv_cmd.total_len = buf_len;
-		ifr.ifr_data = &priv_cmd;
+		ifr.ifr_data = (void *)&priv_cmd;
 
 		if ((ret = ioctl(drv->global->ioctl_sock, SIOCDEVPRIVATE + 1, &ifr)) < 0) {
 			wpa_printf(MSG_ERROR, "%s: failed to issue private commands\n", __func__);
@@ -120,7 +120,7 @@ int wpa_driver_set_ap_wps_p2p_ie(void *priv, const struct wpabuf *beacon,
 				 const struct wpabuf *proberesp,
 				 const struct wpabuf *assocresp)
 {
-	char buf[MAX_WPSP2PIE_CMD_SIZE];
+	char *buf;
 	struct wpabuf *ap_wps_p2p_ie = NULL;
 	char *_cmd = "SET_AP_WPS_P2P_IE";
 	char *pbuf;
@@ -138,16 +138,37 @@ int wpa_driver_set_ap_wps_p2p_ie(void *priv, const struct wpabuf *beacon,
 
 	wpa_printf(MSG_DEBUG, "%s: Entry", __func__);
 	for (i = 0; cmd_arr[i].cmd != -1; i++) {
-		os_memset(buf, 0, sizeof(buf));
-		pbuf = buf;
-		pbuf += sprintf(pbuf, "%s %d", _cmd, cmd_arr[i].cmd);
-		*pbuf++ = '\0';
+		#if 0
+		if(cmd_arr[i].src){
+		wpa_printf(MSG_INFO,	"cmd_arr[%d].src->size:%d\n"
+					"cmd_arr[%d].src->used:%d\n"
+					"cmd_arr[%d].src->ext_data:%s\n"
+					, i, cmd_arr[i].src->size
+					, i, cmd_arr[i].src->used
+					, i, cmd_arr[i].src->ext_data
+		);
+		}
+		#endif
+
 		ap_wps_p2p_ie = cmd_arr[i].src ?
 			wpabuf_dup(cmd_arr[i].src) : NULL;
 		if (ap_wps_p2p_ie) {
-			os_memcpy(pbuf, wpabuf_head(ap_wps_p2p_ie), wpabuf_len(ap_wps_p2p_ie));
-			ret = wpa_driver_nl80211_driver_cmd(priv, buf, buf,
-				strlen(_cmd) + 3 + wpabuf_len(ap_wps_p2p_ie));
+			buf = os_zalloc(strlen(_cmd) + 3 + wpabuf_len(ap_wps_p2p_ie));
+			if(buf) {
+				pbuf = buf;
+				pbuf += sprintf(pbuf, "%s %d", _cmd, cmd_arr[i].cmd);
+				*pbuf++ = '\0';
+
+				os_memcpy(pbuf, wpabuf_head(ap_wps_p2p_ie), wpabuf_len(ap_wps_p2p_ie));
+				ret = wpa_driver_nl80211_driver_cmd(priv, buf, buf,
+					strlen(_cmd) + 3 + wpabuf_len(ap_wps_p2p_ie));
+
+				os_free(buf);				
+			} else {
+				wpa_printf(MSG_ERROR, "%s: os_zalloc fail", __func__);
+				ret = -1;
+			}
+
 			wpabuf_free(ap_wps_p2p_ie);
 			if (ret < 0)
 				break;

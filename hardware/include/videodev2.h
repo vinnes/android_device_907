@@ -53,6 +53,9 @@
  *              Hans Verkuil <hverkuil@xs4all.nl>
  *		et al.
  */
+#ifdef SUPPORT_NEW_DRIVER
+#include "videodev2_new.h"
+#else
 #ifndef __LINUX_VIDEODEV2_H
 #define __LINUX_VIDEODEV2_H
 
@@ -711,6 +714,7 @@ struct v4l2_captureparm {
 #define V4L2_MODE_HIGHQUALITY	0x0001	/*  High quality imaging mode */
 #define V4L2_MODE_VIDEO				0x0002	/*  For video capture */
 #define V4L2_MODE_IMAGE				0x0003	/*  For image capture */
+#define V4L2_MODE_PREVIEW			0x0004	/*  For preview capture */
 #define V4L2_CAP_TIMEPERFRAME	0x1000	/*  timeperframe field is supported */
 
 struct v4l2_outputparm {
@@ -2005,3 +2009,4 @@ struct v4l2_dbg_chip_ident {
 #define BASE_VIDIOC_PRIVATE	192		/* 192-255 are private */
 
 #endif /* __LINUX_VIDEODEV2_H */
+#endif

@@ -51,9 +51,12 @@ LOCAL_SRC_FILES := 								\
 
 endif
 
+#				MagnetoSensor.cpp               \
+#				GyroSensor.cpp                  \
+
 LOCAL_SHARED_LIBRARIES := liblog libcutils libdl
 
-#LOCAL_LDFLAGS = $(LOCAL_PATH)/LibFusion_ARM_cpp.a
+LOCAL_LDFLAGS = $(LOCAL_PATH)/LibFusion_ARM_cpp.a
 
 include $(BUILD_SHARED_LIBRARY)
 

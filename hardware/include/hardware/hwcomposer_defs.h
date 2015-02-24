@@ -180,6 +180,8 @@ enum {
      */
     HWC_DISPLAY_DPI_X                       = 4,
     HWC_DISPLAY_DPI_Y                       = 5,
+
+    HWC_DISPLAY_IS_SECURE                   = 6,
 };
 
 /* Allowed events for hwc_methods::eventControl() */
