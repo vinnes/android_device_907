@@ -1,8 +1,8 @@
 #include <linux/input.h>
 
-#include "recovery_ui.h"
 #include "common.h"
 #include "extendedcommands.h"
+#include "recovery_ui.h"
 
 
 int device_toggle_display(volatile char* key_pressed, int key_code) {
@@ -28,7 +28,9 @@ int device_handle_key(int key_code, int visible) {
 	    case 217:   
 	    case KEY_1:
             case KEY_ESC:
+                if (!ui_root_menu) {
                     return GO_BACK;
+                }
         }
     }
 
