@@ -1,30 +1,25 @@
-/*
- * Copyright (C) 2011 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
-#ifndef HW_EMULATOR_CAMERA_CALLBACK_NOTIFIER_H
-#define HW_EMULATOR_CAMERA_CALLBACK_NOTIFIER_H
+#ifndef __HAL_CALLBACK_NOTIFIER_H__
+#define __HAL_CALLBACK_NOTIFIER_H__
+
+#include "BufferListManager.h"
 
 /*
  * Contains declaration of a class CallbackNotifier that manages callbacks set
  * via set_callbacks, enable_msg_type, and disable_msg_type camera HAL API.
  */
+	
+	
+	enum ThreadState {
+		THREAD_STATE_NULL,		// The thread has not been created.
+		THREAD_STATE_PAUSED,	// The thread is paused for waiting some signal.
+		THREAD_STATE_RUNNING,	// The thread is in running.
+		THREAD_STATE_EXIT,		// The thread will exit.
+	};
 
 namespace android {
 
-class V4L2Camera;
+class V4L2CameraDevice;
 
 /* Manages callbacks set via set_callbacks, enable_msg_type, and disable_msg_type
  * camera HAL API.
@@ -82,26 +77,16 @@ public:
     /* Enables video recording.
      * This method is called by the containing V4L2Camera object when it is
      * handing the camera_device_ops_t::start_recording callback.
-     * Param:
-     *  fps - Video frame frequency. This parameter determins when a frame
-     *      received via onNextFrameAvailable call will be pushed through the
-     *      callback.
      * Return:
      *  NO_ERROR on success, or an appropriate error status.
      */
-    status_t enableVideoRecording(int fps);
+    status_t enableVideoRecording();
 
     /* Disables video recording.
      * This method is called by the containing V4L2Camera object when it is
      * handing the camera_device_ops_t::stop_recording callback.
      */
     void disableVideoRecording();
-
-    /* Releases video frame, sent to the framework.
-     * This method is called by the containing V4L2Camera object when it is
-     * handing the camera_device_ops_t::release_recording_frame callback.
-     */
-    void releaseRecordingFrame(const void* opaque);
 
     /* Actual handler for camera_device_ops_t::msg_type_enabled callback.
      * This method is called by the containing V4L2Camera object when it is
@@ -112,10 +97,6 @@ public:
      * Return:
      *  0 if message is disabled, or non-zero value, if message is enabled.
      */
-
-    void getCurrentDateTime();
-
-    
     inline int isMessageEnabled(uint msg_type)
     {
         return mMessageEnabler & msg_type;
@@ -160,32 +141,17 @@ public:
      * camera_dev - Camera device instance that delivered the frame.
      */
     void onNextFrameAvailable(const void* frame,
-                              nsecs_t timestamp,
-                              V4L2Camera* camera_dev,
-                              bool bUseMataData);
+                              bool hw);
 
-	void onNextFrameHW(const void* frame,
-                              nsecs_t timestamp,
-                              V4L2Camera* camera_dev);
+	void onNextFrameHW(const void* frame);
 
-	void onNextFrameSW(const void* frame,
-                              nsecs_t timestamp,
-                              V4L2Camera* camera_dev);
+	void onNextFrameSW(const void* frame);
 
     /* Entry point for notifications that occur in camera device.
      * Param:
      *  err - CAMERA_ERROR_XXX error code.
      */
     void onCameraDeviceError(int err);
-
-    /* Sets, or resets taking picture state.
-     * This state control whether or not to notify the framework about compressed
-     * image, shutter, and other picture related events.
-     */
-    void setTakingPicture(bool taking)
-    {
-        mTakingPicture = taking;
-    }
 
     /* Sets JPEG quality used to compress frame during picture taking. */
     void setJpegQuality(int jpeg_quality)
@@ -196,13 +162,6 @@ public:
     /****************************************************************************
      * Private API
      ***************************************************************************/
-
-protected:
-    /* Checks if it's time to push new video frame.
-     * Note that this method must be called while object is locked.
-     * Param:
-     *  timestamp - Timestamp for the new frame. */
-    bool isNewVideoFrameTime(nsecs_t timestamp);
 
     /****************************************************************************
      * Data members
@@ -222,34 +181,33 @@ protected:
     camera_request_memory           mGetMemoryCB;
     void*                           mCallbackCookie;
 
-    /* Timestamp when last frame has been delivered to the framework. */
-    nsecs_t                         mLastFrameTimestamp;
-
-    /* Video frequency in nanosec. */
-    nsecs_t                         mFrameRefreshFreq;
-
     /* Message enabler. */
     uint32_t                        mMessageEnabler;
-
-    /* JPEG quality used to compress frame during picture taking. */
-    int                             mJpegQuality;
 
     /* Video recording status. */
     bool                            mVideoRecEnabled;
 
-    /* Picture taking status. */
-    bool                            mTakingPicture;
-
 	// -------------------------------------------------------------------------
 	// extended interfaces here <***** star *****>
 	// -------------------------------------------------------------------------
-
+	
 public:
-	inline bool isUseMetaDataBufferMode()
-	{
-		return mUseMetaDataBufferMode;
-	}
+	inline void setPictureSize(int w, int h)
+    {
+        mPictureWidth = w;
+        mPictureHeight = h;
+    }
 
+	inline void setExifMake(char * make)
+	{
+		strcpy(mExifMake, make);
+	}
+	
+	inline void setExifModel(char * model)
+	{
+		strcpy(mExifModel, model);
+	}
+	
 	// Sets JPEG rotate used to compress frame during picture taking.
     inline void setJpegRotate(int jpeg_rotate)
     {
@@ -302,40 +260,119 @@ public:
 		strcpy(mCallingProcessName, str);
 	}
 
-	status_t autoFocus(bool success);
-	status_t faceDetection(camera_frame_metadata_t *face);
+	inline void setSaveFolderPath(const char * str)
+	{
+		strcpy(mFolderPath, str);
+	}
+	
+	inline void setSnapPath(const char * str)
+	{
+		strcpy(mSnapPath, str);
+	}
+	
+	inline void setCBSize(int w, int h)
+	{
+		mCBWidth = w;
+		mCBHeight = h;
+	}
 
-	void takePicture(const void* frame, V4L2Camera* camera_dev, bool bUseMataData);
-	void takePictureHW(const void* frame, V4L2Camera* camera_dev);
-	void takePictureSW(const void* frame, V4L2Camera* camera_dev);
-	void takePictureCB(const void* frame, V4L2Camera* camera_dev);
+	status_t autoFocusMsg(bool success);
+	status_t autoFocusContinuousMsg(bool success);
+	status_t faceDetectionMsg(camera_frame_metadata_t *face);
+
+	bool takePicture(const void* frame, bool is_continuous = false);
+	void startContinuousPicture();
+	void stopContinuousPicture();
+
+	void setContinuousPictureCnt(int cnt);
+
+	void notifyPictureMsg(const void* frame);
+
+	void getCurrentDateTime();
+	
+	// -------------------------------------------------------------------------
+	// continuous picture
+	// -------------------------------------------------------------------------
 	
 protected:
-	bool 							mUseMetaDataBufferMode;
+
+	class DoSavePictureThread : public Thread {
+		CallbackNotifier* mCallbackNotifier;
+		ThreadState		mThreadStatus;
+	public:
+		DoSavePictureThread(CallbackNotifier* cb) :
+			Thread(false),
+			mCallbackNotifier(cb),
+			mThreadStatus(THREAD_STATE_NULL) {
+		}
+		void startThread() {
+			mThreadStatus = THREAD_STATE_RUNNING;
+			run("DoSavePictureThread", PRIORITY_DISPLAY);
+		}
+		void stopThread() {
+			mThreadStatus = THREAD_STATE_EXIT;
+        }
+		ThreadState getThreadStatus() {
+			return mThreadStatus;
+		}
+		bool isThreadStarted() {
+			return (mThreadStatus == THREAD_STATE_PAUSED) || (mThreadStatus == THREAD_STATE_RUNNING);
+		}
+		virtual bool threadLoop() {
+			return mCallbackNotifier->savePictureThread();
+		}
+	};
+
+	bool 							savePictureThread();
+
+	sp<DoSavePictureThread> 		mSavePictureThread;
+	pthread_mutex_t 				mSavePictureMutex;
+	pthread_cond_t					mSavePictureCond;
+	int 							mSavePictureCnt;
+	int 							mSavePictureMax;
+	
+protected:
+	// calling process name for some app, such as facelock
+	char							mCallingProcessName[128];
+	
+    // JPEG quality used to compress frame during picture taking.
+    int                             mJpegQuality;
 
 	// JPEG rotate used to compress frame during picture taking.
 	int								mJpegRotate;
 
-	char		mCallingProcessName[128];
+	// JPEG size
+	int								mPictureWidth;
+	int								mPictureHeight;
+
+	// thumb size
+	int								mThumbWidth;
+	int								mThumbHeight;
 
 	// gps exif
-	double      mGpsLatitude;
-	double		mGpsLongitude;
-	long        mGpsAltitude;  
-	long        mGpsTimestamp;
-	char		mGpsMethod[100]; 
-
-	int			mThumbWidth;
-	int			mThumbHeight;
+	double      					mGpsLatitude;
+	double							mGpsLongitude;
+	long        					mGpsAltitude;  
+	long        					mGpsTimestamp;
+	char							mGpsMethod[100]; 
 	
-	double		mFocalLength;
-	int 		mWhiteBalance;
+	double							mFocalLength;
+	int 							mWhiteBalance;
 
-	char  		mCameraMake[11];	//for the cameraMake name
-	char  		mCameraModel[21];	//for the cameraMode
-	char  		mDateTime[21];		//for the data and time
+	char  							mExifMake[64];		//for the cameraMake name
+	char  							mExifModel[64];		//for the cameraMode
+	char  							mDateTime[64];		//for the data and time
+	char                            mFolderPath[128];
+	char                            mSnapPath[128];
+	
+	// cb size
+	int								mCBWidth;
+	int								mCBHeight;
+
+	BufferListManager *				mBufferList;
+	bool							mSaveThreadExited;
 };
 
 }; /* namespace android */
 
-#endif  /* HW_EMULATOR_CAMERA_CALLBACK_NOTIFIER_H */
+#endif  /* __HAL_CALLBACK_NOTIFIER_H__ */

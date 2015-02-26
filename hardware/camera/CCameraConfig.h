@@ -9,11 +9,16 @@
 
 #define KEY_LENGTH	256
 
+#define kCAMERA_EXIF_MAKE					"key_camera_exif_make"
+#define kCAMERA_EXIF_MODEL					"key_camera_exif_model"
+
 #define kNUMBER_OF_CAMERA					"number_of_camera"
 #define kCAMERA_FACING						"camera_facing"
 #define kCAMERA_ORIENTATION					"camera_orientation"
 #define kCAMERA_DEVICE						"camera_device"
 #define kDEVICE_ID							"device_id"
+#define kFAST_PICTURE_MODE					"fast_picture_mode"
+#define kUSE_BUILTIN_ISP					"use_builtin_isp"
 
 #define kUSED_PREVIEW_SIZE					"used_preview_size"
 #define kSUPPORT_PREVIEW_SIZE				"key_support_preview_size"
@@ -97,6 +102,23 @@ public:
 	int getDeviceID()
 	{
 		return mDeviceID;
+	}
+
+	// support fast picture mode or not
+	bool supportFastPictureMode()
+	{
+		return mFastPictureMode;
+	}
+
+	// exif
+	char * getExifMake()
+	{
+		return mCameraMake;
+	}
+
+	char * getExifModel()
+	{
+		return mCameraModel;
 	}
 
 	bool supportPreviewSize();
@@ -195,12 +217,19 @@ private:
 
 	FILE * mhKeyFile;
 
+	bool mConstructOk;
+
 	int mCurCameraId;
 	int mNumberOfCamera;
 	int mCameraFacing;
 	int mOrientation;
 	char mCameraDevice[64];
 	int mDeviceID;
+	bool mFastPictureMode;
+
+	// exif make and model
+	char mCameraMake[64];
+	char mCameraModel[64];
 
 	MEMBER_DEF(PreviewSize)
 	MEMBER_DEF(PictureSize)

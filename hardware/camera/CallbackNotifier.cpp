@@ -1,23 +1,4 @@
-/*
- * Copyright (C) 2011 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
-/*
- * Contains implementation of a class CallbackNotifier that manages callbacks set
- * via set_callbacks, enable_msg_type, and disable_msg_type camera HAL API.
- */
 #include "CameraDebug.h"
 #if DBG_CALLBACK
 #define LOG_NDEBUG 0
@@ -26,12 +7,13 @@
 #include <cutils/log.h>
 
 #include <cutils/properties.h>
-#include <type_camera.h>
-#include "V4L2Camera.h"
+
+#include "V4L2CameraDevice.h"
 #include "CallbackNotifier.h"
-#include "JpegCompressor.h"
 
 extern "C" int JpegEnc(void * pBufOut, int * bufSize, JPEG_ENC_t *jpeg_enc);
+
+extern "C" int scaler(unsigned char * psrc, unsigned char * pdst, int src_w, int src_h, int dst_w, int dst_h, int fmt, int align);
 
 namespace android {
 
@@ -48,7 +30,10 @@ static const char* lCameraMessages[] =
     "CAMERA_MSG_RAW_IMAGE",
     "CAMERA_MSG_COMPRESSED_IMAGE",
     "CAMERA_MSG_RAW_IMAGE_NOTIFY",
-    "CAMERA_MSG_PREVIEW_METADATA"
+    "CAMERA_MSG_PREVIEW_METADATA",
+    "CAMERA_MSG_CONTINUOUSSNAP",
+    "CAMERA_MSG_SNAP"
+    "CAMERA_MSG_SNAP_THUMB"
 };
 static const int lCameraMessagesNum = sizeof(lCameraMessages) / sizeof(char*);
 
@@ -81,6 +66,7 @@ static int GetMessageStrings(uint32_t msg, const char** strings, int max)
 }
 
 /* Logs messages, enabled by the mask. */
+#if DEBUG_MSG
 static void PrintMessages(uint32_t msg)
 {
     const char* strs[lCameraMessagesNum];
@@ -89,33 +75,246 @@ static void PrintMessages(uint32_t msg)
         LOGV("    %s", strs[n]);
     }
 }
+#else
+#define PrintMessages(msg)   (void(0))
+#endif
 
-static void NV12_down_scale(const void* src, void* dst, int src_width, int src_height, int dst_width, int dst_height)
+static void formatToNV21(void *dst,
+		               void *src,
+		               int width,
+		               int height,
+		               size_t stride,
+		               uint32_t offset,
+		               unsigned int bytesPerPixel,
+		               size_t length,
+		               int pixelFormat)
 {
-	char * p_src_y = (char *)src;
-	char * p_dst_y = (char *)dst;
-	int scale = src_width / dst_width;
+    unsigned int alignedRow, row;
+    unsigned char *bufferDst, *bufferSrc;
+    unsigned char *bufferDstEnd, *bufferSrcEnd;
+    uint16_t *bufferSrc_UV;
+
+    unsigned int y_uv[2];
+    y_uv[0] = (unsigned int)src;
+	y_uv[1] = (unsigned int)src + width*height;
+
+	// NV12 -> NV21
+    if (pixelFormat == V4L2_PIX_FMT_NV12) {
+        bytesPerPixel = 1;
+        bufferDst = ( unsigned char * ) dst;
+        bufferDstEnd = ( unsigned char * ) dst + width*height*bytesPerPixel;
+        bufferSrc = ( unsigned char * ) y_uv[0] + offset;
+        bufferSrcEnd = ( unsigned char * ) ( ( size_t ) y_uv[0] + length + offset);
+        row = width*bytesPerPixel;
+        alignedRow = stride-width;
+        int stride_bytes = stride / 8;
+        uint32_t xOff = offset % stride;
+        uint32_t yOff = offset / stride;
+
+        // going to convert from NV12 here and return
+        // Step 1: Y plane: iterate through each row and copy
+        for ( int i = 0 ; i < height ; i++) {
+            memcpy(bufferDst, bufferSrc, row);
+            bufferSrc += stride;
+            bufferDst += row;
+            if ( ( bufferSrc > bufferSrcEnd ) || ( bufferDst > bufferDstEnd ) ) {
+                break;
+            }
+        }
+
+        bufferSrc_UV = ( uint16_t * ) ((uint8_t*)y_uv[1] + (stride/2)*yOff + xOff);
+
+        uint16_t *bufferDst_UV;
+
+        // Step 2: UV plane: convert NV12 to NV21 by swapping U & V
+        bufferDst_UV = (uint16_t *) (((uint8_t*)dst)+row*height);
+
+        for (int i = 0 ; i < height/2 ; i++, bufferSrc_UV += alignedRow/2) {
+            int n = width;
+            asm volatile (
+            "   pld [%[src], %[src_stride], lsl #2]                         \n\t"
+            "   cmp %[n], #32                                               \n\t"
+            "   blt 1f                                                      \n\t"
+            "0: @ 32 byte swap                                              \n\t"
+            "   sub %[n], %[n], #32                                         \n\t"
+            "   vld2.8  {q0, q1} , [%[src]]!                                \n\t"
+            "   vswp q0, q1                                                 \n\t"
+            "   cmp %[n], #32                                               \n\t"
+            "   vst2.8  {q0,q1},[%[dst]]!                                   \n\t"
+            "   bge 0b                                                      \n\t"
+            "1: @ Is there enough data?                                     \n\t"
+            "   cmp %[n], #16                                               \n\t"
+            "   blt 3f                                                      \n\t"
+            "2: @ 16 byte swap                                              \n\t"
+            "   sub %[n], %[n], #16                                         \n\t"
+            "   vld2.8  {d0, d1} , [%[src]]!                                \n\t"
+            "   vswp d0, d1                                                 \n\t"
+            "   cmp %[n], #16                                               \n\t"
+            "   vst2.8  {d0,d1},[%[dst]]!                                   \n\t"
+            "   bge 2b                                                      \n\t"
+            "3: @ Is there enough data?                                     \n\t"
+            "   cmp %[n], #8                                                \n\t"
+            "   blt 5f                                                      \n\t"
+            "4: @ 8 byte swap                                               \n\t"
+            "   sub %[n], %[n], #8                                          \n\t"
+            "   vld2.8  {d0, d1} , [%[src]]!                                \n\t"
+            "   vswp d0, d1                                                 \n\t"
+            "   cmp %[n], #8                                                \n\t"
+            "   vst2.8  {d0[0],d1[0]},[%[dst]]!                             \n\t"
+            "   bge 4b                                                      \n\t"
+            "5: @ end                                                       \n\t"
+#ifdef NEEDS_ARM_ERRATA_754319_754320
+            "   vmov s0,s0  @ add noop for errata item                      \n\t"
+#endif
+            : [dst] "+r" (bufferDst_UV), [src] "+r" (bufferSrc_UV), [n] "+r" (n)
+            : [src_stride] "r" (stride_bytes)
+            : "cc", "memory", "q0", "q1"
+            );
+        }
+    }
+}
+
+static void NV12ToYVU420(void* psrc, void* pdst, int width, int height)
+{
+	uint8_t* psrc_y = (uint8_t*)psrc;
+	uint8_t* pdst_y = (uint8_t*)pdst;
+	uint8_t* psrc_uv = (uint8_t*)psrc + width * height;
+	uint8_t* pdst_uv = (uint8_t*)pdst + width * height;
 	
-	int w = 0, h = 0;
-	for (h = 0; h < dst_height; h++)
+	for(int i = 0; i < height; i++)
 	{
-		for (w = 0; w < dst_width; w++)
+		for (int j = 0; j < width; j++)
 		{
-			*(p_dst_y + h * dst_width + w) = *(p_src_y + h * scale * src_width + w * scale);
+			*(uint8_t*)(pdst_y + i * width + j) = *(uint8_t*)(psrc_y + i * width + j);
+		}
+	}
+	
+	for(int i = 0; i < height / 2; i++)
+	{
+		for (int j = 0; j < width / 2; j++)
+		{
+			*(uint8_t*)(pdst_uv + i * width / 2 + j) = *(uint8_t*)(psrc_uv + i * width + j * 2);
+			*(uint8_t*)(pdst_uv + (width / 2) * (height / 2) + i * width / 2 + j) = *(uint8_t*)(psrc_uv + i * width + j * 2 + 1);
+		}
+	}
+	
+}
+
+static void NV21ToYVU420(void* psrc, void* pdst, int width, int height)
+{
+	uint8_t* psrc_y = (uint8_t*)psrc;
+	uint8_t* pdst_y = (uint8_t*)pdst;
+	uint8_t* psrc_uv = (uint8_t*)psrc + width * height;
+	uint8_t* pdst_uv = (uint8_t*)pdst + width * height;
+	
+	for(int i = 0; i < height; i++)
+	{
+		for (int j = 0; j < width; j++)
+		{
+			*(uint8_t*)(pdst_y + i * width + j) = *(uint8_t*)(psrc_y + i * width + j);
+		}
+	}
+	for(int i = 0; i < height / 2; i++)
+	{
+		for (int j = 0; j < width / 2; j++)
+		{
+			*(uint8_t*)(pdst_uv + i * width / 2 + j) = *(uint8_t*)(psrc_uv + i * width + j * 2 + 1);
+			*(uint8_t*)(pdst_uv + (width / 2) * (height / 2) + i * width / 2 + j) = *(uint8_t*)(psrc_uv + i * width + j * 2);
 		}
 	}
 }
 
-void CallbackNotifier::getCurrentDateTime()
+static void YVU420ToNV21(void* psrc, void* pdst, int width, int height)
 {
-	time_t t;
-	struct tm *tm_t;
-	time(&t);
-	tm_t = localtime(&t);
-	sprintf(mDateTime, "%4d:%02d:%02d %02d:%02d:%02d", 
-		tm_t->tm_year+1900, tm_t->tm_mon+1, tm_t->tm_mday,
-		tm_t->tm_hour, tm_t->tm_min, tm_t->tm_sec);
-	    LOGV("===================== %s", mDateTime);
+	uint8_t* psrc_y = (uint8_t*)psrc;
+	uint8_t* pdst_y = (uint8_t*)pdst;
+	uint8_t* psrc_uv = (uint8_t*)psrc + width * height;
+	uint8_t* pdst_uv = (uint8_t*)pdst + width * height;
+	
+	for(int i = 0; i < height; i++)
+	{
+		for (int j = 0; j < width; j++)
+		{
+			*(uint8_t*)(pdst_y + i * width + j) = *(uint8_t*)(psrc_y + i * width + j);
+		}
+	}
+
+	for(int i = 0; i < height / 2; i++)
+	{
+		for (int j = 0; j < width / 2; j++)
+		{
+			*(uint8_t*)(pdst_uv + i * width + j * 2 + 1) = *(uint8_t*)(psrc_uv + i * width / 2 + j);
+			*(uint8_t*)(pdst_uv + i * width + j * 2) = *(uint8_t*)(psrc_uv + (width / 2) * (height / 2) + i * width / 2 + j);
+		}
+	}
+	
+}
+
+static bool yuv420spDownScale(void* psrc, void* pdst, int src_w, int src_h, int dst_w, int dst_h)
+{
+	char * psrc_y = (char *)psrc;
+	char * pdst_y = (char *)pdst;
+	char * psrc_uv = (char *)psrc + src_w * src_h;
+	char * pdst_uv = (char *)pdst + dst_w * dst_h;
+	
+	int scale = 1;
+	int scale_w = src_w / dst_w;
+	int scale_h = src_h / dst_h;
+	int h, w;
+	
+	if (dst_w > src_w
+		|| dst_h > src_h)
+	{
+		LOGE("error size, %dx%d -> %dx%d\n", src_w, src_h, dst_w, dst_h);
+		return false;
+	}
+	
+	if (scale_w == scale_h)
+	{
+		scale = scale_w;
+	}
+	
+	LOGV("scale = %d\n", scale);
+
+	if (scale == 1)
+	{
+		if ((src_w == dst_w)
+			&& (src_h == dst_h))
+		{
+			memcpy((char*)pdst, (char*)psrc, dst_w * dst_h * 3/2);
+		}
+		else
+		{
+			// crop
+			for (h = 0; h < dst_h; h++)
+			{
+				memcpy((char*)pdst + h * dst_w, (char*)psrc + h * src_w, dst_w);
+			}
+			for (h = 0; h < dst_h / 2; h++)
+			{
+				memcpy((char*)pdst_uv + h * dst_w, (char*)psrc_uv + h * src_w, dst_w);
+			}
+		}
+		
+		return true;
+	}
+	
+	for (h = 0; h < dst_h; h++)
+	{
+		for (w = 0; w < dst_w; w++)
+		{
+			*(pdst_y + h * dst_w + w) = *(psrc_y + h * scale * src_w + w * scale);
+		}
+	}
+	for (h = 0; h < dst_h / 2; h++)
+	{
+		for (w = 0; w < dst_w; w+=2)
+		{
+			*((short*)(pdst_uv + h * dst_w + w)) = *((short*)(psrc_uv + h * scale * src_w + w * scale));
+		}
+	}
+	
+	return true;
 }
 
 CallbackNotifier::CallbackNotifier()
@@ -124,50 +323,44 @@ CallbackNotifier::CallbackNotifier()
       mDataCBTimestamp(NULL),
       mGetMemoryCB(NULL),
       mCallbackCookie(NULL),
-      mLastFrameTimestamp(0),
-      mFrameRefreshFreq(0),
       mMessageEnabler(0),
-      mJpegQuality(90),
       mVideoRecEnabled(false),
-      mTakingPicture(false),
-      mUseMetaDataBufferMode(false),
+      mSavePictureCnt(0),
+      mSavePictureMax(0),
+      mJpegQuality(90),
+      mJpegRotate(0),
+      mPictureWidth(640),
+      mPictureHeight(480),
+	  mThumbWidth(0),
+	  mThumbHeight(0),
       mGpsLatitude(0.0),
 	  mGpsLongitude(0.0),
 	  mGpsAltitude(0),
 	  mGpsTimestamp(0),
-	  mThumbWidth(0),
-	  mThumbHeight(0),
 	  mFocalLength(0.0),
-	  mWhiteBalance(0)
+	  mWhiteBalance(0),
+	  mCBWidth(0),
+	  mCBHeight(0),
+	  mBufferList(NULL),
+	  mSaveThreadExited(false)
 {
+	LOGV("CallbackNotifier construct");
+	
 	memset(mGpsMethod, 0, sizeof(mGpsMethod));
 	memset(mCallingProcessName, 0, sizeof(mCallingProcessName));
 	
-	strcpy(mCameraMake, "MID MAKE");		// default
-	strcpy(mCameraModel, "MID MODEL");		// default
-	
-	char prop_value[32];
-	int ret = property_get("ro.exif.make", prop_value, "");
-	if (ret > 0)
-	{
-		if (strlen(prop_value) < 11)
-		{
-			strcpy(mCameraMake, prop_value);
-		}
-	}
-	
-    ret = property_get("ro.exif.model", prop_value, "");
-	if (ret > 0)
-	{
-		if (strlen(prop_value) < 21)
-		{
-			strcpy(mCameraModel, prop_value);
-		}
-	}
+	strcpy(mExifMake, "MID MAKE");		// default
+	strcpy(mExifModel, "MID MODEL");	// default
+	memset(mDateTime, 0, sizeof(mDateTime));
+	strcpy(mDateTime, "2012:10:24 17:30:00");
+
+	memset(mFolderPath, 0, sizeof(mFolderPath));
+	memset(mSnapPath, 0, sizeof(mSnapPath));
 }
 
 CallbackNotifier::~CallbackNotifier()
 {
+	LOGV("CallbackNotifier disconstruct");
 }
 
 /****************************************************************************
@@ -189,6 +382,20 @@ void CallbackNotifier::setCallbacks(camera_notify_callback notify_cb,
     mDataCBTimestamp = data_cb_timestamp;
     mGetMemoryCB = get_memory;
     mCallbackCookie = user;
+
+	mBufferList = new BufferListManager();
+	if (mBufferList == NULL)
+	{
+		LOGE("create BufferListManager failed");
+	}
+
+	mSaveThreadExited = false;
+	
+	// init picture thread
+	mSavePictureThread = new DoSavePictureThread(this);
+	pthread_mutex_init(&mSavePictureMutex, NULL);
+	pthread_cond_init(&mSavePictureCond, NULL);
+	mSavePictureThread->startThread();
 }
 
 void CallbackNotifier::enableMessage(uint msg_type)
@@ -213,32 +420,22 @@ void CallbackNotifier::disableMessage(uint msg_type)
     PrintMessages(mMessageEnabler);
 }
 
-status_t CallbackNotifier::enableVideoRecording(int fps)
+status_t CallbackNotifier::enableVideoRecording()
 {
-    LOGV("%s: FPS = %d", __FUNCTION__, fps);
+    F_LOG;
 
     Mutex::Autolock locker(&mObjectLock);
     mVideoRecEnabled = true;
-    mLastFrameTimestamp = 0;
-    mFrameRefreshFreq = 1000000000LL / fps;
 
     return NO_ERROR;
 }
 
 void CallbackNotifier::disableVideoRecording()
 {
-    LOGV("%s:", __FUNCTION__);
+    F_LOG;
 
     Mutex::Autolock locker(&mObjectLock);
     mVideoRecEnabled = false;
-    mLastFrameTimestamp = 0;
-    mFrameRefreshFreq = 0;
-}
-
-void CallbackNotifier::releaseRecordingFrame(const void* opaque)
-{
-    /* We don't really have anything to release here, since we report video
-     * frames by copying them directly to the camera memory. */
 }
 
 status_t CallbackNotifier::storeMetaDataInBuffers(bool enable)
@@ -248,11 +445,6 @@ status_t CallbackNotifier::storeMetaDataInBuffers(bool enable)
      * INVALID_OPERATION to mean metadata is not supported. */
 
 	return UNKNOWN_ERROR;
-	
-	LOGV("storeMetaDataInBuffers, %s", enable ? "true" : "false");
-    mUseMetaDataBufferMode = enable;
-
-    return NO_ERROR;
 }
 
 /****************************************************************************
@@ -261,6 +453,29 @@ status_t CallbackNotifier::storeMetaDataInBuffers(bool enable)
 
 void CallbackNotifier::cleanupCBNotifier()
 {
+	if (mSavePictureThread != NULL)
+	{
+		mSavePictureThread->stopThread();
+		pthread_cond_signal(&mSavePictureCond);
+		
+		pthread_mutex_lock(&mSavePictureMutex);
+		if (!mSaveThreadExited)
+		{
+			struct timespec timeout;
+			timeout.tv_sec=time(0) + 1;		// 1s timeout
+			timeout.tv_nsec = 0;
+			pthread_cond_timedwait(&mSavePictureCond, &mSavePictureMutex, &timeout);
+			//pthread_cond_wait(&mSavePictureCond, &mSavePictureMutex);
+		}
+		pthread_mutex_unlock(&mSavePictureMutex);
+		
+		mSavePictureThread.clear();
+		mSavePictureThread = 0;
+		
+		pthread_mutex_destroy(&mSavePictureMutex);
+		pthread_cond_destroy(&mSavePictureCond);
+	}
+	
     Mutex::Autolock locker(&mObjectLock);
     mMessageEnabler = 0;
     mNotifyCB = NULL;
@@ -268,40 +483,52 @@ void CallbackNotifier::cleanupCBNotifier()
     mDataCBTimestamp = NULL;
     mGetMemoryCB = NULL;
     mCallbackCookie = NULL;
-    mLastFrameTimestamp = 0;
-    mFrameRefreshFreq = 0;
-    mJpegQuality = 90;
     mVideoRecEnabled = false;
-    mTakingPicture = false;
-}
+    mJpegQuality = 90;
+	mJpegRotate = 0;
+	mPictureWidth = 640;
+	mPictureHeight = 480;
+	mThumbWidth = 0;
+	mThumbHeight = 0;
+	mGpsLatitude = 0.0;
+	mGpsLongitude = 0.0;
+	mGpsAltitude = 0;
+	mGpsTimestamp = 0;
+	mFocalLength = 0.0;
+	mWhiteBalance = 0;
 
-void CallbackNotifier::onNextFrameAvailable(const void* frame,
-                                            nsecs_t timestamp,
-                                            V4L2Camera* camera_dev,
-                                         	bool bUseMataData)
-{
-    if (bUseMataData)
-    {
-    	onNextFrameHW(frame, timestamp, camera_dev);
-    }
-	else
+	if (mBufferList != NULL)
 	{
-    	onNextFrameSW(frame, timestamp, camera_dev);
+		delete mBufferList;
+		mBufferList = NULL;
 	}
 }
 
-void CallbackNotifier::onNextFrameHW(const void* frame,
-			                            nsecs_t timestamp,
-			                            V4L2Camera* camera_dev)
+void CallbackNotifier::onNextFrameAvailable(const void* frame,
+                                         	bool hw)
 {
-	if (isMessageEnabled(CAMERA_MSG_VIDEO_FRAME) && isVideoRecordingEnabled() &&
-            isNewVideoFrameTime(timestamp)) 
+    if (hw)
+    {
+    	onNextFrameHW(frame);
+    }
+	else
+	{
+    	onNextFrameSW(frame);
+	}
+}
+
+void CallbackNotifier::onNextFrameHW(const void* frame)
+{
+	V4L2BUF_t * pbuf = (V4L2BUF_t*)frame;
+	
+	if (isMessageEnabled(CAMERA_MSG_VIDEO_FRAME) && isVideoRecordingEnabled()) 
 	{
         camera_memory_t* cam_buff = mGetMemoryCB(-1, sizeof(V4L2BUF_t), 1, NULL);
         if (NULL != cam_buff && NULL != cam_buff->data) 
 		{
+			pbuf->refCnt++;
             memcpy(cam_buff->data, frame, sizeof(V4L2BUF_t));
-            mDataCBTimestamp(timestamp, CAMERA_MSG_VIDEO_FRAME,
+            mDataCBTimestamp(pbuf->timeStamp, CAMERA_MSG_VIDEO_FRAME,
                                cam_buff, 0, mCallbackCookie);
 			cam_buff->release(cam_buff);
         } 
@@ -327,17 +554,46 @@ void CallbackNotifier::onNextFrameHW(const void* frame,
     }
 }
 
-void CallbackNotifier::onNextFrameSW(const void* frame,
-		                               nsecs_t timestamp,
-		                               V4L2Camera* camera_dev)
+void CallbackNotifier::onNextFrameSW(const void* frame)
 {
-	if (isMessageEnabled(CAMERA_MSG_VIDEO_FRAME) && isVideoRecordingEnabled() &&
-            isNewVideoFrameTime(timestamp)) {
-        camera_memory_t* cam_buff =
-            mGetMemoryCB(-1, camera_dev->getFrameBufferSize(), 1, NULL);
-        if (NULL != cam_buff && NULL != cam_buff->data) {
-            memcpy(cam_buff->data, frame, camera_dev->getFrameBufferSize());
-            mDataCBTimestamp(timestamp, CAMERA_MSG_VIDEO_FRAME,
+	V4L2BUF_t * pbuf = (V4L2BUF_t*)frame;
+	int framesize =0;
+	int src_format = 0;
+	int src_addr_phy = 0;
+	int src_addr_vir = 0;
+	int src_width = 0;
+	int src_height = 0;
+	RECT_t src_crop;
+
+	if ((pbuf->isThumbAvailable == 1)
+		&& (pbuf->thumbUsedForPreview == 1))
+	{
+		src_format			= pbuf->thumbFormat;
+		src_addr_phy		= pbuf->thumbAddrPhyY;
+		src_addr_vir		= pbuf->thumbAddrVirY;
+		src_width			= pbuf->thumbWidth;
+		src_height			= pbuf->thumbHeight;
+		memcpy((void*)&src_crop, (void*)&pbuf->thumb_crop_rect, sizeof(RECT_t));
+	}
+	else
+	{
+		src_format			= pbuf->format;
+		src_addr_phy		= pbuf->addrPhyY;
+		src_addr_vir		= pbuf->addrVirY;
+		src_width			= pbuf->width;
+		src_height			= pbuf->height;
+		memcpy((void*)&src_crop, (void*)&pbuf->crop_rect, sizeof(RECT_t));
+	}
+	
+	framesize = ALIGN_16B(src_width) * src_height * 3/2;
+	
+	if (isMessageEnabled(CAMERA_MSG_VIDEO_FRAME) && isVideoRecordingEnabled()) 
+	{
+        camera_memory_t* cam_buff = mGetMemoryCB(-1, framesize, 1, NULL);
+        if (NULL != cam_buff && NULL != cam_buff->data) 
+		{
+            memcpy(cam_buff->data, (void *)src_addr_vir, framesize);
+            mDataCBTimestamp(pbuf->timeStamp, CAMERA_MSG_VIDEO_FRAME,
                                cam_buff, 0, mCallbackCookie);
 			cam_buff->release(cam_buff);		// star add
         } else {
@@ -345,52 +601,108 @@ void CallbackNotifier::onNextFrameSW(const void* frame,
         }
     }
 
-    if (isMessageEnabled(CAMERA_MSG_PREVIEW_FRAME)) {
+    if (isMessageEnabled(CAMERA_MSG_PREVIEW_FRAME)) 
+	{
 		if (strcmp(mCallingProcessName, "com.android.facelock") == 0)
 		{
-			int frame_w = camera_dev->getFrameWidth();
-			int frame_h = camera_dev->getFrameHeight();
-			camera_memory_t* cam_buff =
-	            mGetMemoryCB(-1, 160 * 120 * 3 / 2, 1, NULL);
-	        if (NULL != cam_buff && NULL != cam_buff->data) {
-				NV12_down_scale(frame, cam_buff->data, 
-								frame_w, frame_h,
+ 			camera_memory_t* cam_buff = mGetMemoryCB(-1, 160 * 120 * 3 / 2, 1, NULL);
+	        if (NULL != cam_buff && NULL != cam_buff->data) 
+			{
+				yuv420spDownScale((void*)src_addr_vir, cam_buff->data, 
+								ALIGN_16B(src_width), src_height,
 								160, 120);
 	            mDataCB(CAMERA_MSG_PREVIEW_FRAME, cam_buff, 0, NULL, mCallbackCookie);
 	            cam_buff->release(cam_buff);
-	        } else {
+	        }
+			else 
+			{
 	            LOGE("%s: Memory failure in CAMERA_MSG_PREVIEW_FRAME", __FUNCTION__);
 	        }
 		}
 		else
 		{
-	        camera_memory_t* cam_buff =
-	            mGetMemoryCB(-1, camera_dev->getFrameBufferSize(), 1, NULL);
-	        if (NULL != cam_buff && NULL != cam_buff->data) {
-	            memcpy(cam_buff->data, frame, camera_dev->getFrameBufferSize());
-	            mDataCB(CAMERA_MSG_PREVIEW_FRAME, cam_buff, 0, NULL, mCallbackCookie);
-	            cam_buff->release(cam_buff);
-	        } else {
-	            LOGE("%s: Memory failure in CAMERA_MSG_PREVIEW_FRAME", __FUNCTION__);
-	        }
+			//LOGD("src size: %dx%d, cb size: %dx%d,", src_width, src_height, mCBWidth, mCBHeight);
+			framesize = mCBWidth * mCBHeight * 3/2;
+	        camera_memory_t* cam_buff = mGetMemoryCB(-1, framesize, 1, NULL);
+
+			if (NULL == cam_buff 
+				|| NULL == cam_buff->data) 
+			{
+				LOGE("%s: Memory failure in CAMERA_MSG_PREVIEW_FRAME", __FUNCTION__);
+				return;
+			}
+			if (src_format == V4L2_PIX_FMT_YVU420)
+			{
+				// it will be used in cts
+				scaler((unsigned char*)src_addr_vir, (unsigned char*)cam_buff->data, 
+									ALIGN_16B(src_width), src_height,
+									mCBWidth, mCBHeight, /*src_format*/0, 16);
+			}
+			else
+			{
+		    	framesize = ALIGN_16B(src_width) * src_height * 3/2;
+				camera_memory_t* src_addr_vir_copy = mGetMemoryCB(-1, framesize, 1, NULL);
+				if (NULL == src_addr_vir_copy 
+				|| NULL == src_addr_vir_copy->data) 
+				{
+					LOGE("%s: Memory failure in CAMERA_MSG_PREVIEW_FRAME", __FUNCTION__);
+					return;
+				}
+
+				framesize = mCBWidth * mCBHeight * 3/2;
+	        	camera_memory_t* cam_buff_copy = mGetMemoryCB(-1, framesize, 1, NULL);
+				if (NULL == cam_buff_copy 
+				|| NULL == cam_buff_copy->data) 
+				{
+					LOGE("%s: Memory failure in CAMERA_MSG_PREVIEW_FRAME", __FUNCTION__);
+					return;
+				}
+			
+				if (src_format == V4L2_PIX_FMT_NV12)
+				{
+					NV12ToYVU420((void*)src_addr_vir, (void*)src_addr_vir_copy->data, ALIGN_16B(src_width), src_height);
+				}
+				else if(src_format == V4L2_PIX_FMT_NV21)
+				{
+					NV21ToYVU420((void*)src_addr_vir, (void*)src_addr_vir_copy->data, ALIGN_16B(src_width), src_height);
+				}
+				
+				scaler((unsigned char*)src_addr_vir_copy->data, (unsigned char*)cam_buff_copy->data, 
+									ALIGN_16B(src_width), src_height,
+									mCBWidth, mCBHeight, 0, 16);
+				YVU420ToNV21(cam_buff_copy->data, cam_buff->data, mCBWidth, mCBHeight);
+
+				cam_buff_copy->release(cam_buff_copy);
+				src_addr_vir_copy->release(src_addr_vir_copy);
+			}
+			
+            mDataCB(CAMERA_MSG_PREVIEW_FRAME, cam_buff, 0, NULL, mCallbackCookie);
+            cam_buff->release(cam_buff);
 		}
     }
-
-	// temp do nothing
-	if (0 && isMessageEnabled(CAMERA_MSG_FOCUS_MOVE))
-	{
-		mNotifyCB(CAMERA_MSG_FOCUS_MOVE, true, 0, mCallbackCookie);
-	}
 }
 
-status_t CallbackNotifier::autoFocus(bool success)
+status_t CallbackNotifier::autoFocusMsg(bool success)
 {
 	if (isMessageEnabled(CAMERA_MSG_FOCUS))
+	{
         mNotifyCB(CAMERA_MSG_FOCUS, success, 0, mCallbackCookie);
+    }
+	return NO_ERROR;
+}
+
+status_t CallbackNotifier::autoFocusContinuousMsg(bool success)
+{
+	if (isMessageEnabled(CAMERA_MSG_FOCUS_MOVE))
+	{
+		// in continuous focus mode
+		// true for starting focus, false for focus ok
+		mNotifyCB(CAMERA_MSG_FOCUS_MOVE, success, 0, mCallbackCookie);
+	}
     return NO_ERROR;
 }
 
-status_t CallbackNotifier::faceDetection(camera_frame_metadata_t *face)
+status_t CallbackNotifier::faceDetectionMsg(camera_frame_metadata_t *face)
 {
 	if (isMessageEnabled(CAMERA_MSG_PREVIEW_METADATA))
 	{
@@ -401,21 +713,12 @@ status_t CallbackNotifier::faceDetection(camera_frame_metadata_t *face)
     return NO_ERROR;
 }
 
-void CallbackNotifier::takePicture(const void* frame, V4L2Camera* camera_dev, bool bUseMataData)
-{
-	if (bUseMataData)
-	{
-		takePictureHW(frame, camera_dev);
-	}
-	else
-	{
-		takePictureSW(frame, camera_dev);
-	}
-}
-
-void CallbackNotifier::takePictureCB(const void* frame, V4L2Camera* camera_dev)
+void CallbackNotifier::notifyPictureMsg(const void* frame)
 {
 	F_LOG;
+
+	V4L2BUF_t * pbuf = (V4L2BUF_t*)frame;
+	int framesize = pbuf->width * pbuf->height * 3/2;
 
 	// shutter msg
     if (isMessageEnabled(CAMERA_MSG_SHUTTER)) 
@@ -423,7 +726,7 @@ void CallbackNotifier::takePictureCB(const void* frame, V4L2Camera* camera_dev)
 		F_LOG;
         mNotifyCB(CAMERA_MSG_SHUTTER, 0, 0, mCallbackCookie);
     }
-	
+
 	// raw image msg
 	if (isMessageEnabled(CAMERA_MSG_RAW_IMAGE)) 
 	{
@@ -445,11 +748,10 @@ void CallbackNotifier::takePictureCB(const void* frame, V4L2Camera* camera_dev)
 	if (0 && isMessageEnabled(CAMERA_MSG_POSTVIEW_FRAME) )
 	{
 		F_LOG;
-		camera_memory_t* cam_buff =
-        	mGetMemoryCB(-1, camera_dev->getFrameBufferSize(), 1, NULL);
+		camera_memory_t* cam_buff = mGetMemoryCB(-1, framesize, 1, NULL);
         if (NULL != cam_buff && NULL != cam_buff->data) 
 		{
-            memset(cam_buff->data, 0xff, camera_dev->getFrameBufferSize());
+            memset(cam_buff->data, 0xff, framesize);
 			mDataCB(CAMERA_MSG_POSTVIEW_FRAME, cam_buff, 0, NULL, mCallbackCookie);
             cam_buff->release(cam_buff);
         } 
@@ -461,187 +763,306 @@ void CallbackNotifier::takePictureCB(const void* frame, V4L2Camera* camera_dev)
 	}
 }
 
-void CallbackNotifier::takePictureHW(const void* frame, V4L2Camera* camera_dev)
+void CallbackNotifier::startContinuousPicture()
 {
-	if (!mTakingPicture) 
+	F_LOG;
+	
+	// 
+	mSavePictureCnt = 0;
+}
+
+void CallbackNotifier::stopContinuousPicture()
+{
+	// do nothing
+}
+
+void CallbackNotifier::setContinuousPictureCnt(int cnt)
+{
+	mSavePictureMax = cnt;
+}
+
+bool CallbackNotifier::takePicture(const void* frame, bool is_continuous)
+{
+	buffer_node * pNode = NULL;
+	V4L2BUF_t * pbuf = (V4L2BUF_t *)frame;
+	void * pOutBuf = NULL;
+	int bufSize = 0;
+
+	int src_format = 0;
+	int src_addr_phy = 0;
+	int src_addr_vir = 0;
+	int src_width = 0;
+	int src_height = 0;
+	RECT_t src_crop;
+
+	DBG_TIME_BEGIN("CallbackNotifier taking picture", 0);
+
+	if ((pbuf->isThumbAvailable == 1)
+		&& (pbuf->thumbUsedForPhoto == 1))
 	{
-		return ;
+		src_format			= pbuf->thumbFormat;
+		src_addr_phy		= pbuf->thumbAddrPhyY;
+		src_addr_vir		= pbuf->thumbAddrVirY;
+		src_width			= pbuf->thumbWidth;
+		src_height			= pbuf->thumbHeight;
+		memcpy((void*)&src_crop, (void*)&pbuf->thumb_crop_rect, sizeof(RECT_t));
+	}
+	else
+	{
+		src_format			= pbuf->format;
+		src_addr_phy		= pbuf->addrPhyY;
+		src_addr_vir		= pbuf->addrVirY;
+		src_width			= pbuf->width;
+		src_height			= pbuf->height;
+		memcpy((void*)&src_crop, (void*)&pbuf->crop_rect, sizeof(RECT_t));
+	}
+
+	JPEG_ENC_t jpeg_enc;
+	memset(&jpeg_enc, 0, sizeof(jpeg_enc));
+	jpeg_enc.addrY			= src_addr_phy;
+	jpeg_enc.addrC			= src_addr_phy + ALIGN_16B(src_width) * src_height;
+	jpeg_enc.src_w			= src_width;
+	jpeg_enc.src_h			= src_height;
+	jpeg_enc.pic_w			= mPictureWidth;
+	jpeg_enc.pic_h			= mPictureHeight;
+	jpeg_enc.colorFormat	= (src_format == V4L2_PIX_FMT_NV21) ? JPEG_COLOR_YUV420_NV21 : JPEG_COLOR_YUV420_NV12;
+	jpeg_enc.quality		= mJpegQuality;
+	jpeg_enc.rotate			= mJpegRotate;
+
+	getCurrentDateTime();
+
+	// 
+	strcpy(jpeg_enc.CameraMake, mExifMake);
+	strcpy(jpeg_enc.CameraModel, mExifModel);
+	strcpy(jpeg_enc.DateTime, mDateTime);
+	
+	jpeg_enc.thumbWidth		= mThumbWidth;
+	jpeg_enc.thumbHeight	= mThumbHeight;
+	jpeg_enc.whitebalance   = mWhiteBalance;
+	jpeg_enc.focal_length	= mFocalLength;
+
+	if (0 != strlen(mGpsMethod))
+	{
+		jpeg_enc.enable_gps			= 1;
+		jpeg_enc.gps_latitude		= mGpsLatitude;
+		jpeg_enc.gps_longitude		= mGpsLongitude;
+		jpeg_enc.gps_altitude		= mGpsAltitude;
+		jpeg_enc.gps_timestamp		= mGpsTimestamp;
+		strcpy(jpeg_enc.gps_processing_method, mGpsMethod);
+		memset(mGpsMethod, 0, sizeof(mGpsMethod));
+	}
+	else
+	{
+		jpeg_enc.enable_gps			= 0;
+	}
+
+	if ((src_crop.width != jpeg_enc.src_w)
+		|| (src_crop.height != jpeg_enc.src_h))
+	{
+		jpeg_enc.enable_crop		= 1;
+		jpeg_enc.crop_x				= src_crop.left;
+		jpeg_enc.crop_y				= src_crop.top;
+		jpeg_enc.crop_w				= src_crop.width;
+		jpeg_enc.crop_h				= src_crop.height;
+	}
+	else
+	{
+		jpeg_enc.enable_crop		= 0;
 	}
 	
-	LOGV("%s, taking photo begin", __FUNCTION__);
-    /* This happens just once. */
-    mTakingPicture = false;
-    
-    if (isMessageEnabled(CAMERA_MSG_COMPRESSED_IMAGE)) 
+	LOGV("addrY: %x, src: %dx%d, pic: %dx%d, quality: %d, rotate: %d, Gps method: %s, \
+		thumbW: %d, thumbH: %d, thubmFactor: %d, crop: [%d, %d, %d, %d]", 
+		jpeg_enc.addrY, 
+		jpeg_enc.src_w, jpeg_enc.src_h,
+		jpeg_enc.pic_w, jpeg_enc.pic_h,
+		jpeg_enc.quality, jpeg_enc.rotate,
+		jpeg_enc.gps_processing_method,
+		jpeg_enc.thumbWidth,
+		jpeg_enc.thumbHeight,
+		jpeg_enc.scale_factor,
+		jpeg_enc.crop_x,
+		jpeg_enc.crop_y,
+		jpeg_enc.crop_w,
+		jpeg_enc.crop_h);
+	
+	pNode = mBufferList->allocBuffer(-1, mPictureWidth * mPictureHeight);
+	if (pNode == NULL)
 	{
-		V4L2BUF_t * pbuf = (V4L2BUF_t *)frame;
-		void * pOutBuf = NULL;
-		int bufSize = 0;
-		int pic_w, pic_h;
-		int factor = 0;
+		LOGE("malloc picture node failed");
+		LOGE("AWHLABEL#camera#takePicture-FAIL!\n");
+		return false;
+	}
+	pOutBuf = pNode->data;
+	if (pOutBuf == NULL)
+	{
+		LOGE("malloc picture memory failed");
+		LOGE("AWHLABEL#camera#takePicture-FAIL!\n");
+		return false;
+	}
 
-		camera_dev->getPictureSize(&pic_w, &pic_h);
+	//int64_t lasttime = systemTime();
+	int ret = JpegEnc(pOutBuf, &bufSize, &jpeg_enc);
+	if (ret < 0)
+	{
+		LOGE("JpegEnc failed");
+		LOGE("AWHLABEL#camera#takePicture:JpegEnc-FAIL!\n");
+		return false;
+	}
+	//LOGV("hw enc time: %lld(ms), size: %d", (systemTime() - lasttime)/1000000, bufSize);
+
+	DBG_TIME_DIFF("enc");
+
+	if (is_continuous)
+	{
+		pNode->id = mSavePictureCnt;
+		pNode->size = bufSize;
+		mBufferList->push(pNode);
+
+		// cb number of pictures
+		if (isMessageEnabled(CAMERA_MSG_CONTINUOUSSNAP)) 
+		{
+			mNotifyCB(CAMERA_MSG_CONTINUOUSSNAP, mSavePictureCnt, 0, mCallbackCookie);
+	    }
+		
+		pthread_cond_signal(&mSavePictureCond);
+
+		mSavePictureCnt++;
+	}
+	else
+	{
+		if (strlen(mSnapPath) > 0)
+		{
+			camera_memory_t* cb_buff;
 			
-        JPEG_ENC_t jpeg_enc;
-		memset(&jpeg_enc, 0, sizeof(jpeg_enc));
-		jpeg_enc.addrY			= pbuf->addrPhyY;
-		jpeg_enc.addrC			= pbuf->addrPhyY + camera_dev->getFrameWidth() * camera_dev->getFrameHeight();
-		jpeg_enc.src_w			= camera_dev->getFrameWidth();
-		jpeg_enc.src_h			= camera_dev->getFrameHeight();
-		jpeg_enc.pic_w			= pic_w;
-		jpeg_enc.pic_h			= pic_h;
-		jpeg_enc.colorFormat	= JPEG_COLOR_YUV420;
-		jpeg_enc.quality		= mJpegQuality;
-		jpeg_enc.rotate			= mJpegRotate;
+			strcpy(pNode->priv, mSnapPath);
+			pNode->id = -1;
+			pNode->size = bufSize;
+			mBufferList->push(pNode);
 
-        getCurrentDateTime();
-		strcpy(jpeg_enc.DateTime, mDateTime);
-		strcpy(jpeg_enc.CameraMake, mCameraMake);
-		strcpy(jpeg_enc.CameraModel, mCameraModel);
-		
-		jpeg_enc.thumbWidth		= mThumbWidth;
-		jpeg_enc.thumbHeight	= mThumbHeight;
-		jpeg_enc.whitebalance   = mWhiteBalance;
-
-		if ((mThumbWidth != 0) && (mThumbHeight != 0))
-		{
-			if ((jpeg_enc.src_w / mThumbWidth >= 4) && (jpeg_enc.src_h / mThumbHeight >= 4))
-			{
-				factor = 2;
-			}
-			else if ((jpeg_enc.src_w / mThumbWidth >= 2) && (jpeg_enc.src_h / mThumbHeight >= 2))
-			{
-				factor = 1;
-			}
-		}
-		jpeg_enc.scale_factor	= factor;
-		jpeg_enc.focal_length	= mFocalLength;
-
-		if (0 != strlen(mGpsMethod))
-		{
-			jpeg_enc.enable_gps			= 1;
-			jpeg_enc.gps_latitude		= mGpsLatitude;
-			jpeg_enc.gps_longitude		= mGpsLongitude;
-			jpeg_enc.gps_altitude		= mGpsAltitude;
-			jpeg_enc.gps_timestamp		= mGpsTimestamp;
-			strcpy(jpeg_enc.gps_processing_method, mGpsMethod);
-			memset(mGpsMethod, 0, sizeof(mGpsMethod));
+			mNotifyCB(CAMERA_MSG_SNAP, 0, 0, mCallbackCookie);
+			pthread_cond_signal(&mSavePictureCond);
 		}
 		else
 		{
-			jpeg_enc.enable_gps			= 0;
-		}
+			camera_memory_t* jpeg_buff = mGetMemoryCB(-1, bufSize, 1, NULL);
+			if (NULL != jpeg_buff && NULL != jpeg_buff->data) 
+			{
+				memcpy(jpeg_buff->data, (uint8_t *)pOutBuf, bufSize); 
+				mDataCB(CAMERA_MSG_COMPRESSED_IMAGE, jpeg_buff, 0, NULL, mCallbackCookie);
+				jpeg_buff->release(jpeg_buff);
+			} 
+			else 
+			{
+				LOGE("%s: Memory failure in CAMERA_MSG_COMPRESSED_IMAGE", __FUNCTION__);
+			}
 
-		if ((pbuf->crop_rect.width != jpeg_enc.src_w)
-			|| (pbuf->crop_rect.height != jpeg_enc.src_h))
-		{
-			jpeg_enc.enable_crop		= 1;
-			jpeg_enc.crop_x				= pbuf->crop_rect.left;
-			jpeg_enc.crop_y				= pbuf->crop_rect.top;
-			jpeg_enc.crop_w				= pbuf->crop_rect.width;
-			jpeg_enc.crop_h				= pbuf->crop_rect.height;
+			mBufferList->releaseBuffer(pNode);
 		}
-		else
+	}
+	
+	DBG_TIME_DIFF("photo end");
+	LOGV("taking photo end");
+	return true;
+}
+
+bool CallbackNotifier::savePictureThread()
+{
+	if (mBufferList->isListEmpty())
+	{
+		pthread_mutex_lock(&mSavePictureMutex);
+		
+		if (mSavePictureThread->getThreadStatus() == THREAD_STATE_EXIT)
 		{
-			jpeg_enc.enable_crop		= 0;
+			mSaveThreadExited = true;
+			pthread_mutex_unlock(&mSavePictureMutex);
+			
+			pthread_cond_signal(&mSavePictureCond);
+			
+			LOGD("savePictureThread exit");
+			return false;
 		}
 		
-		LOGV("addrY: %x, src: %dx%d, pic: %dx%d, quality: %d, rotate: %d, Gps method: %s, \
-			thumbW: %d, thumbH: %d, thubmFactor: %d, crop: [%d, %d, %d, %d]", 
-			jpeg_enc.addrY, 
-			jpeg_enc.src_w, jpeg_enc.src_h,
-			jpeg_enc.pic_w, jpeg_enc.pic_h,
-			jpeg_enc.quality, jpeg_enc.rotate,
-			jpeg_enc.gps_processing_method,
-			jpeg_enc.thumbWidth,
-			jpeg_enc.thumbHeight,
-			jpeg_enc.scale_factor,
-			jpeg_enc.crop_x,
-			jpeg_enc.crop_y,
-			jpeg_enc.crop_w,
-			jpeg_enc.crop_h);
-		
-		pOutBuf = (void *)malloc(jpeg_enc.pic_w * jpeg_enc.pic_h << 2);
-		if (pOutBuf == NULL)
-		{
-			LOGE("malloc picture memory failed");
-			return ;
-		}
+		LOGV("wait for picture to save");
+		pthread_cond_wait(&mSavePictureCond, &mSavePictureMutex);
+		pthread_mutex_unlock(&mSavePictureMutex);
+		return true;
+	}
+	
+	DBG_TIME_BEGIN("save picture", 0);
 
-		int64_t lasttime = systemTime();
-		int ret = JpegEnc(pOutBuf, &bufSize, &jpeg_enc);
-		if (ret < 0)
-		{
-			LOGE("JpegEnc failed");
-			return ;			
-		}
-		LOGV("hw enc time: %lld(ms)", (systemTime() - lasttime)/1000000);
+	char fname[128];
+	FILE *pf = NULL;
+	buffer_node * pNode = mBufferList->pop();
+	if (pNode == NULL)
+	{
+		LOGE("list head is null");
+		goto SAVE_PICTURE_END;
+	}
+	
+	if (pNode->id >= 0)
+	{
+		//LOGV("mFolderPath %s , id: %d", mFolderPath, pNode->id);
+		sprintf(fname, "%s%03d.jpg", mFolderPath, pNode->id);
+	}
+	else
+	{
+		//LOGV("pNode->priv %s ", pNode->priv);
+		strcpy(fname, pNode->priv);
+	}
+	
+	pf = fopen(fname, "wb+");
+	if (pf != NULL)
+	{
+		LOGV("open %s ok", fname);
+		fwrite((uint8_t *)pNode->data, pNode->size, 1, pf);
+		fflush(pf);
+		fclose(pf);
+	}
+	else
+	{
+		LOGE("open %s failed, %s", fname, strerror(errno));
+		LOGE("AWHLABEL#camera#savePicture-FAIL!\n");
+		goto SAVE_PICTURE_END;
+	}
+	
+	DBG_TIME_DIFF("write file");
 
-		camera_memory_t* jpeg_buff = mGetMemoryCB(-1, bufSize, 1, NULL);
-		if (NULL != jpeg_buff && NULL != jpeg_buff->data) 
+	if (pNode->id < 0)
+	{
+		camera_memory_t* cb_buff;
+		cb_buff = mGetMemoryCB(-1, strlen(pNode->priv), 1, NULL);
+		if (NULL != cb_buff && NULL != cb_buff->data) 
 		{
-			memcpy(jpeg_buff->data, (uint8_t *)pOutBuf, bufSize); 
-			mDataCB(CAMERA_MSG_COMPRESSED_IMAGE, jpeg_buff, 0, NULL, mCallbackCookie);
-			jpeg_buff->release(jpeg_buff);
+			memcpy(cb_buff->data, (uint8_t *)pNode->priv, strlen(pNode->priv));
+			mDataCB(CAMERA_MSG_SNAP_THUMB, cb_buff, 0, NULL, mCallbackCookie);
+			cb_buff->release(cb_buff);
 		} 
 		else 
 		{
-			LOGE("%s: Memory failure in CAMERA_MSG_COMPRESSED_IMAGE", __FUNCTION__);
+			LOGE("AWHLABEL#camera#savePicture-FAIL!\n");
+			LOGE("%s: Memory failure in CAMERA_MSG_SNAP_THUMB", __FUNCTION__);
 		}
+	}
 
-		if(pOutBuf != NULL)
-		{
-			free(pOutBuf);
-			pOutBuf = NULL;
-		}
-    }
-	
-	LOGV("taking photo end");
-}
-
-void CallbackNotifier::takePictureSW(const void* frame, V4L2Camera* camera_dev)
-{
-	if (!mTakingPicture) 
+SAVE_PICTURE_END:
+	if (pNode != NULL)
 	{
-		return ;
+		mBufferList->releaseBuffer(pNode);
 	}
 	
-	LOGV("%s, taking photo begin", __FUNCTION__);
-    /* This happens just once. */
-    mTakingPicture = false;
-    /* The sequence of callbacks during picture taking is:
-     *  - CAMERA_MSG_SHUTTER
-     *  - CAMERA_MSG_RAW_IMAGE_NOTIFY
-     *  - CAMERA_MSG_COMPRESSED_IMAGE
-     */
-    if (isMessageEnabled(CAMERA_MSG_SHUTTER)) {
-        mNotifyCB(CAMERA_MSG_SHUTTER, 0, 0, mCallbackCookie);
-    }
-    if (isMessageEnabled(CAMERA_MSG_RAW_IMAGE_NOTIFY)) {
-        mNotifyCB(CAMERA_MSG_RAW_IMAGE_NOTIFY, 0, 0, mCallbackCookie);
-    }
-    if (isMessageEnabled(CAMERA_MSG_COMPRESSED_IMAGE)) {
-        /* Compress the frame to JPEG. Note that when taking pictures, we
-         * have requested camera device to provide us with NV21 frames. */
-        NV21JpegCompressor compressor;
-        status_t res =
-            compressor.compressRawImage(frame, camera_dev->getFrameWidth(),
-                                        camera_dev->getFrameHeight(),
-                                        mJpegQuality);
-        if (res == NO_ERROR) {
-            camera_memory_t* jpeg_buff =
-                mGetMemoryCB(-1, compressor.getCompressedSize(), 1, NULL);
-            if (NULL != jpeg_buff && NULL != jpeg_buff->data) {
-                compressor.getCompressedImage(jpeg_buff->data);
-                mDataCB(CAMERA_MSG_COMPRESSED_IMAGE, jpeg_buff, 0, NULL, mCallbackCookie);
-                jpeg_buff->release(jpeg_buff);
-            } else {
-                LOGE("%s: Memory failure in CAMERA_MSG_COMPRESSED_IMAGE", __FUNCTION__);
-            }
-        } else {
-            LOGE("%s: Compression failure in CAMERA_MSG_COMPRESSED_IMAGE", __FUNCTION__);
-        }
-    }
+	return true;
+}
+
+
+void CallbackNotifier::getCurrentDateTime()
+{
+	time_t t;
+	struct tm *tm_t;
+	time(&t);
+	tm_t = localtime(&t);
+	sprintf(mDateTime, "%4d:%02d:%02d %02d:%02d:%02d", 
+		tm_t->tm_year+1900, tm_t->tm_mon+1, tm_t->tm_mday,
+		tm_t->tm_hour, tm_t->tm_min, tm_t->tm_sec);
 }
 
 void CallbackNotifier::onCameraDeviceError(int err)
@@ -649,22 +1070,6 @@ void CallbackNotifier::onCameraDeviceError(int err)
     if (isMessageEnabled(CAMERA_MSG_ERROR) && mNotifyCB != NULL) {
         mNotifyCB(CAMERA_MSG_ERROR, err, 0, mCallbackCookie);
     }
-}
-
-/****************************************************************************
- * Private API
- ***************************************************************************/
-
-bool CallbackNotifier::isNewVideoFrameTime(nsecs_t timestamp)
-{
-    return true;		// to do here
-	
-    Mutex::Autolock locker(&mObjectLock);
-    if ((timestamp - mLastFrameTimestamp) >= mFrameRefreshFreq) {
-        mLastFrameTimestamp = timestamp;
-        return true;
-    }
-    return false;
 }
 
 }; /* namespace android */

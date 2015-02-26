@@ -134,8 +134,8 @@ PRODUCT_PACKAGES += \
 	libaudioutils \
 	chat \
 	u3gmonitor \
-	devlistener
-	#camera.exDroid
+	devlistener \
+	camera.exDroid \
 
 #PRODUCT_PACKAGES += \
 	libthirdpartstream \

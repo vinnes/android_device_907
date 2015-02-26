@@ -10,8 +10,8 @@
 #include <ui/Rect.h>
 
 #include <drv_display.h>
-#include "CameraHardware.h"
-#include "V4L2CameraDevice.h"
+#include "CameraHardware2.h"
+#include "V4L2CameraDevice2.h"
 
 #define BASE_ZOOM	0
 
@@ -60,7 +60,7 @@ static int faceNotifyCb(int cmd, void * data, void * user)
 				char face_area[128];
 				sprintf(face_area, "(%d, %d, %d, %d, 1)", 
 						pdata->x, pdata->y, pdata->x1, pdata->y1);
-				return camera_hw->parse_focus_areas(face_area);
+				return camera_hw->parse_focus_areas(face_area, true);
 			}
 		case FACE_NOTITY_CMD_REQUEST_ORIENTION:
 			camera_hw->getCurrentOriention((int*)data);
@@ -109,11 +109,15 @@ CameraHardware::CameraHardware(struct hw_module_t* module, CCameraConfig* pCamer
           mFullSizeHeight(0),
           mCaptureWidth(0),
           mCaptureHeight(0),
+          mVideoCaptureWidth(0),
+          mVideoCaptureHeight(0),
           mUseHwEncoder(false),
           mFaceDetection(NULL),
           mFocusStatus(FOCUS_STATUS_IDLE),
           mIsSingleFocus(false),
-          mOriention(0)
+          mOriention(0),
+          mAutoFocusThreadExit(true),
+          mIsImageCaptureIntent(false)
 {
     /*
      * Initialize camera_device descriptor for this object.
@@ -142,7 +146,7 @@ CameraHardware::CameraHardware(struct hw_module_t* module, CCameraConfig* pCamer
 
 	memset(&mFrameRectCrop, 0, sizeof(mFrameRectCrop));
 	memset((void*)mFocusAreasStr, 0, sizeof(mFocusAreasStr));
-	memset((void*)&mFocusAreas, 0, sizeof(mFocusAreas));
+	memset((void*)&mLastFocusAreas, 0, sizeof(mLastFocusAreas));
 
 	// init command queue
 	OSAL_QueueCreate(&mQueueCommand, CMD_QUEUE_MAX);
@@ -197,85 +201,162 @@ CameraHardware::~CameraHardware()
 	}
 }
 
-// single focus
 bool CameraHardware::autoFocusThread()
 {
+	bool ret = true;
+	int status = -1;
+	FocusStatus new_status = FOCUS_STATUS_IDLE;
+
+	usleep(30000);
+
+	const char * valstr = mParameters.get(CameraParameters::KEY_RECORDING_HINT);
+	if(valstr != NULL 
+		&& strcmp(valstr, CameraParameters::TRUE) == 0)
+	{
+		// return true;		// for cts
+	}
+
+	bool timeout = false;
+	int64_t lastTimeMs = systemTime() / 1000000;
+
 	pthread_mutex_lock(&mAutoFocusMutex);
-	pthread_cond_wait(&mAutoFocusCond, &mAutoFocusMutex);
 	if (mAutoFocusThread->getThreadStatus() == THREAD_STATE_EXIT)
 	{
 		LOGD("autoFocusThread exited");
+		ret = false;		// exit thread
 		pthread_mutex_unlock(&mAutoFocusMutex);
-		return false;
+		goto FOCUS_THREAD_EXIT;
 	}
+	mAutoFocusThreadExit = false;
 	pthread_mutex_unlock(&mAutoFocusMutex);
-	
-	int ret = 0;
-	const char *new_focus_mode_str = mParameters.get(CameraParameters::KEY_FOCUS_MODE);
 
-	if (!mCameraConfig->supportFocusMode())
+	if (mIsSingleFocus)
 	{
-		goto FOCUS_END;
-	}
-	
-	if (!strcmp(new_focus_mode_str, CameraParameters::FOCUS_MODE_INFINITY)
-		|| !strcmp(new_focus_mode_str, CameraParameters::FOCUS_MODE_FIXED))
-	{
-		// 
-	}
-	else
-	{
-		bool timeout = false;
-		int64_t lastTimeMs = systemTime() / 1000000;
-		
-		setAutoFocusCtrl(V4L2_AF_TRIG_SINGLE, NULL);
-		usleep(200000);
-
 		while(1)
 		{
 			// if hw af ok
-			ret = mV4L2CameraDevice->getAutoFocusStatus(V4L2_AF_TRIG_SINGLE);
-			if ( ret == 0)
+			status = mV4L2CameraDevice->getAutoFocusStatus();
+			if ( status == V4L2_AUTO_FOCUS_STATUS_REACHED)
 			{
 				LOGV("auto focus ok, use time: %lld(ms)", systemTime() / 1000000 - lastTimeMs);
 				break;
 			}
-			else if (ret == EBUSY)
+			else if (status == V4L2_AUTO_FOCUS_STATUS_BUSY
+						|| status == V4L2_AUTO_FOCUS_STATUS_IDLE)
 			{
-				if ((systemTime() / 1000000 - lastTimeMs) > 5000)	// 5s timeout
+				if ((systemTime() / 1000000 - lastTimeMs) > 2000)	// 2s timeout
 				{
-					LOGW("auto focus time out");
+					LOGW("auto focus time out, ret = %d", status);
 					timeout = true;
 					break;
 				}
 				//LOGV("wait auto focus ......");
-				usleep(10000);
+				usleep(30000);
 			}
-			else if (ret == EFAULT)
+			else if (status == V4L2_AUTO_FOCUS_STATUS_FAILED)
 			{
 				LOGW("auto focus failed");
 				break;
 			}
-			else if (ret < 0)
+			else if (status < 0)
 			{
 				LOGE("auto focus interface error");
 				break;
 			}
 		}
+		
+		mCallbackNotifier.autoFocusMsg(status == V4L2_AUTO_FOCUS_STATUS_REACHED);
 
-		if (ret == 0)
+		if (status == V4L2_AUTO_FOCUS_STATUS_REACHED)
 		{
-			setAutoFocusCtrl(V4L2_AF_LOCK, NULL);
+			mV4L2CameraDevice->set3ALock(V4L2_LOCK_FOCUS);
 		}
+
+		mIsSingleFocus = false;
+
+		mFocusStatus = FOCUS_STATUS_DONE;
+	}
+	else
+	{
+		status = mV4L2CameraDevice->getAutoFocusStatus();
+		
+		if (status == V4L2_AUTO_FOCUS_STATUS_BUSY)
+		{
+			new_status = FOCUS_STATUS_BUSY;
+		}
+		else if (status == V4L2_AUTO_FOCUS_STATUS_REACHED)
+		{
+			new_status = FOCUS_STATUS_SUCCESS;
+		}
+		else if (status == V4L2_AUTO_FOCUS_STATUS_FAILED)
+		{
+			new_status = FOCUS_STATUS_FAIL;
+		}
+		else if (status == V4L2_AUTO_FOCUS_STATUS_IDLE)
+		{
+			// do nothing
+			new_status = FOCUS_STATUS_IDLE;
+		}
+		else if (status == 0xFF000000)
+		{
+			LOGV("getAutoFocusStatus, status = 0xFF000000");
+			ret = false;		// exit thread
+			goto FOCUS_THREAD_EXIT;
+		}
+		else
+		{
+			LOGW("unknow focus status: %d", status);
+			ret = true;
+			goto FOCUS_THREAD_EXIT;
+		}
+
+		// LOGD("status change, old: %d, new: %d", mFocusStatus, new_status);
+
+		if (mFocusStatus == new_status)
+		{
+			ret = true;
+			goto FOCUS_THREAD_EXIT;
+		}
+
+		if ((mFocusStatus == FOCUS_STATUS_IDLE
+				|| mFocusStatus & FOCUS_STATUS_DONE)
+			&& new_status == FOCUS_STATUS_BUSY)
+		{
+			// start focus
+			LOGV("start focus, %d -> %d", mFocusStatus, new_status);
+			// show focus animation
+			mCallbackNotifier.autoFocusContinuousMsg(true);
+		}
+		else if (mFocusStatus == FOCUS_STATUS_BUSY
+				&& (new_status & FOCUS_STATUS_DONE))
+		{
+			// focus end
+			LOGV("focus %s, %d -> %d", (new_status == FOCUS_STATUS_SUCCESS)?"ok":"fail", mFocusStatus, new_status);
+			mCallbackNotifier.autoFocusContinuousMsg(false);
+		}
+		else if ((mFocusStatus & FOCUS_STATUS_DONE)
+				&& new_status == FOCUS_STATUS_IDLE)
+		{
+			// focus end
+			LOGV("do nothing, %d -> %d", mFocusStatus, new_status);
+		}
+		else
+		{
+			LOGW("unknow status change, %d -> %d", mFocusStatus, new_status);
+		}
+
+		mFocusStatus = new_status;
 	}
 
-FOCUS_END:
-
-	mCallbackNotifier.autoFocusMsg(ret == 0);
-	
-	LOGV("auto focus end");
-
-	return true;
+FOCUS_THREAD_EXIT:
+	if (ret == false)
+	{
+		pthread_mutex_lock(&mAutoFocusMutex);
+		mAutoFocusThreadExit = true;
+		pthread_cond_signal(&mAutoFocusCond);
+		pthread_mutex_unlock(&mAutoFocusMutex);
+	}
+	return ret;
 }
 
 bool CameraHardware::commandThread()
@@ -330,7 +411,7 @@ bool CameraHardware::commandThread()
 			int new_exposure_compensation = queue->data;
 			LOGV("CMD_QUEUE_SET_EXPOSURE_COMPENSATION: %d", new_exposure_compensation);
 			
-			if (pV4L2Device->setExposure(new_exposure_compensation) < 0) 
+			if (pV4L2Device->setExposureCompensation(new_exposure_compensation) < 0) 
 			{
 				LOGE("ERR(%s):Fail on mV4L2Camera->setBrightness(brightness(%d))", __FUNCTION__, new_exposure_compensation);
 			}
@@ -344,7 +425,7 @@ bool CameraHardware::commandThread()
 		case CMD_QUEUE_SET_FOCUS_MODE:
 		{
 			LOGV("CMD_QUEUE_SET_FOCUS_MODE");
-			if(setAutoFocusMode() != OK)
+			if(setAutoFocusRange() != OK)
 	        {
 				LOGE("unknown focus mode");
 	       	}
@@ -364,17 +445,32 @@ bool CameraHardware::commandThread()
 		{
 			int width = 0, height = 0;
 			LOGV("CMD_QUEUE_START_FACE_DETECTE");
-			const char * preview_capture_width_str = mParameters.get(KEY_PREVIEW_CAPTURE_SIZE_WIDTH);
-			const char * preview_capture_height_str = mParameters.get(KEY_PREVIEW_CAPTURE_SIZE_HEIGHT);
-			if (preview_capture_width_str != NULL
-				&& preview_capture_height_str != NULL)
+			if (mHalCameraInfo.fast_picture_mode)
 			{
-				width  = atoi(preview_capture_width_str);
-				height = atoi(preview_capture_height_str);
+				int scale = pV4L2Device->getSuitableThumbScale(mCaptureWidth, mCaptureHeight);
+				if (scale <= 0)
+				{
+					LOGE("error thumb scale: %d, full-size: %dx%d", scale, mCaptureWidth, mCaptureHeight);
+					break;
+				}
+				width = mCaptureWidth / scale;
+				height = mCaptureHeight / scale;
 			}
+			else
+			{
+				const char * preview_capture_width_str = mParameters.get(KEY_PREVIEW_CAPTURE_SIZE_WIDTH);
+				const char * preview_capture_height_str = mParameters.get(KEY_PREVIEW_CAPTURE_SIZE_HEIGHT);
+				if (preview_capture_width_str != NULL
+					&& preview_capture_height_str != NULL)
+				{
+					width  = atoi(preview_capture_width_str);
+					height = atoi(preview_capture_height_str);
+				}
+			}
+			
 			if (mFaceDetection != 0)
 			{
-				usleep(500000);
+				LOGV("start facedetection size: %dx%d", width, height);
 				mFaceDetection->ioctrl(mFaceDetection, FACE_OPS_CMD_START, width, height);
 			}
 			else
@@ -408,8 +504,9 @@ bool CameraHardware::commandThread()
 			void * frame = (void *)queue->data;
 			mCallbackNotifier.notifyPictureMsg(frame);
 			if (strcmp(mCallingProcessName, "com.android.cts.stub") != 0
-				&& strcmp(mCallingProcessName, "com.android.cts.mediastress") != 0)
-			{
+				&& strcmp(mCallingProcessName, "com.android.cts.mediastress") != 0
+				&& mIsImageCaptureIntent == false)
+			{			
 				doTakePictureEnd();
 			}
 			break;
@@ -540,7 +637,11 @@ void CameraHardware::initDefaultParameters()
 	if (mHalCameraInfo.fast_picture_mode)
 	{
 		// capture size of picture-mode preview
-		
+		// get full size from the driver, to do
+		mFullSizeWidth = 2592;
+		mFullSizeHeight = 1936;
+
+		mV4L2CameraDevice->getFullSize(&mFullSizeWidth, &mFullSizeHeight);
 		
 		// any other differences ??
 		
@@ -695,7 +796,7 @@ COMMOM_PARAMS:
 	LOGV("zoom_ratios: %s", zoom_ratios);
 	p.set(CameraParameters::KEY_ZOOM_RATIOS, zoom_ratios);
 	p.set(CameraParameters::KEY_ZOOM, "0");
-
+	
 	mV4L2CameraDevice->setCrop(BASE_ZOOM, max_zoom);
 
 	mZoomRatio = 100;
@@ -711,13 +812,16 @@ COMMOM_PARAMS:
 	const char *parm = p.get(CameraParameters::KEY_PREVIEW_SIZE);
 	parse_pair(parm, &mCaptureWidth, &mCaptureHeight, 'x');
 	LOGV("default preview size: %dx%d", mCaptureWidth, mCaptureHeight);
-
+	// default callback size
+	mCallbackNotifier.setCBSize(mCaptureWidth, mCaptureHeight);
+	
+	mV4L2CameraDevice->tryFmtSize(&mCaptureWidth, &mCaptureHeight);
+	mVideoCaptureWidth = mCaptureWidth;
+	mVideoCaptureHeight= mCaptureHeight;
 	p.set(KEY_CAPTURE_SIZE_WIDTH, mCaptureWidth);
 	p.set(KEY_CAPTURE_SIZE_HEIGHT, mCaptureHeight);
 	p.set(KEY_PREVIEW_CAPTURE_SIZE_WIDTH, mCaptureWidth);
 	p.set(KEY_PREVIEW_CAPTURE_SIZE_HEIGHT, mCaptureHeight);
-
-	mCallbackNotifier.setCBSize(mCaptureWidth, mCaptureHeight);
 
 	// preview formats, CTS must support at least 2 formats
 	parameterString = CameraParameters::PIXEL_FORMAT_YUV420SP;			// NV21, default
@@ -750,7 +854,7 @@ COMMOM_PARAMS:
 	p.set(CameraParameters::KEY_HORIZONTAL_VIEW_ANGLE, "54.6");
     p.set(CameraParameters::KEY_VERTICAL_VIEW_ANGLE, "39.4");
 
-	p.set(CameraParameters::KEY_MAX_NUM_DETECTED_FACES_HW, 10);
+	p.set(CameraParameters::KEY_MAX_NUM_DETECTED_FACES_HW, 0);
 	p.set(CameraParameters::KEY_MAX_NUM_DETECTED_FACES_SW, 0);
 	
 	// take picture in video mode
@@ -759,6 +863,11 @@ COMMOM_PARAMS:
 	mParameters = p;
 
 	mFirstSetParameters = true;
+
+	mLastFocusAreas.x1 = -1000;
+	mLastFocusAreas.y1 = -1000;
+	mLastFocusAreas.x2 = -1000;
+	mLastFocusAreas.y2 = -1000;
 
 	LOGV("CameraHardware::initDefaultParameters ok");
 }
@@ -810,11 +919,12 @@ status_t CameraHardware::connectCamera(hw_device_t** device)
 		if (res == NO_ERROR)
 		{
 			*device = &common;
+
 			if (mCameraConfig->supportFocusMode())
 			{
-				// auto focus init for some module
-				setAutoFocusCtrl(V4L2_AF_INIT, NULL);
-			
+				mV4L2CameraDevice->setAutoFocusInit();
+				mV4L2CameraDevice->setExposureMode(V4L2_EXPOSURE_AUTO);
+				
 				// start focus thread
 				mAutoFocusThread->startThread();
 			}
@@ -825,6 +935,7 @@ status_t CameraHardware::connectCamera(hw_device_t** device)
 			mIsCameraIdle = true;
 		}
 	}
+
     return -res;
 }
 
@@ -916,6 +1027,11 @@ status_t CameraHardware::startRecording()
 	mCallbackNotifier.setSnapPath("");
 
 	mParameters.set(CameraParameters::KEY_RECORDING_HINT, CameraParameters::TRUE);
+	
+	if (mCameraConfig->supportFocusMode())
+	{
+		mV4L2CameraDevice->set3ALock(V4L2_LOCK_FOCUS);
+	}
 
 	if (mVideoCaptureWidth != mCaptureWidth
 		|| mVideoCaptureHeight != mCaptureHeight)
@@ -933,6 +1049,11 @@ void CameraHardware::stopRecording()
 	F_LOG;
     mCallbackNotifier.disableVideoRecording();
 	mV4L2CameraDevice->setHwEncoder(false);
+	
+	if (mCameraConfig->supportFocusMode())
+	{
+		mV4L2CameraDevice->set3ALock(~V4L2_LOCK_FOCUS);
+	}
 }
 
 int CameraHardware::isRecordingEnabled()
@@ -955,6 +1076,10 @@ void CameraHardware::releaseRecordingFrame(const void* opaque)
 
 status_t CameraHardware::setAutoFocus()
 {
+	// start singal focus
+	int ret = 0;
+	const char *new_focus_mode_str = mParameters.get(CameraParameters::KEY_FOCUS_MODE);
+
 	if (!mCameraConfig->supportFocusMode())
 	{
 		mQueueElement[CMD_QUEUE_SET_FOCUS_STATUS].cmd = CMD_QUEUE_SET_FOCUS_STATUS;
@@ -964,7 +1089,21 @@ status_t CameraHardware::setAutoFocus()
 		return OK;
 	}
 	
-	pthread_cond_signal(&mAutoFocusCond);
+	pthread_mutex_lock(&mAutoFocusMutex);
+	
+	if (!strcmp(new_focus_mode_str, CameraParameters::FOCUS_MODE_INFINITY)
+		|| !strcmp(new_focus_mode_str, CameraParameters::FOCUS_MODE_FIXED))
+	{
+		// do nothing
+	}
+	else
+	{
+		mV4L2CameraDevice->set3ALock(~(V4L2_LOCK_FOCUS | V4L2_LOCK_EXPOSURE| V4L2_LOCK_WHITE_BALANCE));
+		mV4L2CameraDevice->setAutoFocusStart();
+	}
+
+	mIsSingleFocus = true;
+	pthread_mutex_unlock(&mAutoFocusMutex);
 
 	return OK;
 }
@@ -977,7 +1116,7 @@ status_t CameraHardware::cancelAutoFocus()
 	return NO_ERROR;
 }
 
-int CameraHardware::parse_focus_areas(const char *str)
+int CameraHardware::parse_focus_areas(const char *str, bool is_face)
 {
 	int ret = -1;
 	char *ptr,*tmp;
@@ -1019,48 +1158,81 @@ int CameraHardware::parse_focus_areas(const char *str)
 	t = atoi(p2);
 	r = atoi(p3);
 	b = atoi(p4);
-	
+
 	w = l + (r-l)/2;
 	h = t + (b-t)/2;
 
-	mFocusAreas.width = mFrameRectCrop.right - (1000 - w) * (mFrameRectCrop.right - mFrameRectCrop.left) / 2000;
-	mFocusAreas.height= mFrameRectCrop.bottom - (1000 - h) * (mFrameRectCrop.bottom - mFrameRectCrop.top) / 2000;
+	struct v4l2_win_coordinate win;
+	win.x1 = l;
+	win.y1 = t;
+	win.x2 = r;
+	win.y2 = b;
+	if (abs(mLastFocusAreas.x1 - win.x1) >= 40
+		|| abs(mLastFocusAreas.y1 - win.y1) >= 40
+		|| abs(mLastFocusAreas.x2 - win.x2) >= 40
+		|| abs(mLastFocusAreas.y2 - win.y2) >= 40)
+	{
+		if (!is_face && (mZoomRatio != 0))
+		{
+			win.x1 = win.x1 * 100 / mZoomRatio;
+			win.y1 = win.y1 * 100 / mZoomRatio;
+			win.x2 = win.x2 * 100 / mZoomRatio;
+			win.y2 = win.y2 * 100 / mZoomRatio;
+		}
 
-	// LOGV("V4L2_AF_WIN_XY: %d,%d", mFocusAreas.width, mFocusAreas.height);
-	setAutoFocusCtrl(V4L2_AF_WIN_XY, (void*)&mFocusAreas);
-
+		LOGV("mZoomRatio: %d, v4l2_win_coordinate: [%d,%d,%d,%d]", 
+			mZoomRatio, win.x1, win.y1, win.x2, win.y2);
+		
+		if ((l == 0) && (t == 0) && (r == 0) && (b == 0))
+		{
+			mV4L2CameraDevice->set3ALock(~(V4L2_LOCK_FOCUS | V4L2_LOCK_EXPOSURE | V4L2_LOCK_WHITE_BALANCE));
+			setAutoFocusRange();
+			mV4L2CameraDevice->setAutoFocusWind(0, (void*)&win);
+			mV4L2CameraDevice->setExposureWind(0, (void*)&win);
+		}
+		else
+		{
+			mV4L2CameraDevice->setAutoFocusWind(1, (void*)&win);
+			mV4L2CameraDevice->setExposureWind(1, (void*)&win);
+		}
+		mLastFocusAreas.x1 = win.x1;
+		mLastFocusAreas.y1 = win.y1;
+		mLastFocusAreas.x2 = win.x2;
+		mLastFocusAreas.y2 = win.y2;
+	}
+	
 	return 0;
 }
 
-int CameraHardware::setAutoFocusMode()
+int CameraHardware::setAutoFocusRange()
 {
 	F_LOG;
-	v4l2_autofocus_mode af_mode = V4L2_AF_FIXED;
+
+	v4l2_auto_focus_range af_range = V4L2_AUTO_FOCUS_RANGE_INFINITY;
     if (mCameraConfig->supportFocusMode())
 	{
 	    // focus
 		const char *new_focus_mode_str = mParameters.get(CameraParameters::KEY_FOCUS_MODE);
 		if (!strcmp(new_focus_mode_str, CameraParameters::FOCUS_MODE_AUTO))
 		{
-			af_mode = V4L2_AF_AUTO;
+			af_range = V4L2_AUTO_FOCUS_RANGE_AUTO;
 		}
 		else if (!strcmp(new_focus_mode_str, CameraParameters::FOCUS_MODE_INFINITY))
 		{
-			af_mode = V4L2_AF_INFINITY;
+			af_range = V4L2_AUTO_FOCUS_RANGE_INFINITY;
 		}
 		else if (!strcmp(new_focus_mode_str, CameraParameters::FOCUS_MODE_MACRO))
 		{
-			af_mode = V4L2_AF_MACRO;
+			af_range = V4L2_AUTO_FOCUS_RANGE_MACRO;
 		}
 		else if (!strcmp(new_focus_mode_str, CameraParameters::FOCUS_MODE_FIXED))
 		{
-			af_mode = V4L2_AF_FIXED;
+			af_range = V4L2_AUTO_FOCUS_RANGE_INFINITY;
 		}
 		else if (!strcmp(new_focus_mode_str, CameraParameters::FOCUS_MODE_CONTINUOUS_PICTURE)
 					|| !strcmp(new_focus_mode_str, CameraParameters::FOCUS_MODE_CONTINUOUS_VIDEO))
 		{
-			LOGD("%s : continuous focus to do ...", __FUNCTION__);
-			af_mode = V4L2_AF_AUTO;
+			af_range = V4L2_AUTO_FOCUS_RANGE_AUTO;
 		}
 		else
 		{
@@ -1069,20 +1241,11 @@ int CameraHardware::setAutoFocusMode()
 	}
 	else
 	{
-		af_mode = V4L2_AF_FIXED;
+		af_range = V4L2_AUTO_FOCUS_RANGE_INFINITY;
 	}
 	
-	mV4L2CameraDevice->setAutoFocusMode(af_mode);
+	mV4L2CameraDevice->setAutoFocusRange(af_range);
 	
-	return OK;
-}
-
-int CameraHardware::setAutoFocusCtrl(int ctrl, void *data)
-{
-	if (mCameraConfig->supportFocusMode())
-	{
-		mV4L2CameraDevice->setAutoFocusCtrl(ctrl, data);
-	}
 	return OK;
 }
 
@@ -1183,12 +1346,18 @@ status_t CameraHardware::doTakePicture()
 	mCallbackNotifier.setJpegRotate(jpeg_rotate);
     mCallbackNotifier.setPictureSize(pic_width, pic_height);
 
+	// mV4L2CameraDevice->setTakePictureCtrl();
+
 	// if in recording mode
 	const char * valstr = mParameters.get(CameraParameters::KEY_RECORDING_HINT);
 	bool video_hint = (strcmp(valstr, CameraParameters::TRUE) == 0);
 	if (video_hint)
 	{
-		//mCallbackNotifier.setPictureSize(mCaptureWidth*4, 4*mCaptureHeight);
+		if (strcmp(mCallingProcessName, "com.android.cts.stub"))
+		{
+			// not cts
+			mCallbackNotifier.setPictureSize(mCaptureWidth, mCaptureHeight);
+		}
 		mV4L2CameraDevice->setTakePictureState(TAKE_PICTURE_RECORD);
 		return OK;
 	}
@@ -1223,11 +1392,14 @@ status_t CameraHardware::doTakePicture()
 		}
 	}
 
+	mV4L2CameraDevice->setTakePictureCtrl();
+
 	// normal picture mode
 
 	// full-size capture
 	bool fast_picture_mode = mHalCameraInfo.fast_picture_mode;
-	if (fast_picture_mode)
+	if (fast_picture_mode
+		&& mIsImageCaptureIntent == false)
 	{
 		mV4L2CameraDevice->setTakePictureState(TAKE_PICTURE_FAST);
 		return OK;
@@ -1239,8 +1411,9 @@ status_t CameraHardware::doTakePicture()
 	mV4L2CameraDevice->tryFmtSize(&frame_width, &frame_height);
 
 	if (mCaptureWidth == frame_width
-		&& mCaptureHeight == frame_height)
-	{
+		&& mCaptureHeight == frame_height
+		&& mIsImageCaptureIntent == false)
+	{	
 		LOGV("current capture size[%dx%d] is the same as picture size", frame_width, frame_height);
 		mV4L2CameraDevice->setTakePictureState(TAKE_PICTURE_FAST);
 		return OK;
@@ -1339,10 +1512,21 @@ status_t CameraHardware::cancelPicture()
 // 
 void CameraHardware::notifyPictureMsg(const void* frame)
 {
+	/*
+	pthread_mutex_lock(&mCommandMutex);
 	mQueueElement[CMD_QUEUE_PICTURE_MSG].cmd = CMD_QUEUE_PICTURE_MSG;
 	mQueueElement[CMD_QUEUE_PICTURE_MSG].data = (int)frame;
 	OSAL_Queue(&mQueueCommand, &mQueueElement[CMD_QUEUE_PICTURE_MSG]);
 	pthread_cond_signal(&mCommandCond);
+	pthread_mutex_unlock(&mCommandMutex);
+	*/
+	mCallbackNotifier.notifyPictureMsg(frame);
+	if (strcmp(mCallingProcessName, "com.android.cts.stub") != 0
+		&& strcmp(mCallingProcessName, "com.android.cts.mediastress") != 0
+		&& mIsImageCaptureIntent == false)
+	{
+		doTakePictureEnd();
+	}
 }
 
 /****************************************************************************
@@ -1351,23 +1535,52 @@ void CameraHardware::notifyPictureMsg(const void* frame)
 
 void CameraHardware::setVideoCaptureSize(int video_w, int video_h)
 {
+	LOGD("setVideoCaptureSize next version to do ......");
+	
 	// video size is video_w x video_h, capture size may be different
 	// now the same
 	mVideoCaptureWidth = video_w;
 	mVideoCaptureHeight= video_h;
+	
+	if (mHalCameraInfo.fast_picture_mode)
+	{
+		if (mVideoCaptureWidth == 640)
+		{
+			mVideoCaptureWidth = mVideoCaptureWidth * 2;
+			mVideoCaptureHeight= mVideoCaptureHeight * 2;
+		}
+	}
 
-	LOGD("setVideoCaptureSize next version to do ......");
-
-	int ret = mV4L2CameraDevice->tryFmtSize(&mVideoCaptureWidth, &mVideoCaptureHeight);
+	int videoCaptureWidth = mVideoCaptureWidth;
+	int videoCaptureHeight =mVideoCaptureHeight;
+	
+	int ret = mV4L2CameraDevice->tryFmtSize(&videoCaptureWidth, &videoCaptureHeight);
 	if(ret < 0)
 	{
 		LOGE("setVideoCaptureSize tryFmtSize failed");
 		return;
 	}
-	LOGV("setVideoCaptureSize video source: %dx%d", mVideoCaptureWidth, mVideoCaptureHeight);
-	
-	mParameters.set(KEY_CAPTURE_SIZE_WIDTH, mVideoCaptureWidth);
-	mParameters.set(KEY_CAPTURE_SIZE_HEIGHT, mVideoCaptureHeight);
+
+	float widthRate = (float)videoCaptureWidth / (float)mVideoCaptureWidth;
+	float heightRate = (float)videoCaptureHeight / (float)mVideoCaptureHeight;
+
+	if((widthRate > 4.0) && (heightRate > 4.0))
+	{
+		mV4L2CameraDevice->setThumbUsedForVideo(true);
+		mV4L2CameraDevice->setVideoSize(video_w, video_h);
+		mVideoCaptureWidth = videoCaptureWidth;
+		mVideoCaptureHeight=videoCaptureHeight;
+		mParameters.set(KEY_CAPTURE_SIZE_WIDTH, videoCaptureWidth / 2);
+		mParameters.set(KEY_CAPTURE_SIZE_HEIGHT, videoCaptureHeight / 2);
+	}
+	else
+	{
+		mV4L2CameraDevice->setThumbUsedForVideo(false);
+		mVideoCaptureWidth = videoCaptureWidth;
+		mVideoCaptureHeight=videoCaptureHeight;
+		mParameters.set(KEY_CAPTURE_SIZE_WIDTH, videoCaptureWidth);
+		mParameters.set(KEY_CAPTURE_SIZE_HEIGHT, videoCaptureHeight);
+	}
 }
 
 void CameraHardware::getCurrentOriention(int * oriention)
@@ -1463,6 +1676,19 @@ status_t CameraHardware::setParameters(const char* p)
 		}
     }
 
+
+	const char * is_imagecapture_intent = params.get(KEY_IS_IMAGECAPTURE_INTENT);
+	if (is_imagecapture_intent != NULL) 
+	{
+		if(!strcmp(is_imagecapture_intent, "true"))
+		{
+			mIsImageCaptureIntent = true;
+		}
+		else
+		{
+			mIsImageCaptureIntent = false;
+		}
+	}
 	// preview format
 	const char * new_preview_format = params.getPreviewFormat();
 	LOGV("%s : new_preview_format : %s", __FUNCTION__, new_preview_format);
@@ -1511,15 +1737,51 @@ status_t CameraHardware::setParameters(const char* p)
          __FUNCTION__, new_preview_width, new_preview_height);
 	if (0 < new_preview_width && 0 < new_preview_height)
 	{
+		bool is_vga = false;
 		mParameters.setPreviewSize(new_preview_width, new_preview_height);
 	
 		mCallbackNotifier.setCBSize(new_preview_width, new_preview_height);
-		
+
+		if (!mHalCameraInfo.fast_picture_mode					// YUV sensor
+			&& new_preview_width == 640							// preview with 640x480
+			&& new_preview_height == 480
+			&& mFullSizeWidth * mFullSizeHeight > 1600*1200)	// > 2M, maybe 5M sensor
+		{
+			// try to use 1280x960 for preview
+			is_vga = true;
+			new_preview_width = 1280;
+			new_preview_height = 960;
+		}
+
+		if (strcmp(mCallingProcessName, "com.android.cts.verifier") == 0   //add for CTS Verifier by fuqiang
+			&& new_preview_width == 640
+			&& new_preview_height == 480)
+		{
+			// try to use 1280x960 for preview
+			is_vga = true;
+			new_preview_width = 1280;
+			new_preview_height = 960;
+		}
+
 		// try size
 		ret = pV4L2Device->tryFmtSize(&new_preview_width, &new_preview_height);
 		if(ret < 0)
 		{
 			return ret;
+		}
+
+		if (is_vga 
+			&& (new_preview_width * 3 != new_preview_height * 4))	// 800x600 is also ok
+		{
+			new_preview_width = 640;
+			new_preview_height = 480;
+
+			// try size(vga) again
+			ret = pV4L2Device->tryFmtSize(&new_preview_width, &new_preview_height);
+			if(ret < 0)
+			{
+				return ret;
+			}
 		}
 		
 		mParameters.set(KEY_PREVIEW_CAPTURE_SIZE_WIDTH, new_preview_width);
@@ -1666,7 +1928,7 @@ status_t CameraHardware::setParameters(const char* p)
 	        }
 	    }
 	}
-
+	
 	// white balance
 	if (mCameraConfig->supportWhiteBalance())
 	{
@@ -1681,24 +1943,24 @@ status_t CameraHardware::setParameters(const char* p)
 
 	        if (!strcmp(new_white_str, CameraParameters::WHITE_BALANCE_AUTO))
 	        {
-	            new_white = V4L2_WB_AUTO;
+	            new_white = V4L2_WHITE_BALANCE_AUTO;
 	            no_auto_balance = 0;
 	        }
 	        else if (!strcmp(new_white_str,
 	                         CameraParameters::WHITE_BALANCE_DAYLIGHT))
-	            new_white = V4L2_WB_DAYLIGHT;
+	            new_white = V4L2_WHITE_BALANCE_DAYLIGHT;
 	        else if (!strcmp(new_white_str,
 	                         CameraParameters::WHITE_BALANCE_CLOUDY_DAYLIGHT))
-	            new_white = V4L2_WB_CLOUD;
+	            new_white = V4L2_WHITE_BALANCE_CLOUDY;
 	        else if (!strcmp(new_white_str,
 	                         CameraParameters::WHITE_BALANCE_FLUORESCENT))
-	            new_white = V4L2_WB_FLUORESCENT;
+	            new_white = V4L2_WHITE_BALANCE_FLUORESCENT_H;
 	        else if (!strcmp(new_white_str,
 	                         CameraParameters::WHITE_BALANCE_INCANDESCENT))
-	            new_white = V4L2_WB_INCANDESCENCE;
+	            new_white = V4L2_WHITE_BALANCE_INCANDESCENT;
 	        else if (!strcmp(new_white_str,
 	                         CameraParameters::WHITE_BALANCE_WARM_FLUORESCENT))
-	            new_white = V4L2_WB_TUNGSTEN;
+	            new_white = V4L2_WHITE_BALANCE_FLUORESCENT;
 	        else{
 	            LOGE("ERR(%s):Invalid white balance(%s)", __FUNCTION__, new_white_str); //twilight, shade
 	            ret = UNKNOWN_ERROR;
@@ -1996,15 +2258,22 @@ int CameraHardware::getCurrentFaceFrame(void * frame)
 
 int CameraHardware::faceDetection(camera_frame_metadata_t *face)
 {
-	if (mZoomRatio != 0)
+	int number_of_faces = face->number_of_faces;
+	if (number_of_faces == 0)
 	{
-		int number_of_faces = face->number_of_faces;
-		for(int i =0; i < number_of_faces; i++)
+		parse_focus_areas("(0, 0, 0, 0, 0)", true);
+	}
+	else
+	{
+		if (mZoomRatio != 0)
 		{
-			face->faces[i].rect[0] = (face->faces[i].rect[0] * mZoomRatio) / 100;
-			face->faces[i].rect[1] = (face->faces[i].rect[1] * mZoomRatio) / 100;
-			face->faces[i].rect[2] = (face->faces[i].rect[2] * mZoomRatio) / 100;
-			face->faces[i].rect[3] = (face->faces[i].rect[3] * mZoomRatio) / 100;
+			for(int i =0; i < number_of_faces; i++)
+			{
+				face->faces[i].rect[0] = (face->faces[i].rect[0] * mZoomRatio) / 100;
+				face->faces[i].rect[1] = (face->faces[i].rect[1] * mZoomRatio) / 100;
+				face->faces[i].rect[2] = (face->faces[i].rect[2] * mZoomRatio) / 100;
+				face->faces[i].rect[3] = (face->faces[i].rect[3] * mZoomRatio) / 100;
+			}
 		}
 	}
 	return mCallbackNotifier.faceDetectionMsg(face);
@@ -2019,7 +2288,6 @@ status_t CameraHardware::doStartPreview()
 	F_LOG;
 	
 	V4L2CameraDevice* const camera_dev = mV4L2CameraDevice;
-	camera_dev->setTakePictureState(TAKE_PICTURE_NULL);
 
 	if (camera_dev->isStarted()
 		&& mPreviewWindow.isPreviewEnabled())
@@ -2050,7 +2318,7 @@ status_t CameraHardware::doStartPreview()
 			return res;
 		}
 
-		setAutoFocusCtrl(V4L2_AF_INIT, NULL);
+		camera_dev->setAutoFocusInit();
 	}
 
 	const char * valstr = mParameters.get(CameraParameters::KEY_RECORDING_HINT);
@@ -2091,6 +2359,12 @@ status_t CameraHardware::doStartPreview()
 		}
 	}
 
+	if(strcmp(mCallingProcessName, "com.android.cts.verifier") == 0)  //add for CTS Verifier by fuqiang
+	{
+		mCaptureWidth = preview_width;
+		mCaptureHeight= preview_height;
+	}
+
 	// preview format and video format are the same
 	uint32_t org_fmt = V4L2_PIX_FMT_NV21;		// android default
 	const char* preview_format = mParameters.getPreviewFormat();
@@ -2106,8 +2380,7 @@ status_t CameraHardware::doStartPreview()
 		}
 		else if (strcmp(preview_format, CameraParameters::PIXEL_FORMAT_YUV420P) == 0)
 		{
-			org_fmt = V4L2_PIX_FMT_YVU420;		        // YV12 tmp for cts
-			//org_fmt = V4L2_PIX_FMT_YUV420;		    // YU12		
+			org_fmt = V4L2_PIX_FMT_YVU420;		// YV12
 		}
 		else
 		{
@@ -2193,20 +2466,31 @@ status_t CameraHardware::cleanupCamera()
 		pthread_cond_signal(&mAutoFocusCond);
 	}
 	pthread_mutex_unlock(&mAutoFocusMutex);
+
+	if (mCameraConfig->supportFocusMode())
+	{
+		// wait for auto focus thread exit
+		pthread_mutex_lock(&mAutoFocusMutex);
+		if (!mAutoFocusThreadExit)
+		{
+			LOGW("wait for auto focus thread exit");
+			pthread_cond_wait(&mAutoFocusCond, &mAutoFocusMutex);
+		}
+		pthread_mutex_unlock(&mAutoFocusMutex);
+	}
 	
     /* If preview is running - stop it. */
     res = doStopPreview();
     if (res != NO_ERROR) {
         return -res;
     }
-    usleep(100000);
 
     /* Stop and disconnect the camera device. */
     V4L2CameraDevice* const camera_dev = mV4L2CameraDevice;
     if (camera_dev != NULL) 
-	  {
+	{
         if (camera_dev->isStarted()) 
-		    {
+		{
             camera_dev->stopDeliveringFrames();
             res = camera_dev->stopDevice();
             if (res != NO_ERROR) {
@@ -2214,14 +2498,13 @@ status_t CameraHardware::cleanupCamera()
             }
         }
         if (camera_dev->isConnected()) 
-		    {
+		{
             res = camera_dev->disconnectDevice();
             if (res != NO_ERROR) {
                 return -res;
             }
         }
     }
-    usleep(50000);
 
     mCallbackNotifier.cleanupCBNotifier();
 

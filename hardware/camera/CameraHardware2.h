@@ -17,7 +17,7 @@
 #include <camera/CameraParameters.h>
 #include <FaceDetectionApi.h>
 
-#include "V4L2CameraDevice.h"
+#include "V4L2CameraDevice2.h"
 #include "PreviewWindow.h"
 #include "CallbackNotifier.h"
 #include "CCameraConfig.h"
@@ -39,6 +39,7 @@ namespace android {
 
 #define KEY_SNAP_PATH					"snap-path"
 
+#define KEY_IS_IMAGECAPTURE_INTENT		"is-imagecapture-intent"
 /* Encapsulates functionality common to all V4L2Cameras.
  *
  * Note that HALCameraFactory instantiates object of this class just once,
@@ -392,12 +393,11 @@ public:
 	void notifyPictureMsg(const void* frame);
 	
 	void setNewCrop(Rect * rect);
-	int setAutoFocusMode();
-	int setAutoFocusCtrl(int af_ctrl, void *areas);
+	int setAutoFocusRange();
 	int getCurrentFaceFrame(void * frame);
 	int faceDetection(camera_frame_metadata_t *face);
     
-    int parse_focus_areas(const char * str);
+    int parse_focus_areas(const char * str, bool is_face = false);
 	bool checkFocusArea(const char * area);
 	bool checkFocusMode(const char * mode);
 
@@ -439,7 +439,7 @@ protected:
 	
 	Rect							mFrameRectCrop;		// current frame buffer crop for focus
 	char							mFocusAreasStr[32];
-	struct v4l2_pix_size			mFocusAreas;
+	struct v4l2_win_coordinate		mLastFocusAreas;
 
 	typedef enum CMD_QUEUE_t{
 		CMD_QUEUE_SET_COLOR_EFFECT 	= 0,
@@ -455,7 +455,7 @@ protected:
 		CMD_QUEUE_TAKE_PICTURE,
 		CMD_QUEUE_PICTURE_MSG,
 		CMD_QUEUE_STOP_CONTINUOUSSNAP,
-			
+		
 		CMD_QUEUE_SET_FOCUS_STATUS,
 
 		CMD_QUEUE_MAX
@@ -531,6 +531,7 @@ protected:
 	
 	pthread_mutex_t 				mAutoFocusMutex;
 	pthread_cond_t					mAutoFocusCond;
+	bool							mAutoFocusThreadExit;
 
 public:
 	typedef enum FocusStatus_t {
@@ -548,6 +549,7 @@ protected:
 	int								mOriention;
 
 	int								mZoomRatio;
+	bool                            mIsImageCaptureIntent;
 };
 
 }; /* namespace android */

@@ -11,11 +11,11 @@
 #define READ_KEY_VALUE(key, val)						\
 	val = (char*)::malloc(KEY_LENGTH);					\
 	if (val == 0){										\
-		LOGV("malloc %s failed", val);					\
+		LOGE("malloc %s failed", val);					\
 	}													\
 	memset(val, 0, KEY_LENGTH);							\
 	if (readKey(key, val)){								\
-		LOGV("read key: %s = %s", key, val);			\
+		/*LOGV("read key: %s = %s", key, val);*/		\
 	}
 
 #define INIT_PARAMETER(KEY, key)										\
@@ -31,7 +31,7 @@
 		}																\
 		else                                                            \
 		{                                                               \
-			LOGV("\"%s\" not support", kUSED_##KEY);					\
+			/*LOGV("\"%s\" not support", kUSED_##KEY);*/				\
 		}                                                               \
  	}
 
@@ -80,11 +80,13 @@ MEMBER_FUNCTION(WhiteBalance)
 
 CCameraConfig::CCameraConfig(int id)
 	:mhKeyFile(0)
+	,mConstructOk(false)
 	,mCurCameraId(id)
 	,mNumberOfCamera(0)
 	,mCameraFacing(0)
 	,mOrientation(0)
 	,mDeviceID(0)
+	,mFastPictureMode(false)
 {
 	mhKeyFile = ::fopen(CAMERA_KEY_CONFIG_PATH, "rb");
 	if (mhKeyFile <= 0)
@@ -97,6 +99,11 @@ CCameraConfig::CCameraConfig(int id)
 		LOGV("open file %s OK", CAMERA_KEY_CONFIG_PATH);
 	}
 
+	// exif
+	readKey(kCAMERA_EXIF_MAKE, mCameraMake);
+	readKey(kCAMERA_EXIF_MODEL, mCameraModel);
+	LOGV("exif, make: %s, model: %s", mCameraMake, mCameraModel);
+
 	// get number of camera
 	char numberOfCamera[2];
 	if(readKey(kNUMBER_OF_CAMERA, numberOfCamera))
@@ -105,19 +112,25 @@ CCameraConfig::CCameraConfig(int id)
 		LOGV("read number: %d", mNumberOfCamera);
 	}
 
+	if (mCurCameraId + 1 > mNumberOfCamera)
+	{
+		LOGV("should not read camera id: %d, there are %d camera(s)", mCurCameraId, mNumberOfCamera);
+		return;
+	}
+
 	// get camera facing
 	char cameraFacing[2];
 	if(readKey(kCAMERA_FACING, cameraFacing))
 	{
 		mCameraFacing = atoi(cameraFacing);
-		LOGV("camera facing %s", (mCameraFacing == 0) ? "back" : "front");
+		// LOGV("camera facing %s", (mCameraFacing == 0) ? "back" : "front");
 	}
 
 	// get camera device driver
 	memset(mCameraDevice, 0, sizeof(mCameraDevice));
 	if(readKey(kCAMERA_DEVICE, mCameraDevice))
 	{
-		LOGV("camera device %s", mCameraDevice);
+		// LOGV("camera device %s", mCameraDevice);
 	}
 
 	// get device id
@@ -125,7 +138,7 @@ CCameraConfig::CCameraConfig(int id)
 	if(readKey(kDEVICE_ID, deviceID))
 	{
 		mDeviceID = atoi(deviceID);
-		LOGV("camera device id %d", mDeviceID);
+		// LOGV("camera device id %d", mDeviceID);
 	}
 	
 	// get camera orientation
@@ -133,23 +146,25 @@ CCameraConfig::CCameraConfig(int id)
 	if(readKey(kCAMERA_ORIENTATION, str))
 	{
 		mOrientation = atoi(str);
-		LOGV("camera orientation %d", mOrientation);
+		// LOGV("camera orientation %d", mOrientation);
 	}
+	
+	mConstructOk = true;
 }
 
 CCameraConfig::~CCameraConfig()
-{	
+{
+	CHECK_FREE_POINTER(PreviewSize)
+	CHECK_FREE_POINTER(PictureSize)
+	CHECK_FREE_POINTER(FlashMode)
+	CHECK_FREE_POINTER(ColorEffect)
+	CHECK_FREE_POINTER(FrameRate)
+	CHECK_FREE_POINTER(FocusMode)
+	CHECK_FREE_POINTER(SceneMode)
+	CHECK_FREE_POINTER(WhiteBalance)
+	
 	if (mhKeyFile != 0)
 	{
-		CHECK_FREE_POINTER(PreviewSize)
-		CHECK_FREE_POINTER(PictureSize)
-		CHECK_FREE_POINTER(FlashMode)
-		CHECK_FREE_POINTER(ColorEffect)
-		CHECK_FREE_POINTER(FrameRate)
-		CHECK_FREE_POINTER(FocusMode)
-		CHECK_FREE_POINTER(SceneMode)
-		CHECK_FREE_POINTER(WhiteBalance)
-		
 		::fclose(mhKeyFile);
 		mhKeyFile = 0;
 	}
@@ -161,11 +176,28 @@ bool CCameraConfig::usedKey(char *value)
 }
 
 void CCameraConfig::initParameters()
-{	
+{
+	if (!mConstructOk)
+	{
+		return;
+	}
+	
 	if (mhKeyFile == 0)
 	{
 		LOGW("invalid camera config file hadle");
 		return ;
+	}
+
+	// fast picture mode
+	char str[4];
+	if(readKey(kFAST_PICTURE_MODE, str))
+	{
+		mFastPictureMode = (atoi(str) == 1) ? true : false;
+		// LOGV("%s support fast picture mode", mFastPictureMode ? "" : "do not");
+	}
+	else if(readKey(kUSE_BUILTIN_ISP, str))
+	{
+		mFastPictureMode = (atoi(str) == 1) ? true : false;
 	}
 
 	INIT_PARAMETER(PREVIEW_SIZE, PreviewSize)
@@ -194,7 +226,7 @@ void CCameraConfig::initParameters()
 		}
 		else
 		{
-			LOGV("\"%s\" not support", kUSED_EXPOSURE_COMPENSATION);
+			// LOGV("\"%s\" not support", kUSED_EXPOSURE_COMPENSATION);
 		}
  	}
 
@@ -217,13 +249,18 @@ void CCameraConfig::initParameters()
 		}
 		else
 		{
-			LOGV("\"%s\" not support", kUSED_ZOOM);
+			// LOGV("\"%s\" not support", kUSED_ZOOM);
 		}
  	}
 }
 
 void CCameraConfig::dumpParameters()
 {
+	if (!mConstructOk)
+	{
+		return;
+	}
+	
 	if (mhKeyFile == 0)
 	{
 		LOGW("invalid camera config file hadle");
@@ -233,6 +270,7 @@ void CCameraConfig::dumpParameters()
 	LOGV("/*------------------------------------------------------*/");
 	LOGV("camrea id: %d", mCurCameraId);
 	LOGV("camera facing %s", (mCameraFacing == 0) ? "back" : "front");
+	LOGV("%s support fast picture mode", mFastPictureMode ? "" : "do not");
 	LOGV("camera orientation %d", mOrientation);
 	LOGV("camera device %s", mCameraDevice);
 	DUMP_PARAMETERS(PREVIEW_SIZE, PreviewSize)
@@ -307,7 +345,9 @@ bool CCameraConfig::readKey(char *key, char *value)
 	memset(str, 0, KEY_LENGTH);
 	while (fgets(str, KEY_LENGTH , mhKeyFile))
 	{
-		if (!strcmp(key, "number_of_camera"))
+		if (!strcmp(key, kNUMBER_OF_CAMERA)
+			|| !strcmp(key, kCAMERA_EXIF_MAKE)
+			|| !strcmp(key, kCAMERA_EXIF_MODEL))
 		{
 			bFlagBegin = true;
 		}
@@ -323,6 +363,11 @@ bool CCameraConfig::readKey(char *key, char *value)
 				}
 			}
 			continue;
+		}
+
+		if (!strncmp(str, "camera_id", strlen("camera_id")))
+		{
+			break;
 		}
 
 		if (!strncmp(key, str, strlen(key)))

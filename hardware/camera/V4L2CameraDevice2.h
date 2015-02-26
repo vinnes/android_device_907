@@ -231,19 +231,47 @@ public:
 	int setFrameRate(int rate);						// set frame rate from camera.cfg
 	int getFrameRate();								// get v4l2 device current frame rate
 
+	int enumSize(char * pSize, int len);
+	int getFullSize(int * full_w, int * full_h);
+	int getSuitableThumbScale(int full_w, int full_h);
+
 	int setImageEffect(int effect);
 	int setWhiteBalance(int wb);
-	int setExposure(int exp);
+
+	int setTakePictureCtrl();
+
+	// exposure
+	int setExposureMode(int mode);
+	int setExposureCompensation(int val);
+	int setExposureWind(int num, void *areas);
+	
 	int setFlashMode(int mode);
 	
-	int enumSize(char * pSize, int len);
-	int setAutoFocusMode(int af);
-	int setAutoFocusCtrl(int af_ctrl, void * areas);
-	int getAutoFocusStatus(int af_ctrl);
+	// af
+	int setAutoFocusInit();
+	int setAutoFocusRelease();
+	int setAutoFocusRange(int range);
+	int setAutoFocusWind(int num, void *areas);
+	int setAutoFocusStart();
+	int setAutoFocusStop();
+	int getAutoFocusStatus();
+	
+	int set3ALock(int lock);
 	
 	void releasePreviewFrame(int index);			// Q buffer for encoder
 
 	int getCurrentFaceFrame(void * frame);
+
+	void setThumbUsedForVideo(bool isThumbUsedForVideo)
+	{
+		mIsThumbUsedForVideo = isThumbUsedForVideo;
+	}
+
+	void setVideoSize(int w, int h)
+	{
+		mVideoWidth = w;
+		mVideoHeight = h;
+	}
 
 	inline void setCrop(int new_zoom, int max_zoom)
 	{
@@ -471,6 +499,9 @@ private:
 	V4L2BUF_t *						mCurrentV4l2buf;
 
 	bool							mVideoHint;
+	bool                            mIsThumbUsedForVideo;
+	int	                            mVideoWidth;			// for cts
+	int	                            mVideoHeight;
 };
 
 }; /* namespace android */

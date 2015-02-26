@@ -1,21 +1,6 @@
-/*
- * Copyright (C) 2011 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
-#ifndef HW_EMULATOR_CAMERA_PREVIEW_WINDOW_H
-#define HW_EMULATOR_CAMERA_PREVIEW_WINDOW_H
+#ifndef __HAL_PREVIEW_WINDOW_H__
+#define __HAL_PREVIEW_WINDOW_H__
 
 #include <ui/Rect.h>
 
@@ -26,7 +11,7 @@
 
 namespace android {
 
-class V4L2Camera;
+class V4L2CameraDevice;
 
 /* Encapsulates functionality of a preview window set via set_preview_window
  * camera HAL API.
@@ -60,8 +45,7 @@ public:
      * Return:
      *  NO_ERROR on success, or an appropriate error status.
      */
-    status_t setPreviewWindow(struct preview_stream_ops* window,
-                              int preview_fps);
+    status_t setPreviewWindow(struct preview_stream_ops* window);
 
     /* Starts the preview.
      * This method is called by the containing V4L2Camera object when it is
@@ -101,21 +85,7 @@ public:
      * timestamp - Frame's timestamp.
      * camera_dev - Camera device instance that delivered the frame.
      */
-    bool onNextFrameAvailable(const void* frame,
-							  int video_fmt,
-                              nsecs_t timestamp,
-                              V4L2Camera* camera_dev,
-                              bool bUseMataData);
-
-	bool onNextFrameAvailableSW(const void* frame,
-							  int video_fmt,
-                              nsecs_t timestamp,
-                              V4L2Camera* camera_dev);
-
-	bool onNextFrameAvailableHW(const void* frame,
-							  int video_fmt,
-                              nsecs_t timestamp,
-                              V4L2Camera* camera_dev);
+    bool onNextFrameAvailable(const void* frame);
 
     /***************************************************************************
      * Private API
@@ -139,7 +109,6 @@ protected:
      *  true if cached dimensions have been adjusted, or false if cached
      *  dimensions match device's frame dimensions.
      */
-    bool adjustPreviewDimensions(V4L2Camera* camera_dev);
 	bool adjustPreviewDimensions(V4L2BUF_t* pbuf);
 
     /***************************************************************************
@@ -158,6 +127,8 @@ protected:
      */
     int                             mPreviewFrameWidth;
     int                             mPreviewFrameHeight;
+	int								mPreviewFrameSize;
+	int								mCurPixelFormat;
 
     /* Preview status. */
     bool                            mPreviewEnabled;
@@ -166,35 +137,10 @@ protected:
 	// extended interfaces here <***** star *****>
 	// -------------------------------------------------------------------------
 
-public:
-	// hide or show HW layer
-	int showLayer(bool on, bool video_exit = false);
-	int setLayerFormat(int fmt);
-	int setScreenID(int id);
-
-	inline bool isLayerShowHW()
-	{
-		return (mLayerShowHW == 1) ? true : false;
-	}
-
-	inline void setCrop(Rect * rc, int zoom_value)
-	{
-		mNewCrop = true;
-		memcpy(&mRectCrop, rc, sizeof(Rect));
-	}
-
 protected:
-	bool							mOverlayFirstFrame;
 	bool							mShouldAdjustDimensions;
-	int								mLayerShowHW;
-	bool							mVideoExit;
-	int								mLayerFormat;
-	int								mScreenID;
-
-	bool							mNewCrop;
-	Rect							mRectCrop;
 };
 
 }; /* namespace android */
 
-#endif  /* HW_EMULATOR_CAMERA_PREVIEW_WINDOW_H */
+#endif  /* __HAL_PREVIEW_WINDOW_H__ */

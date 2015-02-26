@@ -1,50 +1,26 @@
-/*
- * Copyright (C) 2011 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
-#ifndef HW_EMULATOR_CAMERA_EMULATED_CAMERA_FACTORY_H
-#define HW_EMULATOR_CAMERA_EMULATED_CAMERA_FACTORY_H
+#ifndef __HAL_CAMERA_FACTORY_H__
+#define __HAL_CAMERA_FACTORY_H__
+
+#include <hardware/camera.h>
 
 #include "CCameraConfig.h"
+#ifdef SUPPORT_NEW_DRIVER
+#include "CameraHardware2.h"
+#else
 #include "CameraHardware.h"
+#endif
 
 namespace android {
+	
+#define MAX_NUM_OF_CAMERAS	2
 
 /*
  * Contains declaration of a class HALCameraFactory that manages cameras
- * available for the emulation. A global instance of this class is statically
+ * available. A global instance of this class is statically
  * instantiated and initialized when camera emulation HAL is loaded.
  */
 
-/* Class EmulatedCameraFactoryManages cameras available for the emulation.
- *
- * When the global static instance of this class is created on the module load,
- * it enumerates cameras available for the emulation by connecting to the
- * emulator's 'camera' service. For every camera found out there it creates an
- * instance of an appropriate class, and stores it an in array of emulated
- * cameras. In addition to the cameras reported by the emulator, a fake camera
- * emulator is always created, so there is always at least one camera that is
- * available.
- *
- * Instance of this class is also used as the entry point for the camera HAL API,
- * including:
- *  - hw_module_methods_t::open entry point
- *  - camera_module_t::get_number_of_cameras entry point
- *  - camera_module_t::get_camera_info entry point
- *
- */
 class HALCameraFactory {
 public:
     /* Constructs HALCameraFactory instance.
@@ -95,17 +71,9 @@ private:
 
 public:
 
-    /* Gets fake camera orientation. */
-    int getFakeCameraOrientation() {
-        /* TODO: Have a boot property that controls that. */
-        return 0;
-    }
-
     /* Gets number of V4L2Cameras.
      */
-    int getCameraHardwareNum() const {
-        return mCameraHardwareNum;
-    }
+    int getCameraHardwareNum();
 
     /* Checks whether or not the constructor has succeeded.
      */
@@ -121,21 +89,25 @@ private:
     /* Array of cameras available for the emulation. */
     CameraHardware**    mHardwareCameras;
 
-    /* Number of V4L2Cameras (including the fake one). */
-    int                 mCameraHardwareNum;
-
-    /* Fake camera ID. */
-    // int                 mFakeCameraID;
+    /* Number of attached Cameras, do not include usb cameras. */
+    int                 mAttachedCamerasNum;
+	
+	/* Number of removable Cameras, such as usb cameras. */
+	int 				mRemovableCamerasNum;
 
     /* Flags whether or not constructor has succeeded. */
     bool                mConstructedOK;
 
 	// Camera Config information
-	CCameraConfig *		mCameraConfig;
+	CCameraConfig *		mCameraConfig[MAX_NUM_OF_CAMERAS];
 	
 public:
     /* Contains device open entry point, as required by HAL API. */
     static struct hw_module_methods_t   mCameraModuleMethods;
+
+public:
+
+	HALCameraInfo		mHalCameraInfo[MAX_NUM_OF_CAMERAS];
 };
 
 }; /* namespace android */
@@ -143,4 +115,4 @@ public:
 /* References the global HALCameraFactory instance. */
 extern android::HALCameraFactory   gEmulatedCameraFactory;
 
-#endif  /* HW_EMULATOR_CAMERA_EMULATED_CAMERA_FACTORY_H */
+#endif  /* __HAL_CAMERA_FACTORY_H__ */

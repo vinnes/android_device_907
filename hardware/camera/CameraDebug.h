@@ -1,5 +1,20 @@
-#ifndef CAMERA_DEBUG_H
-#define CAMERA_DEBUG_H
+#ifndef __HAL_CAMERA_DEBUG_H__
+#define __HAL_CAMERA_DEBUG_H__
+
+#define CAMERA_HAL_VERSION		"3000130327_V1.0"
+
+#define CAMERA_HAL_MODE_OLD		1
+#if	(CAMERA_HAL_MODE_OLD == 1)
+#define USE_OLD_MODE
+#else
+#define USE_NEW_MODE
+#endif
+#define USE_ION_MEM_ALLOCATOR
+
+#define ALIGN_4K(x) (((x) + (4095)) & ~(4095))
+#define ALIGN_32B(x) (((x) + (31)) & ~(31))
+#define ALIGN_16B(x) (((x) + (15)) & ~(15))
+#define ALIGN_8B(x) (((x) + (7)) & ~(7))
 
 #define DBG_CAMERA_HARDWARE		0
 #define DBG_V4L2_CAMERA			0
@@ -7,9 +22,15 @@
 #define DBG_CALLBACK			0
 #define DBG_CAMERA_FACTORY		0
 #define DBG_CAMERA_CONFIG		0
+#define DBG_BUFFER_LIST			0
+
+/* Defines whether we should trace parameter changes. */
+#define DEBUG_PARAM 0
+
+#define DEBUG_MSG	0
 
 // enable all print information
-// #define LOG_NDEBUG 0
+//#define LOG_NDEBUG 0
 
 #define F_LOG ALOGV("%s, line: %d", __FUNCTION__, __LINE__);
 
@@ -20,8 +41,6 @@
 
 #define LOGE_IF	ALOGE_IF
 #define LOGW_IF	ALOGW_IF
-
-#define TO_UPDATA	0			// to do
 
 // performance debug
 #define DBG_TIME_ENABLE		0
@@ -36,7 +55,7 @@
 #define DBG_TIME_DIFF(inf)												\
 	nt_ms = systemTime() / 1000000;										\
 	LOG_TIME("\t[T_DBG_dff] %s use: %lld(ms)", inf, (nt_ms - lt_ms));	\
-	nt_ms = lt_ms;
+	lt_ms = nt_ms;
 
 #define DBG_TIME_END(inf, en)											\
 	nt_ms = systemTime() / 1000000;										\
@@ -47,8 +66,6 @@
 #define DBG_TIME_DIFF(inf)
 #define DBG_TIME_END(inf, en)
 #endif
-
-
 
 #define DBG_TIME_AVG_ENABLE		0
 #if DBG_TIME_AVG_ENABLE
@@ -80,10 +97,33 @@
 
 
 #ifdef __SUN4I__
-#define USE_MP_CONVERT 1		// A10 can define 1, or must 0
-#else
-#define USE_MP_CONVERT 0		// A10 can define 1, or must 0
+#define USE_MP_CONVERT
 #endif
 
-#endif // CAMERA_DEBUG_H
+#ifdef __SUN6I__
+#define USE_MP_CONVERT
+#endif
+
+#ifdef USE_ION_MEM_ALLOCATOR
+extern "C" int ion_alloc_open();
+extern "C" int ion_alloc_close();
+extern "C" int ion_alloc_alloc(int size);
+extern "C" void ion_alloc_free(void * pbuf);
+extern "C" int ion_alloc_vir2phy(void * pbuf);
+extern "C" int ion_alloc_phy2vir(void * pbuf);
+extern "C" void ion_flush_cache(void* startAddr, int size);
+extern "C" void ion_flush_cache_all();
+ 
+#elif USE_SUNXI_MEM_ALLOCATOR
+extern "C" int sunxi_alloc_open();
+extern "C" int sunxi_alloc_close();
+extern "C" int sunxi_alloc_alloc(int size);
+extern "C" void sunxi_alloc_free(void * pbuf);
+extern "C" int sunxi_alloc_vir2phy(void * pbuf);
+extern "C" int sunxi_alloc_phy2vir(void * pbuf);
+extern "C" void sunxi_flush_cache(void* startAddr, int size);
+extern "C" void sunxi_flush_cache_all();
+#endif /*USE_ION_MEM_ALLOCATOR*/
+
+#endif // __HAL_CAMERA_DEBUG_H__
 

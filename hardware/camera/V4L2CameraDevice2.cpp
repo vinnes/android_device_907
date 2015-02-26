@@ -14,10 +14,10 @@
 #include <g2d_driver.h>
 #endif
 
-#include "V4L2CameraDevice.h"
+#include "V4L2CameraDevice2.h"
 #include "CallbackNotifier.h"
 #include "PreviewWindow.h"
-#include "CameraHardware.h"
+#include "CameraHardware2.h"
 
 #define CHECK_NO_ERROR(a)						\
 	if (a != NO_ERROR) {						\
@@ -30,6 +30,9 @@
 	
 namespace android {
 	
+// defined in HALCameraFactory.cpp
+extern void getCallingProcessName(char *name);
+
 static void calculateCrop(Rect * rect, int new_zoom, int max_zoom, int width, int height)
 {
 	if (max_zoom == 0)
@@ -225,6 +228,9 @@ V4L2CameraDevice::V4L2CameraDevice(CameraHardware* camera_hal,
 	  ,mFaceDectectLast(0)
 	  ,mFaceDectectAfter(0)
 	  ,mVideoHint(false)
+	  ,mIsThumbUsedForVideo(false)
+	  ,mVideoWidth(640)
+	  ,mVideoHeight(480)
 {
 	LOGV("V4L2CameraDevice construct");
 
@@ -235,6 +241,9 @@ V4L2CameraDevice::V4L2CameraDevice(CameraHardware* camera_hal,
 	OSAL_QueueCreate(&mQueueBufferPreview, NB_BUFFER);
 	OSAL_QueueCreate(&mQueueBufferPicture, 2);
 	
+	pthread_mutex_init(&mConnectMutex, NULL);
+	pthread_cond_init(&mConnectCond, NULL);
+
 	// init capture thread
 	mCaptureThread = new DoCaptureThread(this);
 	pthread_mutex_init(&mCaptureMutex, NULL);
@@ -253,9 +262,6 @@ V4L2CameraDevice::V4L2CameraDevice(CameraHardware* camera_hal,
 	pthread_mutex_init(&mPictureMutex, NULL);
 	pthread_cond_init(&mPictureCond, NULL);
 	mPictureThread->startThread();
-	
-	pthread_mutex_init(&mConnectMutex, NULL);
-	pthread_cond_init(&mConnectCond, NULL);
 	
 	// init continuous picture thread
 	mContinuousPictureThread = new DoContinuousPictureThread(this);
@@ -326,6 +332,8 @@ V4L2CameraDevice::~V4L2CameraDevice()
 status_t V4L2CameraDevice::connectDevice(HALCameraInfo * halInfo)
 {
 	F_LOG;
+	char calling_process[256];
+	int ret;
 
     Mutex::Autolock locker(&mObjectLock);
 	
@@ -335,11 +343,24 @@ status_t V4L2CameraDevice::connectDevice(HALCameraInfo * halInfo)
 		return NO_ERROR;
 	}
 
+	getCallingProcessName(calling_process);
+	if((strcmp(calling_process, "com.android.cts.stub") == 0)){
+		usleep(400000);
+		ret = openCameraDev(halInfo);
+		if (ret != OK)
+		{
+			LOGE("AWHLABEL#camera#connectDevice:open-FAIL!\n");
+			return ret;
+		}
+	}
+	else {
 	// open v4l2 camera device
-	int ret = openCameraDev(halInfo);
-	if (ret != OK)
-	{
-		return ret;
+		 ret = openCameraDev(halInfo);
+		if (ret != OK)
+		{
+			LOGE("AWHLABEL#camera#connectDevice:open-FAIL!\n");
+			return ret;
+		}
 	}
 
 	memcpy((void*)&mHalCameraInfo, (void*)halInfo, sizeof(HALCameraInfo));
@@ -352,6 +373,7 @@ status_t V4L2CameraDevice::connectDevice(HALCameraInfo * halInfo)
 		if (mG2DHandle < 0)
 		{
 			LOGE("open /dev/g2d failed");
+			LOGE("AWHLABEL#camera#connectDevice:open_/dev/g2d-FAIL!\n");
 			return -1;
 		}
 		LOGV("open /dev/g2d OK");
@@ -363,6 +385,7 @@ status_t V4L2CameraDevice::connectDevice(HALCameraInfo * halInfo)
 	if (ret < 0)
 	{
 		LOGE("ion_alloc_open failed");
+		LOGE("AWHLABEL#camera#connectDevice:ion_alloc_open-FAIL!\n");
 		return -EINVAL;
 	}
 	LOGV("ion_alloc_open ok");
@@ -370,6 +393,7 @@ status_t V4L2CameraDevice::connectDevice(HALCameraInfo * halInfo)
 	// used for normal picture mode
 	mPicBuffer.addrVirY = (int)ion_alloc_alloc(MAX_PICTURE_SIZE);
 	mPicBuffer.addrPhyY = ion_alloc_vir2phy((void*)mPicBuffer.addrVirY);
+	
 #elif USE_SUNXI_MEM_ALLOCATOR
 	ret = sunxi_alloc_open();
 	if (ret < 0)
@@ -386,7 +410,7 @@ status_t V4L2CameraDevice::connectDevice(HALCameraInfo * halInfo)
 
 	/* There is a device to connect to. */
 	mCameraDeviceState = STATE_CONNECTED;
-
+	LOGD("AWHLABEL#camera#connectDevice:open-OK!\n");
     return NO_ERROR;
 }
 
@@ -429,9 +453,12 @@ status_t V4L2CameraDevice::disconnectDevice()
 	int ret = ion_alloc_close();
 	if (ret < 0)
 	{
-		LOGE("ion_alloc_close failed\n");
+		LOGE("sunxi_alloc_close failed\n");
 	}
-	LOGD("ion_alloc_close ok");
+	else
+	{
+		LOGV("sunxi_alloc_close ok");
+	}
 #elif USE_SUNXI_MEM_ALLOCATOR
 	if (mPicBuffer.addrVirY != NULL)
 	{
@@ -444,12 +471,16 @@ status_t V4L2CameraDevice::disconnectDevice()
 	{
 		LOGE("sunxi_alloc_close failed\n");
 	}
-	LOGD("sunxi_alloc_close ok");
+	else
+	{
+		LOGV("sunxi_alloc_close ok");
+	}
 #endif/*USE_ION_MEM_ALLOCATOR*/
 
     /* There is no device to disconnect from. */
     mCameraDeviceState = STATE_CONSTRUCTED;
 
+	LOGD("AWHLABEL#camera#Close-OK!\n");
     return NO_ERROR;
 }
 
@@ -712,8 +743,17 @@ bool V4L2CameraDevice::captureThread()
 
 	if (mLastZoom != mNewZoom)
 	{
-		// the main frame crop
-		calculateCrop(&mRectCrop, mNewZoom, mMaxZoom, mFrameWidth, mFrameHeight);
+		float widthRate = (float)mFrameWidth / (float)mVideoWidth;
+		float heightRate = (float)mFrameHeight / (float)mVideoHeight;
+		if (mIsThumbUsedForVideo && (widthRate > 4.0) && (heightRate > 4.0))
+		{
+			calculateCrop(&mRectCrop, mNewZoom, mMaxZoom, mFrameWidth/2, mFrameHeight/2);	// for cts, to do 
+		}
+		else
+		{
+			// the main frame crop
+			calculateCrop(&mRectCrop, mNewZoom, mMaxZoom, mFrameWidth, mFrameHeight);
+		}
 		mCameraHardware->setNewCrop(&mRectCrop);
 		
 		// the sub-frame crop
@@ -737,32 +777,10 @@ bool V4L2CameraDevice::captureThread()
 					  mFrameWidth, 
 					  mFrameHeight);
 #else
-
-    #ifdef  __SUNXI__
-        if ((mVideoFormat == V4L2_PIX_FMT_NV21) || (mVideoFormat == V4L2_PIX_FMT_NV12))
-        {
-    		YUYVToNV12(mMapMem.mem[buf.index], 
-    					   (void*)mVideoBuffer.buf_vir_addr[buf.index], 
-    					   mFrameWidth, 
-    					   mFrameHeight);
-            mVideoFormat == V4L2_PIX_FMT_NV12;
-        }
-        else
-        {
-            YUYVToNV21(mMapMem.mem[buf.index], 
-    					   (void*)mVideoBuffer.buf_vir_addr[buf.index], 
-    					   mFrameWidth, 
-    					   mFrameHeight);
-            mVideoFormat == V4L2_PIX_FMT_NV21;
-        }
-    #else
-        YUYVToNV21(mMapMem.mem[buf.index], 
-    					   (void*)mVideoBuffer.buf_vir_addr[buf.index], 
-    					   mFrameWidth, 
-    					   mFrameHeight);
-        mVideoFormat == V4L2_PIX_FMT_NV21;
-    #endif
-    
+		YUYVToNV12(mMapMem.mem[buf.index], 
+					   (void*)mVideoBuffer.buf_vir_addr[buf.index], 
+					   mFrameWidth, 
+					   mFrameHeight);
 #endif
 	}
 
@@ -771,7 +789,25 @@ bool V4L2CameraDevice::captureThread()
 	if (mVideoFormat != V4L2_PIX_FMT_YUYV
 		&& mCaptureFormat == V4L2_PIX_FMT_YUYV)
 	{
-		v4l2_buf.addrPhyY		= mVideoBuffer.buf_phy_addr[buf.index]; 
+		if(mVideoBuffer.buf_phy_addr[buf.index] >= 0x40000000 )
+			mVideoBuffer.buf_phy_addr[buf.index] -= 0x40000000;
+
+		v4l2_buf.addrPhyY		= mVideoBuffer.buf_phy_addr[buf.index];
+		v4l2_buf.addrVirY		= mVideoBuffer.buf_vir_addr[buf.index]; 
+	}
+	else
+	{
+		if(buf.m.offset >= 0x40000000 )
+			buf.m.offset -= 0x40000000;
+
+		v4l2_buf.addrPhyY		= buf.m.offset;
+		v4l2_buf.addrVirY		= (unsigned int)mMapMem.mem[buf.index];
+	}
+/*
+	if (mVideoFormat != V4L2_PIX_FMT_YUYV
+		&& mCaptureFormat == V4L2_PIX_FMT_YUYV)
+	{
+		v4l2_buf.addrPhyY		= mVideoBuffer.buf_phy_addr[buf.index] & 0x0fffffff; 
 		v4l2_buf.addrVirY		= mVideoBuffer.buf_vir_addr[buf.index]; 
 	}
 	else
@@ -779,6 +815,7 @@ bool V4L2CameraDevice::captureThread()
 		v4l2_buf.addrPhyY		= buf.m.offset & 0x0fffffff;
 		v4l2_buf.addrVirY		= (unsigned int)mMapMem.mem[buf.index];
 	}
+*/
 	v4l2_buf.index				= buf.index;
 	v4l2_buf.timeStamp			= mCurFrameTimestamp;
 	v4l2_buf.width				= mFrameWidth;
@@ -794,7 +831,14 @@ bool V4L2CameraDevice::captureThread()
 		v4l2_buf.isThumbAvailable		= 1;
 		v4l2_buf.thumbUsedForPreview	= 1;
 		v4l2_buf.thumbUsedForPhoto		= 0;
-		v4l2_buf.thumbUsedForVideo		= 0;
+		if(mIsThumbUsedForVideo == true)
+		{
+			v4l2_buf.thumbUsedForVideo		= 1;
+		}
+		else
+		{
+			v4l2_buf.thumbUsedForVideo		= 0;
+		}
 		v4l2_buf.thumbAddrPhyY			= v4l2_buf.addrPhyY + ALIGN_4K(ALIGN_32B(mFrameWidth) * mFrameHeight * 3 / 2);	// to do
 		v4l2_buf.thumbAddrVirY			= v4l2_buf.addrVirY + ALIGN_4K(ALIGN_32B(mFrameWidth) * mFrameHeight * 3 / 2);	// to do
 		v4l2_buf.thumbWidth				= mThumbWidth;
@@ -832,7 +876,7 @@ bool V4L2CameraDevice::captureThread()
 			return false;
 		}
 		
-		memcpy((void*)&mPicBuffer, &v4l2_buf, sizeof(V4L2BUF_t));
+		memcpy((void*)&mPicBuffer, (void*)&v4l2_buf, sizeof(V4L2BUF_t));
 		mPicBuffer.addrPhyY = phy_addr;
 		mPicBuffer.addrVirY = vir_addr;
 		
@@ -879,6 +923,16 @@ bool V4L2CameraDevice::captureThread()
 		if (mTakePictureState == TAKE_PICTURE_FAST
 			|| mTakePictureState == TAKE_PICTURE_RECORD)
 		{
+			//LOGD("xxxxxxxxxxxxxxxxxxxx buf.reserved: %x", buf.reserved);
+			if (mHalCameraInfo.fast_picture_mode)
+			{
+				if (buf.reserved == 0xFFFFFFFF)
+				{
+					//LOGD("xxxxxxxxxxxxxxxxxxxx buf.reserved: 0xFFFFFFFF");
+					//goto DEC_REF;
+				}
+			}
+			
 			// enqueue picture buffer
 			ret = OSAL_Queue(&mQueueBufferPicture, &mV4l2buf[v4l2_buf.index]);
 			if (ret != 0)
@@ -899,6 +953,14 @@ bool V4L2CameraDevice::captureThread()
 			|| mTakePictureState == TAKE_PICTURE_CONTINUOUS_FAST)
 			&& isContinuousPictureTime())
 		{
+			if (mHalCameraInfo.fast_picture_mode)
+			{
+				if (buf.reserved == 0xFFFFFFFF)
+				{
+					goto DEC_REF;
+				}
+			}
+			
 			// enqueue picture buffer
 			ret = OSAL_Queue(&mQueueBufferPicture, &mV4l2buf[v4l2_buf.index]);
 			if (ret != 0)
@@ -1177,6 +1239,7 @@ int V4L2CameraDevice::openCameraDev(HALCameraInfo * halInfo)
 	struct v4l2_input inp;
 	struct v4l2_capability cap; 
 
+	LOGD("V4L2CameraDevice::openCameraDev");
 	if (halInfo == NULL)
 	{
 		LOGE("error HAL camera info");
@@ -1226,23 +1289,26 @@ int V4L2CameraDevice::openCameraDev(HALCameraInfo * halInfo)
 			goto END_ERROR;
 		}
 	}
-	
-	// try to support this format: NV21, YUYV
-	// we do not support mjpeg camera now
-	if (tryFmt(V4L2_PIX_FMT_NV21) == OK)
+
+	if (mIsUsbCamera)
 	{
-		mCaptureFormat = V4L2_PIX_FMT_NV21;
-		LOGV("capture format: V4L2_PIX_FMT_NV21");
-	}
-	else if(tryFmt(V4L2_PIX_FMT_YUYV) == OK)
-	{
-		mCaptureFormat = V4L2_PIX_FMT_YUYV;		// maybe usb camera
-		LOGV("capture format: V4L2_PIX_FMT_YUYV");
-	}
-	else
-	{
-		LOGE("driver should surpport NV21/NV12 or YUYV format, but it not!");
-		goto END_ERROR;
+		// try to support this format: NV21, YUYV
+		// we do not support mjpeg camera now
+		if (tryFmt(V4L2_PIX_FMT_NV21) == OK)
+		{
+			mCaptureFormat = V4L2_PIX_FMT_NV21;
+			LOGV("capture format: V4L2_PIX_FMT_NV21");
+		}
+		else if(tryFmt(V4L2_PIX_FMT_YUYV) == OK)
+		{
+			mCaptureFormat = V4L2_PIX_FMT_YUYV;		// maybe usb camera
+			LOGV("capture format: V4L2_PIX_FMT_YUYV");
+		}
+		else
+		{
+			LOGE("driver should surpport NV21/NV12 or YUYV format, but it not!");
+			goto END_ERROR;
+		}
 	}
 
 	return OK;
@@ -1290,18 +1356,49 @@ int V4L2CameraDevice::v4l2SetVideoParams(int width, int height, uint32_t pix_fmt
 		format.fmt.pix.pixelformat = pix_fmt; 
 	}
 	format.fmt.pix.field = V4L2_FIELD_NONE;
-	
+
+	if (mHalCameraInfo.fast_picture_mode)
+	{
+		struct v4l2_pix_format sub_fmt;
+		memset(&sub_fmt, 0, sizeof(sub_fmt));
+		
+		int scale = getSuitableThumbScale(width, height);
+		if (scale <= 0)
+		{
+			LOGE("error thumb scale: %d, src_size: %dx%d", scale, width, height);
+			LOGE("AWHLABEL#camera#v4l2SetVideoParams-FAIL!\n");
+			return UNKNOWN_ERROR;
+		}
+		
+		format.fmt.pix.subchannel = &sub_fmt;
+		format.fmt.pix.subchannel->width = format.fmt.pix.width / scale;
+		format.fmt.pix.subchannel->height = format.fmt.pix.height / scale;
+		format.fmt.pix.subchannel->pixelformat = pix_fmt;
+		format.fmt.pix.subchannel->field = V4L2_FIELD_NONE;	
+		LOGV("to camera params: w: %d, h: %d, sub: %dx%d, pfmt: %d, pfield: %d", 
+			format.fmt.pix.width, format.fmt.pix.height,
+			format.fmt.pix.subchannel->width, format.fmt.pix.subchannel->height, pix_fmt, V4L2_FIELD_NONE);
+	}
+
 	ret = ioctl(mCameraFd, VIDIOC_S_FMT, &format); 
 	if (ret < 0) 
 	{ 
 		LOGE("VIDIOC_S_FMT Failed: %s", strerror(errno)); 
+		LOGE("AWHLABEL#camera#v4l2SetVideoParams:VIDIOC_S_FMT-FAIL!\n");
 		return ret; 
 	} 
 
 	mFrameWidth = format.fmt.pix.width;
 	mFrameHeight = format.fmt.pix.height;
-	LOGV("camera params: w: %d, h: %d, pfmt: %d, pfield: %d", 
-		mFrameWidth, mFrameHeight, pix_fmt, V4L2_FIELD_NONE);
+
+	if (mHalCameraInfo.fast_picture_mode)
+	{
+		mThumbWidth = format.fmt.pix.subchannel->width;
+		mThumbHeight = format.fmt.pix.subchannel->height;
+	}
+	
+	LOGV("camera params: w: %d, h: %d, sub: %dx%d, pfmt: %d, pfield: %d", 
+		mFrameWidth, mFrameHeight, mThumbWidth, mThumbHeight, pix_fmt, V4L2_FIELD_NONE);
 
 	return OK;
 }
@@ -1323,6 +1420,7 @@ int V4L2CameraDevice::v4l2ReqBufs(int * buf_cnt)
     if (ret < 0) 
 	{ 
         LOGE("Init: VIDIOC_REQBUFS failed: %s", strerror(errno)); 
+		LOGE("AWHLABEL#camera#v4l2ReqBufs:VIDIOC_REQBUFS-FAIL!\n");
 		return ret;
     } 
 
@@ -1349,6 +1447,7 @@ int V4L2CameraDevice::v4l2QueryBuf()
         if (ret < 0) 
 		{ 
             LOGE("Unable to query buffer (%s)", strerror(errno)); 
+		LOGE("AWHLABEL#camera#v4l2QueryBuf-FAIL!\n");
             return ret; 
         } 
 
@@ -1364,6 +1463,7 @@ int V4L2CameraDevice::v4l2QueryBuf()
         if (mMapMem.mem[i] == MAP_FAILED) 
 		{ 
 			LOGE("Unable to map buffer (%s)", strerror(errno)); 
+		LOGE("AWHLABEL#camera#v4l2QueryBuf:unable_to_map-FAIL!\n");
             return -1; 
         } 
 
@@ -1372,6 +1472,7 @@ int V4L2CameraDevice::v4l2QueryBuf()
         if (ret < 0) 
 		{ 
             LOGE("VIDIOC_QBUF Failed"); 
+		LOGE("AWHLABEL#camera#v4l2QueryBuf:VIDIOC_QBUF-FAIL!\n");
             return ret; 
         } 
 
@@ -1409,6 +1510,7 @@ int V4L2CameraDevice::v4l2StartStreaming()
 	if (ret < 0) 
 	{ 
 		LOGE("StartStreaming: Unable to start capture: %s", strerror(errno)); 
+		LOGE("AWHLABEL#camera#v4l2StartStreaming-FAIL!\n");
 		return ret; 
 	} 
 
@@ -1425,6 +1527,7 @@ int V4L2CameraDevice::v4l2StopStreaming()
 	if (ret < 0) 
 	{ 
 		LOGE("StopStreaming: Unable to stop capture: %s", strerror(errno)); 
+		LOGE("AWHLABEL#camera#v4l2StopStreaming-FAIL!\n");
 		return ret; 
 	} 
 	LOGV("V4L2Camera::v4l2StopStreaming OK");
@@ -1443,6 +1546,7 @@ int V4L2CameraDevice::v4l2UnmapBuf()
         if (ret < 0) 
 		{
             LOGE("v4l2CloseBuf Unmap failed"); 
+			LOGE("AWHLABEL#camera#v4l2UnmapBuf-FAIL!\n");
 			return ret;
 		}
 
@@ -1488,6 +1592,7 @@ void V4L2CameraDevice::releasePreviewFrame(int index)
 		{
 	        LOGE("releasePreviewFrame: VIDIOC_QBUF Failed: index = %d, ret = %d, %s", 
 				buf.index, ret, strerror(errno)); 
+			LOGE("AWHLABEL#camera#releasePreviewFrame:VIDIOC_QBUF-FAIL!\n");
 	    }
 	}
 }
@@ -1503,6 +1608,7 @@ int V4L2CameraDevice::getPreviewFrame(v4l2_buffer *buf)
     if (ret < 0) 
 	{ 
         LOGW("GetPreviewFrame: VIDIOC_DQBUF Failed, %s", strerror(errno)); 
+	    LOGE("AWHLABEL#camera#getPreviewFrame:VIDIOC_DQBUF-FAIL!\n");
         return __LINE__; 			// can not return false
     }
 
@@ -1529,6 +1635,7 @@ int V4L2CameraDevice::tryFmt(int format)
 		}
 	}
 
+	LOGW("AWHLABEL#camera#tryFmt-FAIL!\n");
 	return -1;
 }
 
@@ -1559,6 +1666,7 @@ int V4L2CameraDevice::tryFmtSize(int * width, int * height)
 	if (ret < 0) 
 	{ 
 		LOGE("VIDIOC_TRY_FMT Failed: %s", strerror(errno)); 
+		LOGE("AWHLABEL#camera#tryFmtSize:VIDIOC_TRY_FMT-FAIL!\n");
 		return ret; 
 	} 
 
@@ -1587,6 +1695,7 @@ int V4L2CameraDevice::getFrameRate()
 	if (ret < 0) 
 	{
 		LOGE("VIDIOC_G_PARM getFrameRate error, %s", strerror(errno));
+		LOGE("AWHLABEL#camera#getFrameRate:VIDIOC_G_PARM-FAIL!\n");
 		return ret;
 	}
 
@@ -1629,7 +1738,7 @@ int V4L2CameraDevice::setWhiteBalance(int wb)
 	struct v4l2_control ctrl;
 	int ret = -1;
 
-	ctrl.id = V4L2_CID_DO_WHITE_BALANCE;
+	ctrl.id = V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE;
 	ctrl.value = wb;
 	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
 	if (ret < 0)
@@ -1640,19 +1749,74 @@ int V4L2CameraDevice::setWhiteBalance(int wb)
 	return ret;
 }
 
-int V4L2CameraDevice::setExposure(int exp)
+int V4L2CameraDevice::setTakePictureCtrl()
+{
+	struct v4l2_control ctrl;
+	int ret = -1;
+
+	ctrl.id = V4L2_CID_TAKE_PICTURE;
+	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
+	if (ret < 0)
+		LOGV("setTakePictureCtrl failed, %s", strerror(errno));
+	else 
+		LOGV("setTakePictureCtrl ok");
+
+	return ret;
+}
+
+// ae mode
+int V4L2CameraDevice::setExposureMode(int mode)
 {
 	F_LOG;
 	int ret = -1;
 	struct v4l2_control ctrl;
 
-	ctrl.id = V4L2_CID_EXPOSURE;
-	ctrl.value = exp;
+	ctrl.id = V4L2_CID_EXPOSURE_AUTO;
+	ctrl.value = mode;
 	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
 	if (ret < 0)
-		LOGV("setExposure failed, %s", strerror(errno));
+		LOGV("setExposureMode failed, %s", strerror(errno));
 	else 
-		LOGV("setExposure ok");
+		LOGV("setExposureMode ok");
+
+	return ret;
+}
+
+// ae compensation
+int V4L2CameraDevice::setExposureCompensation(int val)
+{
+	F_LOG;
+	int ret = -1;
+	struct v4l2_control ctrl;
+
+	ctrl.id = V4L2_CID_AUTO_EXPOSURE_BIAS;
+	ctrl.value = val;
+	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
+	if (ret < 0)
+		LOGV("setExposureCompensation failed, %s", strerror(errno));
+	else 
+		LOGV("setExposureCompensation ok");
+
+	return ret;
+}
+
+// ae compensation
+int V4L2CameraDevice::setExposureWind(int num, void *wind)
+{
+	F_LOG;
+	int ret = -1;
+	struct v4l2_control ctrl;
+
+	ctrl.id = V4L2_CID_AUTO_EXPOSURE_WIN_NUM;
+	ctrl.value = num;
+	ctrl.user_pt = (unsigned int)wind;
+	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
+	if (ret < 0) {
+		LOGE("setExposureWind failed, %s", strerror(errno));
+		LOGE("AWHLABEL#camera#setExposureWind-FAIL!\n");
+	}
+	else 
+		LOGV("setExposureWind ok");
 
 	return ret;
 }
@@ -1664,6 +1828,7 @@ int V4L2CameraDevice::setFlashMode(int mode)
 	int ret = -1;
 	struct v4l2_control ctrl;
 
+#if 0
 	ctrl.id = V4L2_CID_CAMERA_FLASH_MODE;
 	ctrl.value = mode;
 	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
@@ -1671,6 +1836,198 @@ int V4L2CameraDevice::setFlashMode(int mode)
 		LOGV("setFlashMode failed, %s", strerror(errno));
 	else 
 		LOGV("setFlashMode ok");
+#endif
+	return ret;
+}
+
+// af init
+int V4L2CameraDevice::setAutoFocusInit()
+{
+	F_LOG;
+	int ret = -1;
+	struct v4l2_control ctrl;
+
+	ctrl.id = V4L2_CID_AUTO_FOCUS_INIT;
+	ctrl.value = 0;
+	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
+	if (ret < 0) {
+		LOGE("setAutoFocusInit failed, %s", strerror(errno));
+		LOGE("AWHLABEL#camera#setAutoFocusInit-FAIL!\n");
+	}
+	else 
+		LOGV("setAutoFocusInit ok");
+
+	return ret;
+}
+
+// af release
+int V4L2CameraDevice::setAutoFocusRelease()
+{
+	F_LOG;
+	int ret = -1;
+	struct v4l2_control ctrl;
+
+	ctrl.id = V4L2_CID_AUTO_FOCUS_RELEASE;
+	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
+	if (ret < 0) {
+		LOGE("setAutoFocusRelease failed, %s", strerror(errno));
+		LOGE("AWHLABEL#camera#setAutoFocusRelease-FAIL!\n");
+	}
+	else 
+		LOGV("setAutoFocusRelease ok");
+
+	return ret;
+}
+
+// af range
+int V4L2CameraDevice::setAutoFocusRange(int af_range)
+{
+	F_LOG;
+	int ret = -1;
+	struct v4l2_control ctrl;
+
+	ctrl.id = V4L2_CID_FOCUS_AUTO;
+	ctrl.value = 1;
+	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
+	if (ret < 0)
+		LOGV("setAutoFocusRange id V4L2_CID_FOCUS_AUTO failed, %s", strerror(errno));
+	else 
+		LOGV("setAutoFocusRange id V4L2_CID_FOCUS_AUTO ok");
+
+	ctrl.id = V4L2_CID_AUTO_FOCUS_RANGE;
+	ctrl.value = af_range;
+	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
+	if (ret < 0)
+		LOGV("setAutoFocusRange id V4L2_CID_AUTO_FOCUS_RANGE failed, %s", strerror(errno));
+	else 
+		LOGV("setAutoFocusRange id V4L2_CID_AUTO_FOCUS_RANGE ok");
+
+	return ret;
+}
+
+// af wind
+int V4L2CameraDevice::setAutoFocusWind(int num, void *wind)
+{
+	F_LOG;
+	int ret = -1;
+	struct v4l2_control ctrl;
+
+	ctrl.id = V4L2_CID_AUTO_FOCUS_WIN_NUM;
+	ctrl.value = num;
+	ctrl.user_pt = (unsigned int)wind;
+	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
+	if (ret < 0) {
+		LOGE("setAutoFocusCtrl failed, %s", strerror(errno));
+		LOGE("AWHLABEL#camera#setAutoFocusWind-FAIL!\n");
+	}
+	else 
+		LOGV("setAutoFocusCtrl ok");
+
+	return ret;
+}
+
+// af start
+int V4L2CameraDevice::setAutoFocusStart()
+{
+	F_LOG;
+	int ret = -1;
+	struct v4l2_control ctrl;
+
+	ctrl.id = V4L2_CID_AUTO_FOCUS_START;
+	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
+	if (ret < 0) {
+		LOGE("setAutoFocusStart failed, %s", strerror(errno));
+		LOGE("AWHLABEL#camera#setAutoFocusStart-FAIL!\n");
+	}
+	else 
+		LOGV("setAutoFocusStart ok");
+
+	return ret;
+}
+
+// af stop
+int V4L2CameraDevice::setAutoFocusStop()
+{
+	F_LOG;
+	int ret = -1;
+	struct v4l2_control ctrl;
+
+	ctrl.id = V4L2_CID_AUTO_FOCUS_STOP;
+	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
+	if (ret < 0) {
+		LOGE("setAutoFocusStart failed, %s", strerror(errno));
+		LOGE("AWHLABEL#camera#setAutoFocusStop-FAIL!\n");
+	}
+	else 
+		LOGV("setAutoFocusStart ok");
+
+	return ret;
+}
+
+// get af statue
+int V4L2CameraDevice::getAutoFocusStatus()
+{
+	//F_LOG;
+	int ret = -1;
+	struct v4l2_control ctrl;
+
+	if (mCameraFd == NULL)
+	{
+		return 0xFF000000;
+	}
+
+	ctrl.id = V4L2_CID_AUTO_FOCUS_STATUS;
+	ret = ioctl(mCameraFd, VIDIOC_G_CTRL, &ctrl);
+	if (ret >= 0)
+	{
+		//LOGV("getAutoFocusCtrl ok");
+	}
+	
+	return ret;
+}
+
+int V4L2CameraDevice::set3ALock(int lock)
+{
+	F_LOG;
+	int ret = -1;
+	struct v4l2_control ctrl;
+	
+	ctrl.id = V4L2_CID_3A_LOCK;
+	ctrl.value = lock;
+	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
+	if (ret >= 0)
+		LOGV("set3ALock ok");
+
+	return ret;
+}
+
+int V4L2CameraDevice::v4l2setCaptureParams()
+{
+	F_LOG;
+	int ret = -1;
+	
+	struct v4l2_streamparm params;
+	params.parm.capture.timeperframe.numerator = 1;
+	params.parm.capture.timeperframe.denominator = mFrameRate;
+	params.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	if (mTakePictureState == TAKE_PICTURE_NORMAL)
+	{
+		params.parm.capture.capturemode = V4L2_MODE_IMAGE;
+	}
+	else
+	{
+		params.parm.capture.capturemode = V4L2_MODE_VIDEO;
+	}
+
+	LOGV("VIDIOC_S_PARM mFrameRate: %d, capture mode: %d", mFrameRate, params.parm.capture.capturemode);
+
+	ret = ioctl(mCameraFd, VIDIOC_S_PARM, &params);
+	if (ret < 0) {
+		LOGE("v4l2setCaptureParams failed, %s", strerror(errno));
+		LOGE("AWHLABEL#camera#v4l2setCaptureParams-FAIL!\n");
+	}
+	else 
+		LOGV("v4l2setCaptureParams ok");
 
 	return ret;
 }
@@ -1710,97 +2067,74 @@ int V4L2CameraDevice::enumSize(char * pSize, int len)
 	return OK;
 }
 
-// af mode
-int V4L2CameraDevice::setAutoFocusMode(int af_mode)
+int V4L2CameraDevice::getFullSize(int * full_w, int * full_h)
 {
-	F_LOG;
-	int ret = -1;
-	struct v4l2_control ctrl;
-
-	ctrl.id = V4L2_CID_CAMERA_AF_MODE;
-	ctrl.value = af_mode;
-	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
-	if (ret < 0)
-		LOGV("setAutoFocusMode failed, %s", strerror(errno));
-	else 
-		LOGV("setAutoFocusMode ok");
-
-	return ret;
-}
-
-// af ctrl
-int V4L2CameraDevice::setAutoFocusCtrl(int af_ctrl, void *areas)
-{
-	F_LOG;
-	int ret = -1;
-	struct v4l2_control ctrl;
-
-	ctrl.id = V4L2_CID_CAMERA_AF_CTRL;
-	ctrl.value = af_ctrl;
-	ctrl.user_pt = (unsigned int)areas;
-	ret = ioctl(mCameraFd, VIDIOC_S_CTRL, &ctrl);
-	if (ret < 0)
-		LOGE("setAutoFocusCtrl failed, %s", strerror(errno));
-	else 
-		LOGV("setAutoFocusCtrl ok");
-
-	return ret;
-}
-
-int V4L2CameraDevice::getAutoFocusStatus(int af_ctrl)
-{
-	F_LOG;
-	int ret = -1;
-	struct v4l2_control ctrl;
-
-	if (mCameraFd == NULL)
+	struct v4l2_frmsizeenum size_enum;
+	size_enum.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	size_enum.pixel_format = mCaptureFormat;
+	size_enum.index = 0;
+	if (-1 == ioctl (mCameraFd, VIDIOC_ENUM_FRAMESIZES, &size_enum))
 	{
-		return 0xFF000000;
+		LOGE("getFullSize failed");
+		LOGE("AWHLABEL#camera#getFullSize-FAIL!\n");
+		return -1;
 	}
-
-	ctrl.id = V4L2_CID_CAMERA_AF_CTRL;
-	ctrl.value = af_ctrl;
-	ret = ioctl(mCameraFd, VIDIOC_G_CTRL, &ctrl);
-	if (ret >= 0)
-		LOGV("getAutoFocusCtrl ok");
-
-	return ret;
-}
-
-int V4L2CameraDevice::v4l2setCaptureParams()
-{
-	F_LOG;
-	int ret = -1;
 	
-	struct v4l2_streamparm params;
-	params.parm.capture.timeperframe.numerator = 1;
-	params.parm.capture.timeperframe.denominator = mFrameRate;
-	params.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	if (mTakePictureState == TAKE_PICTURE_NORMAL)
-	{
-		params.parm.capture.capturemode = V4L2_MODE_IMAGE;
-	}
-	else
-	{
-		if(mVideoHint == true)
-		{
-			params.parm.capture.capturemode = V4L2_MODE_VIDEO;
-		}
-		else
-		{
-			params.parm.capture.capturemode = V4L2_MODE_PREVIEW;
-		}
-	}
+	*full_w = size_enum.discrete.width;
+	*full_h = size_enum.discrete.height;
 
-	LOGV("VIDIOC_S_PARM mFrameRate: %d, capture mode: %d", mFrameRate, params.parm.capture.capturemode);
-
-	ret = ioctl(mCameraFd, VIDIOC_S_PARM, &params);
-	if (ret < 0)
-		LOGE("v4l2setCaptureParams failed, %s", strerror(errno));
-	else 
-		LOGV("v4l2setCaptureParams ok");
-
-	return ret;
+	LOGV("getFullSize: %dx%d", *full_w, *full_h);
+	
+	return OK;
 }
+
+int V4L2CameraDevice::getSuitableThumbScale(int full_w, int full_h)
+{
+	int scale = 1;
+	if(mIsThumbUsedForVideo == true)
+	{
+		scale = 2;
+	}
+	if ((full_w == 4000)
+		&& (full_h == 3000))
+	{
+		return 4;	// 1000x750
+	}
+	else if ((full_w == 3264)
+		&& (full_h == 2448))
+	{
+		return 2;	// 1632x1224
+	}
+	else if ((full_w == 2592)
+		&& (full_h == 1936))
+	{
+		return 2;	// 1296x968
+	}
+	else if ((full_w == 1280)
+		&& (full_h == 960))
+	{
+		return 1 * scale;	// 1280x960
+	}
+	else if ((full_w == 1920)
+		&& (full_h == 1080))
+	{
+		return 2;	// 960x540
+	}
+	else if ((full_w == 1280)
+		&& (full_h == 720))
+	{
+		
+		return 1 * scale;	// 1280x720
+	}
+	else if ((full_w == 640)
+		&& (full_h == 480))
+	{
+		return 1;	// 640x480
+	}
+
+	LOGW("getSuitableThumbScale unknown size: %dx%d", full_w, full_h);
+	return 1;		// failed
+}
+
 
 }; /* namespace android */

@@ -146,6 +146,7 @@ typedef struct JPEG_ENC_t
 	char  			CameraMake[64];//for the cameraMake name
 	char  			CameraModel[64];//for the cameraMode
 	char  			DateTime[21];//for the data and time
+	void*           pover_overlay;
 }JPEG_ENC_t;
 
 #endif // __LIB__CAMERA__TYPE__H__
