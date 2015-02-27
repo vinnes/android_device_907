@@ -87,23 +87,12 @@ enum {
     CAMERA_MSG_PREVIEW_METADATA = 0x0400, // dataCallback
     // Notify on autofocus start and stop. This is useful in continuous
     // autofocus - FOCUS_MODE_CONTINUOUS_VIDEO and FOCUS_MODE_CONTINUOUS_PICTURE.
-#if defined(QCOM_ICS_COMPAT) && defined(QCOM_HARDWARE)
-    CAMERA_MSG_STATS_DATA       = 0x800,
-    CAMERA_MSG_FOCUS_MOVE = 0x1000,       // notifyCallback
-#elif defined(OMAP_ICS_CAMERA) && defined(OMAP_ENHANCEMENT)
-    CAMERA_MSG_COMPRESSED_BURST_IMAGE = 0x0800, //dataCallback
-    CAMERA_MSG_RAW_BURST = 0x1000,        // dataCallback
-#else
-    CAMERA_MSG_FOCUS_MOVE = 0x0800,       // notifyCallback
-#ifdef QCOM_HARDWARE
-    CAMERA_MSG_STATS_DATA       = 0x1000,
-    CAMERA_MSG_META_DATA = 0x2000,
-#elif defined(OMAP_ENHANCEMENT) && defined(OMAP_ENHANCEMENT_BURST_CAPTURE)
-    CAMERA_MSG_COMPRESSED_BURST_IMAGE = 0x1000, // dataCallback
-    CAMERA_MSG_RAW_BURST = 0x2000,        // dataCallback
-#endif
-#endif
-    CAMERA_MSG_ALL_MSGS = 0xFFFF
+     CAMERA_MSG_FOCUS_MOVE = 0x0800,       // notifyCallback
+     CAMERA_MSG_CONTINUOUSSNAP= 0x1000,    //notifyCallback for continuous snap by fuqiang
+     CAMERA_MSG_SNAP= 0x2000,    //notifyCallback of setting camera idle  for single snap by fuqiang
+     CAMERA_MSG_SNAP_THUMB= 0x4000,    //notifyCallback of saving thumb for single snap by fuqiang
+     CAMERA_MSG_SNAP_FD= 0x8000,    //notifyCallback of requesting fd for single and continuoussnap by fuqiang
+     CAMERA_MSG_ALL_MSGS = 0xFFFF
 };
 
 /** meta data type in CameraMetaDataCallback */
