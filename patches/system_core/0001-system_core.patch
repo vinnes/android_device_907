@@ -4,20 +4,6 @@ Date: Wed, 4 Jun 2014 22:17:17 +0800
 Subject: [PATCH] system_core
 
 Change-Id: I45356b81f7f67b5d922fc6409e8082e0fbd892ae
----
- include/system/audio.h                   |    4 ++
- include/system/camera.h                  |    4 ++
- init/init.c                              |    3 +-
- init/init.h                              |    1 +
- init/logo.c                              |  101 +++++++++++++++++++++++++++++-
- init/property_service.c                  |    4 +-
- libsuspend/autosuspend.c                 |   24 +++++++
- libsuspend/autosuspend_autosleep.c       |    7 +++
- libsuspend/autosuspend_earlysuspend.c    |   24 +++++++
- libsuspend/autosuspend_ops.h             |    1 +
- libsuspend/autosuspend_wakeup_count.c    |    7 ++-
- libsuspend/include/suspend/autosuspend.h |    2 +
- 12 files changed, 178 insertions(+), 4 deletions(-)
 
 diff --git a/include/system/audio.h b/include/system/audio.h
 index a953536..044ed62 100644
@@ -70,20 +56,6 @@ index 9cc8286..8a87422 100644
  
  #if defined(QCOM_ICS_COMPAT) && defined(QCOM_HARDWARE)
      CAMERA_CMD_HISTOGRAM_ON     = 8,
-diff --git a/init/init.c b/init/init.c
-index 1cb9194..7790874 100644
---- a/init/init.c
-+++ b/init/init.c
-@@ -754,7 +754,8 @@ static int console_init_action(int nargs, char **args)
-     close(fd);
- 
- #ifdef INITLOGO
--    if( load_565rle_image(INIT_IMAGE_FILE) ) {
-+    //if( load_565rle_image(INIT_IMAGE_FILE) ) {
-+    if( load_argb8888_image(INIT_IMAGE_FILE) ) {
-         fd = open("/dev/tty0", O_WRONLY);
-         if (fd >= 0) {
-             const char *msg;
 diff --git a/init/init.h b/init/init.h
 index db94c29..45ece9b 100644
 --- a/init/init.h
@@ -212,31 +184,6 @@ index 614224c..d20294f 100644
 +    vt_set_mode(0);
 +    return -1;
 +}
-diff --git a/init/property_service.c b/init/property_service.c
-index 0b4845e..368f350 100644
---- a/init/property_service.c
-+++ b/init/property_service.c
-@@ -65,10 +65,11 @@ struct {
-     unsigned int uid;
-     unsigned int gid;
- } property_perms[] = {
--    { "net.rmnet",        AID_RADIO,    0 },
-+    { "net.rmnet0.",      AID_RADIO,    0 },
-     { "net.gprs.",        AID_RADIO,    0 },
-     { "net.ppp",          AID_RADIO,    0 },
-     { "net.qmi",          AID_RADIO,    0 },
-+    { "ril.pcui",         AID_RADIO,    0 },
-     { "net.lte",          AID_RADIO,    0 },
-     { "net.cdma",         AID_RADIO,    0 },
-     { "ril.",             AID_RADIO,    0 },
-@@ -99,6 +100,7 @@ struct {
-     { "persist.security.", AID_SYSTEM,   0 },
-     { "persist.service.bdroid.", AID_BLUETOOTH,   0 },
-     { "selinux."         , AID_SYSTEM,   0 },
-+    { "audio.routing",    AID_MEDIA,     0 },
-     { "wc_transport.",     AID_BLUETOOTH,   AID_SYSTEM },
-     { "net.pdp",          AID_RADIO,    AID_RADIO },
-     { "service.bootanim.exit", AID_GRAPHICS, 0 },
 diff --git a/libsuspend/autosuspend.c b/libsuspend/autosuspend.c
 index eb1f66e..62473ce 100644
 --- a/libsuspend/autosuspend.c
@@ -385,6 +332,4 @@ index f56fc6a..c9a8380 100644
  __END_DECLS
  
  #endif
--- 
-1.7.9.5
 
