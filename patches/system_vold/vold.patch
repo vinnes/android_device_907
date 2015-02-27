@@ -1,0 +1,149 @@
+From 1186944372071bc0ba3619fa8e21b9044f753a8b
+From: ugers <yugers@gmail.com>
+Date:   Fri Feb 27 23:29:03 2015 +0300
+Subject: [PATCH] system_vold
+
+Change-Id: I51b065e657c4fcaedd0006faf8684e46ad3f9d18
+
+diff --git a/Android.mk b/Android.mk
+index 8c9d3d6..4ad7a8e 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -33,8 +33,9 @@ common_src_files := \
+ 	Process.cpp \
+ 	Ext4.cpp \
+ 	Fat.cpp \
+-	Ntfs.cpp \
+ 	Exfat.cpp \
++	Ntfs.cpp \
++	iso9660.cpp \
+ 	F2FS.cpp \
+ 	Loop.cpp \
+ 	Devmapper.cpp \
+@@ -88,7 +89,7 @@ include $(CLEAR_VARS)
+ LOCAL_MODULE:= vold
+ LOCAL_SRC_FILES := vold.c
+ LOCAL_C_INCLUDES := $(common_c_includes)
+-LOCAL_CFLAGS := $(common_cflags)
++LOCAL_CFLAGS := -Werror=format
+ 
+ ifeq ($(TARGET_HW_DISK_ENCRYPTION),true)
+ LOCAL_C_INCLUDES += device/qcom/common/cryptfs_hw
+diff --git a/iso9660.cpp b/iso9660.cpp
+new file mode 100644
+index 0000000..3288f3c
+--- /dev/null
++++ b/iso9660.cpp
+@@ -0,0 +1,74 @@
++/*
++ * Copyright (C) 2008 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <errno.h>
++#include <string.h>
++#include <dirent.h>
++#include <errno.h>
++#include <fcntl.h>
++
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <sys/types.h>
++#include <sys/mman.h>
++#include <sys/mount.h>
++
++#include <linux/kdev_t.h>
++
++#define LOG_TAG "Vold"
++
++#include <cutils/log.h>
++#include <cutils/properties.h>
++
++#include "iso9660.h"
++
++extern "C" int logwrap(int argc, const char **argv, int background);
++extern "C" int mount(const char *, const char *, const char *, unsigned long, const void *);
++
++int iso9660::check(const char *fsPath) {
++    return 0;    
++}
++
++int iso9660::doMount(const char *fsPath, const char *mountPoint,
++                 bool ro, bool remount, bool executable,
++                 int ownerUid, int ownerGid, int permMask, bool createLost) {
++    int rc;
++    unsigned long flags;
++    char mountData[255];
++
++    flags = MS_NODEV | MS_NOSUID;
++
++    flags |= (remount ? MS_REMOUNT : 0);
++
++
++    sprintf(mountData,
++            "utf8,uid=%d,gid=%d",
++            ownerUid, ownerGid);
++
++    rc = mount(fsPath, mountPoint, "iso9660", flags, mountData);
++
++    if (rc && errno == EROFS) {
++        SLOGE("%s appears to be a read only filesystem - retrying mount RO", fsPath);
++        flags |= MS_RDONLY;
++        rc = mount(fsPath, mountPoint, "iso9660", flags, mountData);
++    }
++
++    return rc;
++}
+diff --git a/iso9660.h b/iso9660.h
+new file mode 100644
+index 0000000..13ffe98
+--- /dev/null
++++ b/iso9660.h
+@@ -0,0 +1,32 @@
++/*
++ * Copyright (C) 2008 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef _ISO9660_H
++#define _ISO9660_H
++
++#include <unistd.h>
++
++class iso9660 {
++public:
++    static int check(const char *fsPath);
++    static int doMount(const char *fsPath, const char *mountPoint,
++                       bool ro, bool remount, bool executable,
++                       int ownerUid, int ownerGid, int permMask,
++                       bool createLost);
++  
++};
++
++#endif
