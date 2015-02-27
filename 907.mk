@@ -29,10 +29,6 @@ PRODUCT_TAGS += dalvik.gc.type-precise
 PRODUCT_PROPERTY_OVERRIDES += \
         ro.opengles.version = 131072 \
 	drm.service.enabled=true \
-   
-# low memory
-PRODUCT_PROPERTY_OVERRIDES += \
-	ro.config.low_ram=true \
 
 # Fix Graphics Issues
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -104,7 +100,6 @@ PRODUCT_COPY_FILES += \
 
 #Wlan
 PRODUCT_PACKAGES += \
-	libnetcmdiface \
 	dhcpcd.conf
 
 # Device specific settings
