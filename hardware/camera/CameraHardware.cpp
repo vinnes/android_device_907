@@ -9,7 +9,7 @@
 #include <cutils/properties.h>
 #include <ui/Rect.h>
 
-#include <drv_display.h>
+#include <drv_display_sun4i.h>
 #include "CameraHardware.h"
 #include "V4L2CameraDevice.h"
 
