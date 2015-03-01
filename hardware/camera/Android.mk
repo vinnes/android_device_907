@@ -20,15 +20,16 @@ LOCAL_LDFLAGS += \
 	device/softwinner/907/prebuilt/lib/cedarx/libcedarv_adapter.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libcedarxbase.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libCedarX.so \
+	device/softwinner/907/prebuilt/lib/cedarx/libcedarxsftstream.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libion_alloc.so \
 	device/softwinner/907/prebuilt/lib/cedarx/libsunxi_alloc.so \
 	
-LOCAL_C_INCLUDES += 								\
+LOCAL_C_INCLUDES += 						\
 	frameworks/base/core/jni/android/graphics 		\
 	frameworks/native/include/media/openmax			\
 	hardware/libhardware/include/hardware			\
-	frameworks/native/include						\
-	device/softwinner/907/hardware/camera/include_camera \
+	frameworks/native/include				\
+	device/softwinner/907/hardware/camera/include_camera 	\
 	$(TARGET_HARDWARE_INCLUDE)
 
 LOCAL_SRC_FILES := \
