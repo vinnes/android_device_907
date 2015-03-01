@@ -165,6 +165,7 @@ BOARD_SEPOLICY_UNION += \
     rild.te \
     surfaceflinger.te \
     system.te \
+    ueventd.te \
     untrusted_app.te \
     vold.te \
     wpa_supplicant.te \
