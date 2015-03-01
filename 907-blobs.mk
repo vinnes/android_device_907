@@ -13,10 +13,15 @@
 # limitations under the License.
 COMMON_PATH := device/softwinner/907
 
-# /system/bin
+# /system/bin and other
 PRODUCT_COPY_FILES += \
 	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/bin,system/bin) \
 	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/xbin,system/xbin) \
+	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/usr/idc,system/usr/idc) \
+	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/usr/keylayout,system/usr/keylayout) \
+	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/lib/modules,system/lib/modules) \
+	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/etc/init.d,system/etc/init.d) \
+	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/etc/usb_modeswitch.d,system/etc/usb_modeswitch.d) \
 
 # /system/etc
 PRODUCT_COPY_FILES += \
@@ -37,13 +42,6 @@ PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/prebuilt/etc/media_profiles.xml:system/etc/media_profiles.xml \
     $(COMMON_PATH)/prebuilt/etc/audio_effects.conf:system/etc/audio_effects.conf \
 
-PRODUCT_COPY_FILES += \
-	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/etc/init.d,system/etc/init.d)
-
-# 3G Data Card usb modeswitch File
-PRODUCT_COPY_FILES += \
-	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/etc/usb_modeswitch.d,system/etc/usb_modeswitch.d)
-
 # /system/lib
 PRODUCT_COPY_FILES += \
 	$(COMMON_PATH)/prebuilt/lib/egl/libEGL_mali.so:system/lib/egl/libEGL_mali.so \
@@ -54,15 +52,7 @@ PRODUCT_COPY_FILES += \
 	$(COMMON_PATH)/prebuilt/lib/libUMP.so:system/lib/libUMP.so \
 	$(COMMON_PATH)/prebuilt/lib/libMali.so:obj/lib/libMali.so \
 	$(COMMON_PATH)/prebuilt/lib/libUMP.so:obj/lib/libUMP.so \
-
-# /system/usr/idc
-PRODUCT_COPY_FILES += \
-	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/usr/idc,system/usr/idc)
-	
-# /system/usr/keylayout	
-PRODUCT_COPY_FILES += \
-	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/usr/keylayout,system/usr/keylayout)
-	
+		
 PRODUCT_COPY_FILES += \
 	$(COMMON_PATH)/prebuilt/usr/icu/icudt48l.dat:system/usr/icu/icudt48l.dat \
 	$(COMMON_PATH)/prebuilt/usr/gsensor.cfg:system/usr/gsensor.cfg \
@@ -70,13 +60,6 @@ PRODUCT_COPY_FILES += \
 # temporary prebuilt wpa_supplicant
 PRODUCT_COPY_FILES += \
 	$(COMMON_PATH)/prebuilt/etc/wifi/wpa_supplicant.conf:system/etc/wifi/wpa_supplicant.conf
-
-# prebuilt kernel modules
-#PRODUCT_COPY_FILES += \
-#	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/vendor/modules,system/vendor/modules)
-
-PRODUCT_COPY_FILES += \
-	$(call find-copy-subdir-files,*,$(COMMON_PATH)/prebuilt/lib/modules,system/lib/modules)
 
 # HACK by turl: Create some intermediate files to link with libMali/libUMP
 $(shell mkdir -p out/target/product/907/obj/SHARED_LIBRARIES/libMali_intermediates)
