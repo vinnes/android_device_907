@@ -4,10 +4,6 @@ Date: Wed, 4 Jun 2014 22:19:47 +0800
 Subject: [PATCH] frameworks_base
 
 Change-Id: I7f759922b5c92f45e107fefaab84b3c2207c5f73
----
- core/java/android/hardware/Camera.java             |    2 +
- .../com/android/server/WiredAccessoryManager.java  |   91 ++++++++++++++++++++
- 2 files changed, 93 insertions(+)
 
 diff --git a/core/java/android/hardware/Camera.java b/core/java/android/hardware/Camera.java
 index 0764445..12be27f 100644
@@ -135,6 +131,3 @@ index 3c388e2..3b03194 100644
 +        };
 +    };
  }
--- 
-1.7.9.5
-
