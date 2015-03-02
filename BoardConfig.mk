@@ -130,23 +130,26 @@ TARGET_PROVIDES_INIT_RC := true
 BOARD_WIFI_VENDOR                := realtek
 WPA_SUPPLICANT_VERSION           := VER_0_8_X
 BOARD_WPA_SUPPLICANT_DRIVER      := NL80211
-BOARD_WPA_SUPPLICANT_PRIVATE_LIB := lib_driver_cmd_rtl
+CONFIG_DRIVER_WEXT               :=y
+BOARD_WPA_SUPPLICANT_PRIVATE_LIB := lib_driver_cmd_nl80211
 BOARD_HOSTAPD_DRIVER             := NL80211
-BOARD_HOSTAPD_PRIVATE_LIB        := lib_driver_cmd_rtl
+BOARD_HOSTAPD_PRIVATE_LIB        := lib_driver_cmd_nl80211
 BOARD_WLAN_DEVICE                := rtl8192cu
 SW_BOARD_USR_WIFI                := rtl8192cu
 
+WIFI_DRIVER               := rtl8192cu
 WIFI_DRIVER_MODULE_NAME   := 8192cu
+WIFI_DRIVER_FW_PATH_STA := none
 WIFI_DRIVER_MODULE_PATH   := "/system/lib/modules/8192cu.ko"
+WIFI_DRIVER_MODULE_ARG    := "ifname=wlan0if2name=p2p0"
 
-WIFI_DRIVER_MODULE_ARG    := ""
 WIFI_FIRMWARE_LOADER      := ""
 WIFI_DRIVER_FW_PATH_STA   := ""
 WIFI_DRIVER_FW_PATH_AP    := ""
 WIFI_DRIVER_FW_PATH_P2P   := ""
 WIFI_DRIVER_FW_PATH_PARAM := ""
 
-#TARGET_CUSTOM_WIFI := hardware/realtek/wlan/libhardware_legacy/wifi/wifi_realtek.c
+TARGET_CUSTOM_WIFI := hardware/realtek/wlan/libhardware_legacy/wifi/wifi_realtek.c
 
 # Selinux
 BOARD_SEPOLICY_DIRS += \
@@ -174,6 +177,6 @@ BOARD_SEPOLICY_UNION += \
 # Beware: set only prebuilt OR source+config
 TARGET_PREBUILT_KERNEL := device/softwinner/907/kernel
 BOARD_KERNEL_BASE := 0x40000000
-BOARD_KERNEL_CMDLINE := console=ttyS0,115200 rw init=/init loglevel=8 androidboot.selinux=permissive
+BOARD_KERNEL_CMDLINE := console=ttyS0,115200 rw init=/init loglevel=5 androidboot.selinux=permissive
 
 COMMON_GLOBAL_CFLAGS += "-DICS_CAMERA_BLOB -DICS_AUDIO_BLOB"
