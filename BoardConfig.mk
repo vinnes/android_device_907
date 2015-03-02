@@ -50,7 +50,7 @@ BOARD_HAVE_BLUETOOTH_BCM := true
 BLUETOOTH_HCI_USE_USB := true
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/softwinner/907/hardware/bluetooth
 BOARD_BLUEDROID_VENDOR_CONF := device/softwinner/907/hardware/bluetooth/vnd_generic_usb.txt
-BOARD_HAS_VIBRATOR_IMPLEMENTATION := ../../device/softwinner/907/vibrator.c
+BOARD_HAS_VIBRATOR_IMPLEMENTATION := ../../device/softwinner/907/hardware/include/vibrator.c
 
 # Partition sizes; must be in decimal
 TARGET_USERIMAGES_USE_EXT4 := true
