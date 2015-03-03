@@ -200,10 +200,6 @@ service iprenew_eth /system/bin/dhcpcd -n
     class main
     disabled
     oneshot
-    
-service u3gmonitor /system/bin/u3gmonitor
-    class main
-    oneshot
 
 service  sensors  /system/bin/busybox  sh  /system/bin/sensors.sh
     user root
@@ -213,3 +209,7 @@ service  sensors  /system/bin/busybox  sh  /system/bin/sensors.sh
 
 on property:sys.sensors=1
     start sensors
+
+on property:sys.boot_completed=1
+    start ril-daemon
+    start u3gmonitor
